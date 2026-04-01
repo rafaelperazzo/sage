@@ -6,9 +6,10 @@
 
 | Módulo | Rota | Descrição | Status |
 |---|---|---|---|
-| [SAGE Map](plans/sage-map.md) | `/#/map` | Grade semanal de salas em tempo real | Planejado |
-| [SAGE Agenda](plans/sage-agenda.md) | `/#/agenda` | Grade de horários por professor | Planejado |
-| [SAGE Report](plans/sage-report.md) | `/#/report` | Relatórios de ocupação e disponibilidade | Planejado |
+| [SAGE Map](plans/sage-map.md) | `/#/map` | Grade semanal de salas em tempo real | Implementado |
+| [SAGE Agenda](plans/sage-agenda.md) | `/#/agenda` | Grade de horários por professor | Implementado |
+| [SAGE Report](plans/sage-report.md) | `/#/report` | Relatórios de ocupação e disponibilidade | Implementado |
+| [SAGE Auditório](plans/sage-auditorio.md) | `/#/auditorio` | Calendário de reservas do auditório | Implementado |
 
 ## Ordem de Implementação
 
@@ -18,7 +19,8 @@
 4. **Fase 4 — SAGE Map (admin)** — CRUD de alocações
 5. **Fase 5 — SAGE Agenda** — grade por professor
 6. **Fase 6 — SAGE Report** — relatórios e gráficos
-7. **Fase 7 — Deploy** — publicação no GitHub Pages
+7. **Fase 7 — SAGE Auditório** — calendário mensal de reservas do auditório
+8. **Fase 8 — Deploy** — publicação no GitHub Pages
 
 ## Links
 
