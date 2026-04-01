@@ -17,3 +17,13 @@ export interface SalaInfo {
   nome: string
   tipo: TipoSala
 }
+
+export interface Reserva {
+  id: number
+  data: string          // "YYYY-MM-DD"
+  inicio: string        // "HH:MM:SS" (Supabase time) — normalizar com normalizeTime()
+  fim: string           // "HH:MM:SS"
+  responsavel: string | null
+}
+
+export type ReservaInput = Omit<Reserva, 'id'>

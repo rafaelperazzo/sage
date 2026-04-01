@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { Alocacao, AlocacaoInput } from '../types'
+import type { Alocacao, AlocacaoInput, Reserva, ReservaInput } from '../types'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
@@ -84,6 +84,59 @@ export async function updateAlocacao(id: number, input: AlocacaoInput): Promise<
 export async function deleteAlocacao(id: number): Promise<void> {
   const { error } = await supabase
     .from(TABLE_NAME)
+    .delete()
+    .eq('id', id)
+
+  if (error) throw error
+}
+
+// ── Auditório ───────────────────────────────────────────────────
+
+export const AUDITORIO_TABLE = 'auditorio'
+
+export async function fetchReservasMes(ano: number, mes: number): Promise<Reserva[]> {
+  const dataInicio = `${ano}-${String(mes).padStart(2, '0')}-01`
+  const lastDay = new Date(ano, mes, 0).getDate()
+  const dataFim = `${ano}-${String(mes).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+
+  const { data, error } = await supabase
+    .from(AUDITORIO_TABLE)
+    .select('*')
+    .gte('data', dataInicio)
+    .lte('data', dataFim)
+    .order('data')
+    .order('inicio')
+
+  if (error) throw error
+  return data as Reserva[]
+}
+
+export async function insertReserva(input: ReservaInput): Promise<Reserva> {
+  const { data, error } = await supabase
+    .from(AUDITORIO_TABLE)
+    .insert(input)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data as Reserva
+}
+
+export async function updateReserva(id: number, input: ReservaInput): Promise<Reserva> {
+  const { data, error } = await supabase
+    .from(AUDITORIO_TABLE)
+    .update(input)
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data as Reserva
+}
+
+export async function deleteReserva(id: number): Promise<void> {
+  const { error } = await supabase
+    .from(AUDITORIO_TABLE)
     .delete()
     .eq('id', id)
 

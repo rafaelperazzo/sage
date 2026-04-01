@@ -38,6 +38,22 @@ Relatórios de ocupação e disponibilidade das salas.
 - Base de cálculo: 12 horas/dia × 6 dias = 72h/semana = 100% de ocupação
 - Salas agrupadas por tipo: salas de aula, inovação e laboratórios
 
+### SAGE Auditório
+Calendário mensal de reservas do auditório do Departamento de Computação.
+
+- Calendário mensal interativo exibindo apenas segunda a sábado
+- Navegação por mês/ano a partir do mês atual
+- Clique em uma reserva para ver os detalhes (responsável, data e horário)
+- Aba de relatório com ocupação diária e mensal (base: 12h/dia = 100%)
+- Gráfico de barras e tabela detalhada de utilização do mês
+
+**Modo administrador** (requer login):
+- Clique em qualquer dia para cadastrar uma nova reserva
+- Clique em uma reserva para editar ou remover (com confirmação)
+- Detecção automática de conflito de horário no mesmo dia
+
+> Para solicitar uma reserva, envie e-mail para **diretoria.dc@ufrpe.br**. As reservas são gerenciadas pela direção do Departamento.
+
 ---
 
 ## Salas
