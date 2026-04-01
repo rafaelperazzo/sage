@@ -13,12 +13,29 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 // Nome da tabela — isolado aqui para facilitar manutenção
 export const TABLE_NAME = 'alocacao_2026.1'
 
-// ── Operações CRUD ──────────────────────────────────────────────
+// ── Períodos letivos ────────────────────────────────────────────
 
-export async function fetchAlocacoes(): Promise<Alocacao[]> {
+export async function fetchPeriodos(): Promise<string[]> {
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .select('periodo')
+
+  if (error) throw error
+
+  const periodos = Array.from(
+    new Set((data as { periodo: string }[]).map((r) => r.periodo).filter(Boolean))
+  ).sort()
+
+  return periodos
+}
+
+// ── Operações de leitura (filtradas por período) ────────────────
+
+export async function fetchAlocacoes(periodo: string): Promise<Alocacao[]> {
   const { data, error } = await supabase
     .from(TABLE_NAME)
     .select('*')
+    .eq('periodo', periodo)
     .order('dia_semana')
     .order('inicio')
 
@@ -26,11 +43,12 @@ export async function fetchAlocacoes(): Promise<Alocacao[]> {
   return data as Alocacao[]
 }
 
-export async function fetchAlocacoesPorSala(sala: string): Promise<Alocacao[]> {
+export async function fetchAlocacoesPorSala(sala: string, periodo: string): Promise<Alocacao[]> {
   const { data, error } = await supabase
     .from(TABLE_NAME)
     .select('*')
     .eq('sala', sala)
+    .eq('periodo', periodo)
     .order('dia_semana')
     .order('inicio')
 
@@ -38,22 +56,12 @@ export async function fetchAlocacoesPorSala(sala: string): Promise<Alocacao[]> {
   return data as Alocacao[]
 }
 
-export async function fetchAlocacoesPorProfessor(professor: string): Promise<Alocacao[]> {
+// ── Operações CRUD ──────────────────────────────────────────────
+
+export async function insertAlocacao(input: AlocacaoInput, periodo: string): Promise<Alocacao> {
   const { data, error } = await supabase
     .from(TABLE_NAME)
-    .select('*')
-    .eq('professor', professor)
-    .order('dia_semana')
-    .order('inicio')
-
-  if (error) throw error
-  return data as Alocacao[]
-}
-
-export async function insertAlocacao(input: AlocacaoInput): Promise<Alocacao> {
-  const { data, error } = await supabase
-    .from(TABLE_NAME)
-    .insert({ ...input, periodo: '2026.1' })
+    .insert({ ...input, periodo })
     .select()
     .single()
 

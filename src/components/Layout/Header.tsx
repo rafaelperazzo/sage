@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { MapPin, Calendar, BarChart2, LogIn, LogOut } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
+import { usePeriodo } from '../../contexts/PeriodoContext'
 
 const NAV_ITEMS = [
   { to: '/map', label: 'SAGE Map', icon: MapPin },
@@ -11,6 +12,7 @@ const NAV_ITEMS = [
 export function Header() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
+  const { periodo, setPeriodo, periodos, loadingPeriodos } = usePeriodo()
 
   async function handleSignOut() {
     await signOut()
@@ -44,7 +46,26 @@ export function Header() {
           </nav>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          {/* Seletor de período */}
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs text-gray-500 hidden sm:block whitespace-nowrap">
+              Período:
+            </label>
+            <select
+              value={periodo}
+              onChange={(e) => setPeriodo(e.target.value)}
+              disabled={loadingPeriodos || periodos.length === 0}
+              className="border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            >
+              {loadingPeriodos && <option>Carregando...</option>}
+              {periodos.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Auth */}
           {user ? (
             <div className="flex items-center gap-3">
               <span className="text-xs text-gray-500 hidden sm:block">

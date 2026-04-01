@@ -9,6 +9,7 @@ import {
   updateAlocacao,
   deleteAlocacao,
 } from '../lib/supabase'
+import { usePeriodo } from '../contexts/PeriodoContext'
 
 function timeToMinutes(time: string): number {
   const [h, m] = time.split(':').map(Number)
@@ -21,47 +22,48 @@ function horariosConflitam(a: AlocacaoInput, b: Alocacao): boolean {
   const aFim = timeToMinutes(a.fim)
   const bInicio = timeToMinutes(b.inicio)
   const bFim = timeToMinutes(b.fim)
-  // Sobreposição: não há conflito apenas se um termina antes do outro começar
   return aInicio < bFim && aFim > bInicio
 }
 
-// ── Hook para todas as alocações (agenda, report) ────────────────
+// ── Hook para todas as alocações do período (agenda, report) ─────
 
 export function useAlocacoes() {
+  const { periodo } = usePeriodo()
   const [alocacoes, setAlocacoes] = useState<Alocacao[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
+    if (!periodo) return
     try {
       setLoading(true)
       setError(null)
-      const data = await fetchAlocacoes()
+      const data = await fetchAlocacoes(periodo)
       setAlocacoes(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar alocações')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [periodo])
 
   useEffect(() => {
     void load()
 
     const channel = supabase
-      .channel('alocacoes-all')
+      .channel(`alocacoes-all-${periodo}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE_NAME }, () => {
         void load()
       })
       .subscribe()
 
     return () => { void supabase.removeChannel(channel) }
-  }, [load])
+  }, [load, periodo])
 
   return { alocacoes, loading, error, reload: load }
 }
 
-// ── Hook para alocações de uma sala (SAGE Map) ───────────────────
+// ── Hook para alocações de uma sala no período (SAGE Map) ────────
 
 interface UseAlocacoesPorSalaReturn {
   alocacoes: Alocacao[]
@@ -74,36 +76,37 @@ interface UseAlocacoesPorSalaReturn {
 }
 
 export function useAlocacoesPorSala(sala: string): UseAlocacoesPorSalaReturn {
+  const { periodo } = usePeriodo()
   const [alocacoes, setAlocacoes] = useState<Alocacao[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
-    if (!sala) return
+    if (!sala || !periodo) return
     try {
       setLoading(true)
       setError(null)
-      const data = await fetchAlocacoesPorSala(sala)
+      const data = await fetchAlocacoesPorSala(sala, periodo)
       setAlocacoes(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar alocações')
     } finally {
       setLoading(false)
     }
-  }, [sala])
+  }, [sala, periodo])
 
   useEffect(() => {
     void load()
 
     const channel = supabase
-      .channel(`alocacoes-sala-${sala}`)
+      .channel(`alocacoes-sala-${sala}-${periodo}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE_NAME }, () => {
         void load()
       })
       .subscribe()
 
     return () => { void supabase.removeChannel(channel) }
-  }, [load, sala])
+  }, [load, sala, periodo])
 
   function hasConflict(data: AlocacaoInput, excludeId?: number): boolean {
     return alocacoes
@@ -113,8 +116,7 @@ export function useAlocacoesPorSala(sala: string): UseAlocacoesPorSalaReturn {
 
   async function create(data: AlocacaoInput) {
     if (hasConflict(data)) throw new Error('Conflito de horário: este slot já está ocupado.')
-    await insertAlocacao(data)
-    // Realtime irá atualizar; forçar reload como fallback
+    await insertAlocacao(data, periodo)
     await load()
   }
 

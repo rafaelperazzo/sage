@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { BaseModal } from '../../components/Modal/BaseModal'
 import type { AlocacaoInput } from '../../types'
-import { SALAS, DIAS, HORAS, PERIODO_ATUAL } from '../../constants/salas'
+import { SALAS, DIAS, HORAS } from '../../constants/salas'
+import { usePeriodo } from '../../contexts/PeriodoContext'
 import { AlertCircle } from 'lucide-react'
 
 interface AllocationFormProps {
@@ -21,6 +22,7 @@ export function AllocationForm({
   onSave,
   onClose,
 }: AllocationFormProps) {
+  const { periodo } = usePeriodo()
   const [disciplina, setDisciplina] = useState('')
   const [professor, setProfessor] = useState('')
   const [dia, setDia] = useState(initialDia ?? DIAS[0]!)
@@ -55,7 +57,7 @@ export function AllocationForm({
   }
 
   return (
-    <BaseModal title={`Nova Alocação — ${PERIODO_ATUAL}`} onClose={onClose}>
+    <BaseModal title={`Nova Alocação — ${periodo}`} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">Disciplina *</label>
