@@ -7,6 +7,22 @@ if ! command -v whiptail &> /dev/null; then
 fi
 
 TITLE="SAGE — Commit"
+
+# --- Verificar alterações pendentes ---
+GIT_STATUS=$(git status --short)
+if [[ -z "$GIT_STATUS" ]]; then
+  whiptail --title "$TITLE" \
+    --msgbox "Nenhuma alteração pendente.\n\nNão há arquivos modificados para enviar." \
+    10 55 --ok-button "Sair"
+  clear
+  exit 0
+fi
+
+whiptail --title "$TITLE — Alterações Pendentes" \
+  --scrolltext \
+  --msgbox "$(git status)" \
+  22 70 --ok-button "Prosseguir"
+
 STEP=1
 
 while true; do
