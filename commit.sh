@@ -76,6 +76,10 @@ while true; do
       fi
 
       rm -f "$ERR_FILE"
+      whiptail --title "$TITLE" \
+        --msgbox "Operações concluídas com sucesso!\n\n  ✔ git add .\n  ✔ git commit\n  ✔ git push origin master" \
+        12 65 \
+        --ok-button "Sair"
       clear
       echo -e "\033[0;32m✔ Commit concluído: $COMMIT_MSG\033[0m"
       exit 0

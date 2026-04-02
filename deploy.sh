@@ -107,6 +107,10 @@ while true; do
       fi
 
       rm -f "$ERR_FILE"
+      whiptail --title "$TITLE" \
+        --msgbox "Operações concluídas com sucesso!\n\n  ✔ git add .\n  ✔ git commit\n  ✔ git tag $NEW_TAG\n  ✔ git push origin master --tags" \
+        14 65 \
+        --ok-button "Sair"
       clear
       echo -e "\033[0;32m✔ Deploy concluído — tag $NEW_TAG publicada.\033[0m"
       exit 0
