@@ -17,6 +17,7 @@ Visualização da agenda semanal de cada sala em formato de grade (segunda a sá
 - Cores distintas por tipo de sala: salas de aula, salas de inovação e laboratórios
 - Clique em uma célula ocupada para ver os detalhes da alocação
 - Atualização automática em tempo real (Supabase Realtime)
+- **Aba "Buscar Sala"**: localize disciplinas e professores por autocomplete, com lista de salas e horários
 
 **Modo administrador** (requer login):
 - Clique em célula vazia para criar uma nova alocação

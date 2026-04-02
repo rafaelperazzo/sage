@@ -7,6 +7,7 @@
 | Módulo | Rota | Descrição | Status |
 |---|---|---|---|
 | [SAGE Map](plans/sage-map.md) | `/#/map` | Grade semanal de salas em tempo real | Implementado |
+| [SAGE Map — Buscar Sala](plans/sage-map-busca-sala.md) | `/#/map` (tab) | Busca por disciplina ou professor com autocomplete | Implementado |
 | [SAGE Agenda](plans/sage-agenda.md) | `/#/agenda` | Grade de horários por professor | Implementado |
 | [SAGE Report](plans/sage-report.md) | `/#/report` | Relatórios de ocupação e disponibilidade | Implementado |
 | [SAGE Auditório](plans/sage-auditorio.md) | `/#/auditorio` | Calendário de reservas do auditório | Implementado |

@@ -4,7 +4,8 @@ import { WeekGrid } from './WeekGrid'
 import { ViewModal } from './ViewModal'
 import { EditModal } from './EditModal'
 import { AllocationForm } from './AllocationForm'
-import { useAlocacoesPorSala } from '../../hooks/useAlocacoes'
+import { BuscaSala } from './BuscaSala'
+import { useAlocacoesPorSala, useAlocacoes } from '../../hooks/useAlocacoes'
 import { useAuth } from '../../hooks/useAuth'
 import { SALAS, TIPO_LABEL, TIPO_COLOR, getSalaInfo } from '../../constants/salas'
 import type { Alocacao, AlocacaoInput } from '../../types'
@@ -17,10 +18,12 @@ type ModalState =
   | null
 
 export function MapPage() {
+  const [tab, setTab] = useState<'grade' | 'busca'>('grade')
   const [selectedSala, setSelectedSala] = useState(SALAS[0]!.nome)
   const [modal, setModal] = useState<ModalState>(null)
   const { isAdmin } = useAuth()
   const { alocacoes, loading, error, create, update, remove, hasConflict } = useAlocacoesPorSala(selectedSala)
+  const { alocacoes: todasAlocacoes, loading: loadingBusca } = useAlocacoes()
 
   const salaInfo = getSalaInfo(selectedSala)
 
@@ -61,7 +64,29 @@ export function MapPage() {
         )
       }
     >
-      {/* Seletor de sala */}
+      {/* Tabs */}
+      <div className="mb-5 flex gap-1 border-b border-gray-200">
+        {(['grade', 'busca'] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
+              tab === t
+                ? 'border-blue-600 text-blue-700'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {t === 'grade' ? 'Grade Semanal' : 'Buscar Sala'}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'busca' && (
+        <BuscaSala alocacoes={todasAlocacoes} loading={loadingBusca} />
+      )}
+
+      {tab === 'grade' && (
+      <>{/* Seletor de sala */}
       <div className="mb-5 flex flex-wrap gap-2">
         {SALAS.map((sala) => (
           <button
@@ -142,6 +167,8 @@ export function MapPage() {
           onSave={handleCreate}
           onClose={() => setModal(null)}
         />
+      )}
+      </>
       )}
     </PageShell>
   )
