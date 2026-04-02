@@ -50,15 +50,18 @@ fi
 
 echo ""
 
+GREEN='\033[0;32m'
+NC='\033[0m'
+
 # --- 4. Git ---
-echo "→ git add ."
+echo -e "${GREEN}→ git add .${NC}"
 git add .
 
-echo "→ git commit: \"$COMMIT_MSG\""
+echo -e "${GREEN}→ git commit: \"$COMMIT_MSG\"${NC}"
 git commit -m "$COMMIT_MSG"
 
-echo "→ git push origin master"
+echo -e "${GREEN}→ git push origin master${NC}"
 git push origin master
 
 echo ""
-echo "✔ Commit concluído."
+echo -e "${GREEN}✔ Commit concluído.${NC}"

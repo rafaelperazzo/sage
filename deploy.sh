@@ -85,18 +85,21 @@ fi
 
 echo ""
 
+GREEN='\033[0;32m'
+NC='\033[0m'
+
 # --- 6. Git ---
-echo "→ git add ."
+echo -e "${GREEN}→ git add .${NC}"
 git add .
 
-echo "→ git commit: \"$COMMIT_MSG\""
+echo -e "${GREEN}→ git commit: \"$COMMIT_MSG\"${NC}"
 git commit -m "$COMMIT_MSG"
 
-echo "→ criando tag $NEW_TAG"
+echo -e "${GREEN}→ criando tag $NEW_TAG${NC}"
 git tag -a "$NEW_TAG" -m "$NEW_TAG"
 
-echo "→ git push origin master --tags"
+echo -e "${GREEN}→ git push origin master --tags${NC}"
 git push origin master --tags
 
 echo ""
-echo "✔ Deploy concluído — tag $NEW_TAG publicada."
+echo -e "${GREEN}✔ Deploy concluído — tag $NEW_TAG publicada.${NC}"
