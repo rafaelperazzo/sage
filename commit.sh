@@ -1,67 +1,84 @@
 #!/usr/bin/env bash
-set -e
 
 # --- Verificar dependência ---
-if ! command -v fzf &> /dev/null; then
-  echo "Erro: fzf não encontrado. Instale com: sudo apt install fzf"
+if ! command -v whiptail &> /dev/null; then
+  echo "Erro: whiptail não encontrado. Instale com: sudo apt install whiptail"
   exit 1
 fi
 
-FZF_OPTS=(--height=40% --layout=reverse --border --prompt="> " --pointer="▶")
+TITLE="SAGE — Commit"
+STEP=1
 
-echo "==============================="
-echo "       SAGE — Commit"
-echo "==============================="
-echo ""
+while true; do
+  case $STEP in
 
-# --- 1. Tipo de commit semântico ---
-TIPO=$(printf \
-  "feat     — nova funcionalidade\nfix      — correção de bug\ndocs     — documentação\nstyle    — formatação / estilo\nrefactor — refatoração de código\ntest     — testes\nchore    — tarefas de manutenção\nperf     — melhoria de desempenho" \
-  | fzf "${FZF_OPTS[@]}" --header="Tipo de commit:" \
-  | awk '{print $1}')
+    # --- Passo 1: Tipo de commit ---
+    1)
+      TIPO=$(whiptail --title "$TITLE" \
+        --menu "Escolha o tipo de commit:" 20 65 8 \
+        "feat"     "Nova funcionalidade" \
+        "fix"      "Correção de bug" \
+        "docs"     "Documentação" \
+        "style"    "Formatação / estilo" \
+        "refactor" "Refatoração de código" \
+        "test"     "Testes" \
+        "chore"    "Tarefas de manutenção" \
+        "perf"     "Melhoria de desempenho" \
+        3>&1 1>&2 2>&3) || { clear; echo "Operação cancelada."; exit 0; }
+      STEP=2
+      ;;
 
-if [ -z "$TIPO" ]; then
-  echo "Operação cancelada."
-  exit 0
-fi
+    # --- Passo 2: Mensagem do commit ---
+    2)
+      MSG=$(whiptail --title "$TITLE" \
+        --inputbox "Mensagem do commit:" 10 65 "${MSG:-}" \
+        3>&1 1>&2 2>&3) || { STEP=1; continue; }
 
-echo ""
+      if [[ -z "$MSG" ]]; then
+        whiptail --title "Atenção" --msgbox "A mensagem não pode estar vazia." 8 45
+        continue
+      fi
 
-# --- 2. Mensagem do commit ---
-read -rp "Mensagem do commit: " MSG
+      COMMIT_MSG="${TIPO}: ${MSG}"
+      STEP=3
+      ;;
 
-if [ -z "$MSG" ]; then
-  echo "Erro: a mensagem não pode estar vazia."
-  exit 1
-fi
+    # --- Passo 3: Confirmação ---
+    3)
+      whiptail --title "$TITLE" \
+        --yesno "Confirmar e fazer push?\n\nCommit: $COMMIT_MSG" 10 65 \
+        3>&1 1>&2 2>&3 || { STEP=2; continue; }
+      STEP=4
+      ;;
 
-COMMIT_MSG="${TIPO}: ${MSG}"
-echo ""
-echo "Commit: \"$COMMIT_MSG\""
-echo ""
+    # --- Passo 4: Execução com barra de progresso ---
+    4)
+      ERR_FILE=$(mktemp)
 
-# --- 3. Confirmação ---
-read -rp "Confirmar e fazer push? [s/N] " CONFIRMA
+      (
+        echo "10"; echo "# Adicionando arquivos..."
+        git add . 2>"$ERR_FILE" || exit 1
 
-if [[ "$CONFIRMA" != "s" && "$CONFIRMA" != "S" ]]; then
-  echo "Operação cancelada."
-  exit 0
-fi
+        echo "40"; echo "# Criando commit..."
+        git commit -m "$COMMIT_MSG" 2>"$ERR_FILE" || exit 1
 
-echo ""
+        echo "75"; echo "# Enviando para o repositório..."
+        git push origin master 2>"$ERR_FILE" || exit 1
 
-GREEN='\033[0;32m'
-NC='\033[0m'
+        echo "100"; echo "# Concluído!"
+      ) | whiptail --title "$TITLE" --gauge "Aguarde..." 8 65 0
 
-# --- 4. Git ---
-echo -e "${GREEN}→ git add .${NC}"
-git add .
+      if [ "${PIPESTATUS[0]}" -ne 0 ]; then
+        ERR_MSG=$(cat "$ERR_FILE")
+        rm -f "$ERR_FILE"
+        whiptail --title "Erro" --msgbox "Falha ao executar git:\n\n$ERR_MSG" 15 65
+        exit 1
+      fi
 
-echo -e "${GREEN}→ git commit: \"$COMMIT_MSG\"${NC}"
-git commit -m "$COMMIT_MSG"
-
-echo -e "${GREEN}→ git push origin master${NC}"
-git push origin master
-
-echo ""
-echo -e "${GREEN}✔ Commit concluído.${NC}"
+      rm -f "$ERR_FILE"
+      clear
+      echo -e "\033[0;32m✔ Commit concluído: $COMMIT_MSG\033[0m"
+      exit 0
+      ;;
+  esac
+done

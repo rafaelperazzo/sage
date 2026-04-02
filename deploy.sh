@@ -1,105 +1,115 @@
 #!/usr/bin/env bash
-set -e
 
 # --- Verificar dependência ---
-if ! command -v fzf &> /dev/null; then
-  echo "Erro: fzf não encontrado. Instale com: sudo apt install fzf"
+if ! command -v whiptail &> /dev/null; then
+  echo "Erro: whiptail não encontrado. Instale com: sudo apt install whiptail"
   exit 1
 fi
 
-FZF_OPTS=(--height=40% --layout=reverse --border --prompt="> " --pointer="▶")
+TITLE="SAGE — Deploy"
+STEP=1
 
-echo "==============================="
-echo "       SAGE — Deploy"
-echo "==============================="
-echo ""
+while true; do
+  case $STEP in
 
-# --- 1. Tipo de commit semântico ---
-TIPO=$(printf \
-  "feat     — nova funcionalidade\nfix      — correção de bug\ndocs     — documentação\nstyle    — formatação / estilo\nrefactor — refatoração de código\ntest     — testes\nchore    — tarefas de manutenção\nperf     — melhoria de desempenho" \
-  | fzf "${FZF_OPTS[@]}" --header="Tipo de commit:" \
-  | awk '{print $1}')
+    # --- Passo 1: Tipo de commit ---
+    1)
+      TIPO=$(whiptail --title "$TITLE" \
+        --menu "Escolha o tipo de commit:" 20 65 8 \
+        "feat"     "Nova funcionalidade" \
+        "fix"      "Correção de bug" \
+        "docs"     "Documentação" \
+        "style"    "Formatação / estilo" \
+        "refactor" "Refatoração de código" \
+        "test"     "Testes" \
+        "chore"    "Tarefas de manutenção" \
+        "perf"     "Melhoria de desempenho" \
+        3>&1 1>&2 2>&3) || { clear; echo "Operação cancelada."; exit 0; }
+      STEP=2
+      ;;
 
-if [ -z "$TIPO" ]; then
-  echo "Operação cancelada."
-  exit 0
-fi
+    # --- Passo 2: Mensagem do commit ---
+    2)
+      MSG=$(whiptail --title "$TITLE" \
+        --inputbox "Mensagem do commit:" 10 65 "${MSG:-}" \
+        3>&1 1>&2 2>&3) || { STEP=1; continue; }
 
-echo ""
+      if [[ -z "$MSG" ]]; then
+        whiptail --title "Atenção" --msgbox "A mensagem não pode estar vazia." 8 45
+        continue
+      fi
 
-# --- 2. Mensagem do commit ---
-read -rp "Mensagem do commit: " MSG
+      COMMIT_MSG="${TIPO}: ${MSG}"
+      STEP=3
+      ;;
 
-if [ -z "$MSG" ]; then
-  echo "Erro: a mensagem não pode estar vazia."
-  exit 1
-fi
+    # --- Passo 3: Tipo de versão ---
+    3)
+      BUMP=$(whiptail --title "$TITLE" \
+        --menu "Tipo de versão (versionamento semântico):" 15 65 3 \
+        "patch" "Correção retrocompatível     — v0.0.X" \
+        "minor" "Nova funcionalidade          — v0.X.0" \
+        "major" "Quebra de compatibilidade    — vX.0.0" \
+        3>&1 1>&2 2>&3) || { STEP=2; continue; }
 
-COMMIT_MSG="${TIPO}: ${MSG}"
-echo ""
-echo "Commit: \"$COMMIT_MSG\""
-echo ""
+      # Calcular próxima tag
+      LAST_TAG=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n1)
+      if [ -z "$LAST_TAG" ]; then
+        MAJOR=0; MINOR=0; PATCH=0
+      else
+        VERSION="${LAST_TAG#v}"
+        IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+      fi
 
-# --- 3. Tipo de versão ---
-BUMP=$(printf \
-  "patch  — correção retrocompatível      (v0.0.X)\nminor  — nova funcionalidade            (v0.X.0)\nmajor  — quebra de compatibilidade       (vX.0.0)" \
-  | fzf "${FZF_OPTS[@]}" --header="Tipo de versão:" \
-  | awk '{print $1}')
+      case "$BUMP" in
+        major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+        minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+        patch) PATCH=$((PATCH + 1)) ;;
+      esac
 
-if [ -z "$BUMP" ]; then
-  echo "Operação cancelada."
-  exit 0
-fi
+      NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
+      STEP=4
+      ;;
 
-echo ""
+    # --- Passo 4: Confirmação ---
+    4)
+      whiptail --title "$TITLE" \
+        --yesno "Confirmar e fazer push?\n\nCommit : $COMMIT_MSG\nTag    : $NEW_TAG" 11 65 \
+        3>&1 1>&2 2>&3 || { STEP=3; continue; }
+      STEP=5
+      ;;
 
-# --- 4. Calcular próxima tag ---
-LAST_TAG=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n1)
+    # --- Passo 5: Execução com barra de progresso ---
+    5)
+      ERR_FILE=$(mktemp)
 
-if [ -z "$LAST_TAG" ]; then
-  MAJOR=0; MINOR=0; PATCH=0
-else
-  VERSION="${LAST_TAG#v}"
-  IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-fi
+      (
+        echo "10"; echo "# Adicionando arquivos..."
+        git add . 2>"$ERR_FILE" || exit 1
 
-case "$BUMP" in
-  major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
-  minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
-  patch) PATCH=$((PATCH + 1)) ;;
-esac
+        echo "30"; echo "# Criando commit..."
+        git commit -m "$COMMIT_MSG" 2>"$ERR_FILE" || exit 1
 
-NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
+        echo "55"; echo "# Criando tag $NEW_TAG..."
+        git tag -a "$NEW_TAG" -m "$NEW_TAG" 2>"$ERR_FILE" || exit 1
 
-# --- 5. Confirmação ---
-echo "Resumo:"
-echo "  Commit : $COMMIT_MSG"
-echo "  Tag    : $NEW_TAG"
-echo ""
-read -rp "Confirmar e fazer push? [s/N] " CONFIRMA
+        echo "80"; echo "# Enviando para o repositório..."
+        git push origin master --tags 2>"$ERR_FILE" || exit 1
 
-if [[ "$CONFIRMA" != "s" && "$CONFIRMA" != "S" ]]; then
-  echo "Operação cancelada."
-  exit 0
-fi
+        echo "100"; echo "# Concluído!"
+      ) | whiptail --title "$TITLE" --gauge "Aguarde..." 8 65 0
 
-echo ""
+      if [ "${PIPESTATUS[0]}" -ne 0 ]; then
+        ERR_MSG=$(cat "$ERR_FILE")
+        rm -f "$ERR_FILE"
+        whiptail --title "Erro" --msgbox "Falha ao executar git:\n\n$ERR_MSG" 15 65
+        exit 1
+      fi
 
-GREEN='\033[0;32m'
-NC='\033[0m'
-
-# --- 6. Git ---
-echo -e "${GREEN}→ git add .${NC}"
-git add .
-
-echo -e "${GREEN}→ git commit: \"$COMMIT_MSG\"${NC}"
-git commit -m "$COMMIT_MSG"
-
-echo -e "${GREEN}→ criando tag $NEW_TAG${NC}"
-git tag -a "$NEW_TAG" -m "$NEW_TAG"
-
-echo -e "${GREEN}→ git push origin master --tags${NC}"
-git push origin master --tags
-
-echo ""
-echo -e "${GREEN}✔ Deploy concluído — tag $NEW_TAG publicada.${NC}"
+      rm -f "$ERR_FILE"
+      clear
+      echo -e "\033[0;32m✔ Deploy concluído — tag $NEW_TAG publicada.\033[0m"
+      exit 0
+      ;;
+  esac
+done
