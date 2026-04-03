@@ -8,6 +8,7 @@ import { LoginPage } from './modules/auth/LoginPage'
 import { AuditorioPage } from './modules/auditorio/AuditorioPage'
 import { ManutencaoPage } from './modules/manutencao/ManutencaoPage'
 import { SobrePage } from './modules/sobre/SobrePage'
+import { HomePage } from './modules/home/HomePage'
 
 export function App() {
   return (
@@ -16,7 +17,7 @@ export function App() {
         <div className="min-h-screen flex flex-col">
           <Header />
           <Routes>
-            <Route path="/" element={<Navigate to="/map" replace />} />
+            <Route path="/" element={<HomePage />} />
             <Route path="/map" element={<MapPage />} />
             <Route path="/agenda" element={<AgendaPage />} />
             <Route path="/report" element={<ReportPage />} />
