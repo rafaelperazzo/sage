@@ -7,7 +7,8 @@
       "mcp__claude_ai_Supabase__get_publishable_keys",
       "Bash(npm install:*)",
       "Bash(npm run:*)",
-      "Bash(ls -la /home/perazzo/Projetos/sage/src/modules/*/)"
+      "Bash(ls -la /home/perazzo/Projetos/sage/src/modules/*/)",
+      "Bash(wc -l /home/perazzo/Projetos/sage/src/**/*.ts /home/perazzo/Projetos/sage/src/**/*.tsx)"
     ]
   }
 }
