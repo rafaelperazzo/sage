@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { PageShell } from '../../components/Layout/PageShell'
-import { MapPin, Calendar, BarChart2, Building2, Mail } from 'lucide-react'
+import { MapPin, Calendar, BarChart2, Building2, Wrench, Mail } from 'lucide-react'
 
 interface ModuleCardProps {
   icon: React.ReactNode
@@ -58,6 +58,7 @@ const MODULES: ModuleCardProps[] = [
       'Selecione qualquer sala para ver sua grade da semana',
       'Clique em uma alocação para ver os detalhes: disciplina, professor, sala e horário',
       'As salas são coloridas por tipo: salas de aula (azul), inovação (roxo) e laboratórios (verde)',
+      'Aba "Buscar Sala": localize disciplinas e professores com autocomplete e veja todas as salas e horários',
       'A grade é atualizada automaticamente em tempo real',
       'Filtre os dados pelo período letivo usando o seletor no topo da página',
     ],
@@ -105,6 +106,21 @@ const MODULES: ModuleCardProps[] = [
       'Para solicitar uma reserva, envie e-mail para diretoria.dc@ufrpe.br',
     ],
   },
+  {
+    icon: <Wrench size={20} className="text-orange-700" />,
+    title: 'SAGE Manutenção',
+    route: '/manutencao',
+    color: 'bg-orange-50 border-orange-100 text-orange-900',
+    description:
+      'Acompanhe as solicitações de manutenção (RTs) do Departamento de Computação, com status atualizado em tempo real.',
+    features: [
+      'Lista completa das solicitações com número da RT, local, descrição e status',
+      'Filtre as solicitações por número da RT, local ou descrição simultaneamente',
+      'Clique em uma solicitação para ver todos os detalhes, incluindo datas e observações',
+      'Status visual por cor: Aberto (vermelho), Em andamento (amarelo), Concluído (verde)',
+      'Atualização automática em tempo real via Supabase Realtime',
+    ],
+  },
 ]
 
 export function SobrePage() {
@@ -119,7 +135,7 @@ export function SobrePage() {
           Todos os módulos abaixo são de acesso público — nenhum cadastro é necessário para consultar as informações.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 mb-8">
           {MODULES.map((m) => (
             <ModuleCard key={m.route} {...m} />
           ))}

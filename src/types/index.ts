@@ -27,3 +27,16 @@ export interface Reserva {
 }
 
 export type ReservaInput = Omit<Reserva, 'id'>
+
+export interface Manutencao {
+  id: number
+  numero_rt: string
+  sala_local: string
+  descricao_problema: string
+  status: string
+  data_abertura: string | null   // "YYYY-MM-DD"
+  data_conclusao: string | null  // "YYYY-MM-DD"
+  observacao: string | null
+}
+
+export type ManutencaoInput = Omit<Manutencao, 'id'>

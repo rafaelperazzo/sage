@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { Alocacao, AlocacaoInput, Reserva, ReservaInput } from '../types'
+import type { Alocacao, AlocacaoInput, Reserva, ReservaInput, Manutencao, ManutencaoInput } from '../types'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
@@ -137,6 +137,52 @@ export async function updateReserva(id: number, input: ReservaInput): Promise<Re
 export async function deleteReserva(id: number): Promise<void> {
   const { error } = await supabase
     .from(AUDITORIO_TABLE)
+    .delete()
+    .eq('id', id)
+
+  if (error) throw error
+}
+
+// ── Manutenção ──────────────────────────────────────────────────
+
+export const MANUTENCAO_TABLE = 'manutencao'
+
+export async function fetchManutencoes(): Promise<Manutencao[]> {
+  const { data, error } = await supabase
+    .from(MANUTENCAO_TABLE)
+    .select('*')
+    .order('data_abertura', { ascending: false })
+
+  if (error) throw error
+  return data as Manutencao[]
+}
+
+export async function insertManutencao(input: ManutencaoInput): Promise<Manutencao> {
+  const { data, error } = await supabase
+    .from(MANUTENCAO_TABLE)
+    .insert(input)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data as Manutencao
+}
+
+export async function updateManutencao(id: number, input: ManutencaoInput): Promise<Manutencao> {
+  const { data, error } = await supabase
+    .from(MANUTENCAO_TABLE)
+    .update(input)
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data as Manutencao
+}
+
+export async function deleteManutencao(id: number): Promise<void> {
+  const { error } = await supabase
+    .from(MANUTENCAO_TABLE)
     .delete()
     .eq('id', id)
 

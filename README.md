@@ -39,6 +39,19 @@ Relatórios de ocupação e disponibilidade das salas.
 - Base de cálculo: 12 horas/dia × 6 dias = 72h/semana = 100% de ocupação
 - Salas agrupadas por tipo: salas de aula, inovação e laboratórios
 
+### SAGE Manutenção
+Lista pública das solicitações de manutenção (RTs) do Departamento de Computação.
+
+- Lista completa com número da RT, local, descrição, status e data de abertura
+- Filtros simultâneos por RT, local e descrição com busca em tempo real
+- Badge de status colorido: Aberto (vermelho), Em andamento (amarelo), Concluído (verde)
+- Clique em qualquer linha para ver os detalhes completos da solicitação
+- Atualização automática em tempo real (Supabase Realtime)
+
+**Modo administrador** (requer login):
+- Botão "+ Nova RT" para cadastrar uma nova solicitação
+- Clique em uma linha para editar dados ou remover (com confirmação)
+
 ### SAGE Auditório
 Calendário mensal de reservas do auditório do Departamento de Computação.
 

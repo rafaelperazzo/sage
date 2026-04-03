@@ -11,6 +11,7 @@
 | [SAGE Agenda](plans/sage-agenda.md) | `/#/agenda` | Grade de horários por professor | Implementado |
 | [SAGE Report](plans/sage-report.md) | `/#/report` | Relatórios de ocupação e disponibilidade | Implementado |
 | [SAGE Auditório](plans/sage-auditorio.md) | `/#/auditorio` | Calendário de reservas do auditório | Implementado |
+| [SAGE Manutenção](plans/sage-manutencao.md) | `/#/manutencao` | Lista de solicitações de manutenção (RTs) com filtros | Implementado |
 
 ## Ordem de Implementação
 

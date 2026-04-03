@@ -6,6 +6,7 @@ import { AgendaPage } from './modules/agenda/AgendaPage'
 import { ReportPage } from './modules/report/ReportPage'
 import { LoginPage } from './modules/auth/LoginPage'
 import { AuditorioPage } from './modules/auditorio/AuditorioPage'
+import { ManutencaoPage } from './modules/manutencao/ManutencaoPage'
 import { SobrePage } from './modules/sobre/SobrePage'
 
 export function App() {
@@ -20,6 +21,7 @@ export function App() {
             <Route path="/agenda" element={<AgendaPage />} />
             <Route path="/report" element={<ReportPage />} />
             <Route path="/auditorio" element={<AuditorioPage />} />
+            <Route path="/manutencao" element={<ManutencaoPage />} />
             <Route path="/sobre" element={<SobrePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="*" element={<Navigate to="/map" replace />} />
