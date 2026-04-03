@@ -111,7 +111,6 @@ describe('WeekGrid — interações', () => {
 
   it('usuário comum clica em célula vazia → onEmptyCellClick NÃO é chamado', async () => {
     const onEmptyCellClick = vi.fn()
-    const user = userEvent.setup()
     const { container } = render(
       <WeekGrid
         alocacoes={[]}

@@ -21,7 +21,7 @@ vi.mock('../report/OccupancyBarChart', () => ({
 }))
 
 vi.mock('../report/RoomDetail', () => ({
-  RoomDetail: ({ room, onClose }: { room: { sala: string }; onClose: () => void }) => (
+  RoomDetail: ({ onClose }: { room: { sala: string }; onClose: () => void }) => (
     <div data-testid="room-detail">
       <p>Segunda</p>
       <button onClick={onClose}>Fechar detalhes</button>
