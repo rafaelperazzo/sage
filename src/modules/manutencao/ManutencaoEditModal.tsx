@@ -19,7 +19,7 @@ export function ManutencaoEditModal({ manutencao, onSave, onDelete, onClose }: P
   const [status, setStatus] = useState(manutencao.status)
   const [dataAbertura, setDataAbertura] = useState(manutencao.data_abertura ?? '')
   const [dataConclusao, setDataConclusao] = useState(manutencao.data_conclusao ?? '')
-  const [observacao, setObservacao] = useState(manutencao.observacao ?? '')
+  const [observacao, setObservacao] = useState(manutencao.observacoes ?? '')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -40,7 +40,7 @@ export function ManutencaoEditModal({ manutencao, onSave, onDelete, onClose }: P
         status,
         data_abertura: dataAbertura || null,
         data_conclusao: dataConclusao || null,
-        observacao: observacao.trim() || null,
+        observacoes: observacao.trim() || null,
       })
       onClose()
     } catch (err) {

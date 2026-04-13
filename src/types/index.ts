@@ -36,7 +36,7 @@ export interface Manutencao {
   status: string
   data_abertura: string | null   // "YYYY-MM-DD"
   data_conclusao: string | null  // "YYYY-MM-DD"
-  observacao: string | null
+  observacoes: string | null
 }
 
 export type ManutencaoInput = Omit<Manutencao, 'id'>

@@ -61,7 +61,7 @@ export function ManutencaoViewModal({ manutencao, onClose }: Props) {
             <dd className="mt-0.5 text-sm text-gray-900">{formatDate(manutencao.data_conclusao)}</dd>
           </div>
         </div>
-        <Field label="Observações" value={manutencao.observacao} />
+        <Field label="Observações" value={manutencao.observacoes} />
       </dl>
     </BaseModal>
   )

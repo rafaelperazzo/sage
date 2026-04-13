@@ -36,7 +36,7 @@ export function ManutencaoForm({ onSave, onClose }: Props) {
         status,
         data_abertura: dataAbertura || null,
         data_conclusao: dataConclusao || null,
-        observacao: observacao.trim() || null,
+        observacoes: observacao.trim() || null,
       })
       onClose()
     } catch (err) {
