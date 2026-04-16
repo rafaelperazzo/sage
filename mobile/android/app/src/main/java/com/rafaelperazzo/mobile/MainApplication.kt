@@ -12,6 +12,8 @@ import com.facebook.react.ReactNativeHost
 import com.facebook.react.common.ReleaseLevel
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint
 
+import com.rafaelperazzo.appdc.BuildConfig
+
 import expo.modules.ApplicationLifecycleDispatcher
 import expo.modules.ExpoReactHostFactory
 
