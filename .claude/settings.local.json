@@ -17,7 +17,9 @@
       "Bash(npx expo *)",
       "Bash(npm show *)",
       "Bash(npx tsc *)",
-      "Bash(node -e \"const v = require\\('victory-native'\\); console.log\\(Object.keys\\(v\\).filter\\(k => k.includes\\('Bar'\\) || k.includes\\('Chart'\\) || k.includes\\('Axis'\\)\\).join\\('\\\\n'\\)\\)\")"
+      "Bash(node -e \"const v = require\\('victory-native'\\); console.log\\(Object.keys\\(v\\).filter\\(k => k.includes\\('Bar'\\) || k.includes\\('Chart'\\) || k.includes\\('Axis'\\)\\).join\\('\\\\n'\\)\\)\")",
+      "Bash(rm -rf app/build build)",
+      "Bash(./gradlew assembleRelease -PreactNativeArchitectures=x86_64)"
     ]
   }
 }

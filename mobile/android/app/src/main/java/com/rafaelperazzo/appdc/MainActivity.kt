@@ -1,10 +1,7 @@
-package com.rafaelperazzo.mobile
+package com.rafaelperazzo.appdc
 
 import android.os.Build
 import android.os.Bundle
-
-import com.rafaelperazzo.appdc.BuildConfig
-import com.rafaelperazzo.appdc.R
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
