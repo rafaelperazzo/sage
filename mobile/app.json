@@ -21,7 +21,8 @@
         "backgroundColor": "#ffffff"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.rafaelperazzo.appdc"
+      "package": "com.rafaelperazzo.appdc",
+      "versionCode": 9
     },
     "web": {
       "favicon": "./assets/favicon.png"
