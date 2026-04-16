@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Alocacao, AlocacaoInput } from '../types'
 import {
-  supabase,
-  TABLE_NAME,
   fetchAlocacoes,
   fetchAlocacoesPorSala,
   insertAlocacao,
@@ -49,16 +47,7 @@ export function useAlocacoes() {
 
   useEffect(() => {
     void load()
-
-    const channel = supabase
-      .channel(`alocacoes-all-${periodo}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: TABLE_NAME }, () => {
-        void load()
-      })
-      .subscribe()
-
-    return () => { void supabase.removeChannel(channel) }
-  }, [load, periodo])
+  }, [load])
 
   return { alocacoes, loading, error, reload: load }
 }
@@ -97,16 +86,7 @@ export function useAlocacoesPorSala(sala: string): UseAlocacoesPorSalaReturn {
 
   useEffect(() => {
     void load()
-
-    const channel = supabase
-      .channel(`alocacoes-sala-${sala}-${periodo}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: TABLE_NAME }, () => {
-        void load()
-      })
-      .subscribe()
-
-    return () => { void supabase.removeChannel(channel) }
-  }, [load, sala, periodo])
+  }, [load])
 
   function hasConflict(data: AlocacaoInput, excludeId?: number): boolean {
     return alocacoes

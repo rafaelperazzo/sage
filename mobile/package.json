@@ -1,5 +1,6 @@
 {
-  "name": "mobile",
+  "name": "sage",
+  "slug": "sage",
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {

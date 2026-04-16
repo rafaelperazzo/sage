@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Reserva, ReservaInput } from '../types'
 import {
-  supabase,
-  AUDITORIO_TABLE,
   fetchReservasMes,
   insertReserva,
   updateReserva,
@@ -55,14 +53,6 @@ export function useReservas(ano: number, mes: number): UseReservasReturn {
   useEffect(() => {
     void load()
 
-    const channel = supabase
-      .channel(`auditorio-${ano}-${mes}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: AUDITORIO_TABLE }, () => {
-        void load()
-      })
-      .subscribe()
-
-    return () => { void supabase.removeChannel(channel) }
   }, [load, ano, mes])
 
   function hasConflict(data: ReservaInput, excludeId?: number): boolean {

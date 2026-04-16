@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Manutencao, ManutencaoInput } from '../types'
 import {
-  supabase,
-  MANUTENCAO_TABLE,
   fetchManutencoes,
   insertManutencao,
   updateManutencao,
@@ -39,14 +37,6 @@ export function useManutencao(): UseManutencaoReturn {
   useEffect(() => {
     void load()
 
-    const channel = supabase
-      .channel('manutencao-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: MANUTENCAO_TABLE }, () => {
-        void load()
-      })
-      .subscribe()
-
-    return () => { void supabase.removeChannel(channel) }
   }, [load])
 
   async function create(data: ManutencaoInput) {
