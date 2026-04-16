@@ -2,7 +2,11 @@
 
 # dependencies
 node_modules/
-
+brseclabapp-e9bccb91d544.json
+credentials.json
+.env
+android/local.properties
+credentials/*
 # Expo
 .expo/
 dist/
@@ -38,4 +42,4 @@ yarn-error.*
 
 # generated native folders
 /ios
-/android
+# /android — mantido no git por conter correções manuais (build.gradle, MainApplication.kt)

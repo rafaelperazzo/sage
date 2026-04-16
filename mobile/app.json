@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
-    "version": "1.0.0",
+    "name": "sage",
+    "slug": "sage",
+    "version": "10.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.rafaelperazzo.mobile"
+      "bundleIdentifier": "com.rafaelperazzo.appdc"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +23,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.rafaelperazzo.mobile"
+      "package": "com.rafaelperazzo.appdc"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -32,6 +32,13 @@
     "plugins": [
       "expo-router",
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "bb4a9eba-9c40-49d1-a03a-fada08228e32"
+      }
+    },
+    "owner": "rafaelperazzo"
   }
 }
