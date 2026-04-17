@@ -30,35 +30,29 @@ function ModuleCard({ item, cellWidth }: { item: Module; cellWidth: number }) {
       style={({ pressed }) => ({
         width: cellWidth,
         alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1,
-        borderColor: item.borderColor,
-        borderRadius: 16,
-        paddingVertical: 20,
-        paddingHorizontal: 8,
-        opacity: pressed ? 0.85 : 1,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.06,
-        shadowRadius: 4,
-        elevation: 2,
+        opacity: pressed ? 0.8 : 1,
       })}
     >
       <View
         style={{
-          width: 52,
-          height: 52,
-          borderRadius: 16,
+          width: 60,
+          height: 60,
+          borderRadius: 18,
           backgroundColor: item.iconBg,
           alignItems: 'center',
           justifyContent: 'center',
-          marginBottom: 10,
+          borderWidth: 1,
+          borderColor: item.borderColor,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 6,
+          elevation: 3,
         }}
       >
-        <Ionicons name={item.icon} size={26} color={item.iconColor} />
+        <Ionicons name={item.icon} size={28} color={item.iconColor} />
       </View>
-      <Text style={{ fontSize: 13, fontWeight: '700', color: '#111827', textAlign: 'center' }}>
+      <Text style={{ fontSize: 11, fontWeight: '600', color: '#374151', textAlign: 'center', marginTop: 8, lineHeight: 15 }}>
         {item.title}
       </Text>
     </Pressable>
@@ -109,19 +103,17 @@ export default function HomeScreen() {
             <Text style={{ fontSize: 13, color: '#9CA3AF' }}>Sobre o SAGE</Text>
           </Pressable>
         </View>
-        <View style={{ width: cardWidth }}>
+        <View style={{ width: cardWidth, alignItems: 'center' }}>
           {[0, 3].map((startIdx) => {
             const row = MODULES.slice(startIdx, startIdx + 3)
             const cellW = (cardWidth - 48) / 3
             return (
               <View
                 key={startIdx}
-                style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 24 }}
+                style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 32, gap: 24 }}
               >
-                {row.map((item, i) => (
-                  <View key={item.route} style={{ marginLeft: i > 0 ? 24 : 0 }}>
-                    <ModuleCard item={item} cellWidth={cellW} />
-                  </View>
+                {row.map((item) => (
+                  <ModuleCard key={item.route} item={item} cellWidth={cellW} />
                 ))}
               </View>
             )

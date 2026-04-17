@@ -39,11 +39,11 @@ export function WeekGrid({ alocacoes, isAdmin, onCellPress, onEmptyCellPress }: 
   }
 
   return (
+    <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator>
     <ScrollView
       ref={scrollRef}
       horizontal
       showsHorizontalScrollIndicator
-      style={{ flex: 1 }}
       contentContainerStyle={{ flexDirection: 'row' }}
     >
       {/* Coluna de horas */}
@@ -142,6 +142,7 @@ export function WeekGrid({ alocacoes, isAdmin, onCellPress, onEmptyCellPress }: 
           </View>
         </View>
       ))}
+    </ScrollView>
     </ScrollView>
   )
 }
