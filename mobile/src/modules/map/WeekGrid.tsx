@@ -38,12 +38,14 @@ export function WeekGrid({ alocacoes, isAdmin, onCellPress, onEmptyCellPress }: 
     if (byDia[a.dia_semana]) byDia[a.dia_semana]!.push(a)
   }
 
+  const totalH = totalGridH + HEADER_H
+
   return (
-    <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator>
     <ScrollView
       ref={scrollRef}
       horizontal
       showsHorizontalScrollIndicator
+      style={{ height: totalH }}
       contentContainerStyle={{ flexDirection: 'row' }}
     >
       {/* Coluna de horas */}
@@ -142,7 +144,6 @@ export function WeekGrid({ alocacoes, isAdmin, onCellPress, onEmptyCellPress }: 
           </View>
         </View>
       ))}
-    </ScrollView>
     </ScrollView>
   )
 }

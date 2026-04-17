@@ -4,6 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { Picker } from '@react-native-picker/picker'
 import { useReservas } from '../../src/hooks/useReservas'
 import { Ionicons } from '@expo/vector-icons'
+import { DatePickerField } from '../../src/components/DatePickerField'
 
 const HORAS = Array.from({ length: 15 }, (_, i) => `${String(7 + i).padStart(2, '0')}:00:00`)
 const HORAS_FIM = Array.from({ length: 15 }, (_, i) => `${String(8 + i).padStart(2, '0')}:00:00`)
@@ -53,15 +54,7 @@ export default function AuditorioCreateScreen() {
         </View>
       )}
 
-      <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 6 }}>Data *</Text>
-      <TextInput
-        value={data}
-        onChangeText={setData}
-        placeholder="AAAA-MM-DD"
-        placeholderTextColor="#9CA3AF"
-        keyboardType="numeric"
-        style={{ borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 10, padding: 12, fontSize: 14, color: '#111827', marginBottom: 14, backgroundColor: '#F9FAFB' }}
-      />
+      <DatePickerField label="Data" value={data} onChange={setData} required />
 
       <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 6 }}>Responsável</Text>
       <TextInput

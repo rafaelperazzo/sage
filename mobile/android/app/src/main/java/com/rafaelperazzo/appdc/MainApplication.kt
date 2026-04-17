@@ -6,9 +6,9 @@ import android.content.res.Configuration
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactNativeApplicationEntryPoint.loadReactNative
+import com.facebook.react.ReactNativeHost
 import com.facebook.react.ReactPackage
 import com.facebook.react.ReactHost
-import com.facebook.react.ReactNativeHost
 import com.facebook.react.common.ReleaseLevel
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint
 
@@ -17,8 +17,9 @@ import expo.modules.ExpoReactHostFactory
 
 class MainApplication : Application(), ReactApplication {
 
+  @Deprecated("Replaced by ReactHost in New Architecture")
   override val reactNativeHost: ReactNativeHost
-    get() = throw UnsupportedOperationException("New Architecture is enabled — reactNativeHost is not used")
+    get() = throw UnsupportedOperationException("New Architecture does not use ReactNativeHost")
 
   override val reactHost: ReactHost by lazy {
     ExpoReactHostFactory.getDefaultReactHost(

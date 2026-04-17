@@ -5,6 +5,7 @@ import { Picker } from '@react-native-picker/picker'
 import { useManutencao } from '../../../src/hooks/useManutencao'
 import { useAuthContext } from '../../../src/contexts/AuthContext'
 import { Ionicons } from '@expo/vector-icons'
+import { DatePickerField } from '../../../src/components/DatePickerField'
 
 const STATUS_OPTIONS = ['Aberto', 'Em andamento', 'Concluído', 'Cancelado']
 
@@ -113,18 +114,8 @@ export default function ManutencaoEditScreen() {
         </Picker>
       </View>
 
-      <View style={{ flexDirection: 'row', gap: 12, marginBottom: 14 }}>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 6 }}>Data Abertura</Text>
-          <TextInput value={dataAbertura} onChangeText={setDataAbertura} placeholder="AAAA-MM-DD" placeholderTextColor="#9CA3AF" keyboardType="numeric"
-            style={{ borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 10, padding: 12, fontSize: 13, color: '#111827', backgroundColor: '#F9FAFB' }} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 6 }}>Data Conclusão</Text>
-          <TextInput value={dataConclusao} onChangeText={setDataConclusao} placeholder="AAAA-MM-DD" placeholderTextColor="#9CA3AF" keyboardType="numeric"
-            style={{ borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 10, padding: 12, fontSize: 13, color: '#111827', backgroundColor: '#F9FAFB' }} />
-        </View>
-      </View>
+      <DatePickerField label="Data Abertura" value={dataAbertura} onChange={setDataAbertura} />
+      <DatePickerField label="Data Conclusão" value={dataConclusao} onChange={setDataConclusao} />
 
       <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 6 }}>Observações</Text>
       <TextInput value={observacoes} onChangeText={setObservacoes} multiline numberOfLines={2} placeholderTextColor="#9CA3AF"

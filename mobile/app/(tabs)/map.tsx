@@ -108,12 +108,14 @@ export default function MapScreen() {
           <Text style={{ color: '#DC2626', textAlign: 'center' }}>{error}</Text>
         </View>
       ) : (
-        <WeekGrid
-          alocacoes={alocacoes}
-          isAdmin={isAdmin}
-          onCellPress={handleCellPress}
-          onEmptyCellPress={handleEmptyCellPress}
-        />
+        <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator>
+          <WeekGrid
+            alocacoes={alocacoes}
+            isAdmin={isAdmin}
+            onCellPress={handleCellPress}
+            onEmptyCellPress={handleEmptyCellPress}
+          />
+        </ScrollView>
       )}
     </SafeAreaView>
   )

@@ -19,7 +19,13 @@
       "Bash(npx tsc *)",
       "Bash(node -e \"const v = require\\('victory-native'\\); console.log\\(Object.keys\\(v\\).filter\\(k => k.includes\\('Bar'\\) || k.includes\\('Chart'\\) || k.includes\\('Axis'\\)\\).join\\('\\\\n'\\)\\)\")",
       "Bash(rm -rf app/build build)",
-      "Bash(./gradlew assembleRelease -PreactNativeArchitectures=x86_64)"
+      "Bash(./gradlew assembleRelease -PreactNativeArchitectures=x86_64)",
+      "Bash(node --print \"require.resolve\\('hermes-compiler/package.json', { paths: [require.resolve\\('react-native/package.json'\\)] }\\)\")",
+      "Bash(node --print \"require.resolve\\('react-native/package.json'\\)\")",
+      "Bash(./gradlew app:assembleDebug -x lint -x test --configure-on-demand)",
+      "Bash(./gradlew app:compileDebugKotlin)",
+      "Bash(grep -v \"^$\")",
+      "Bash(./gradlew app:compileDebugKotlin --info)"
     ]
   }
 }

@@ -4,6 +4,7 @@ import { router } from 'expo-router'
 import { Picker } from '@react-native-picker/picker'
 import { useManutencao } from '../../src/hooks/useManutencao'
 import { Ionicons } from '@expo/vector-icons'
+import { DatePickerField } from '../../src/components/DatePickerField'
 
 const STATUS_OPTIONS = ['Aberto', 'Em andamento', 'Concluído', 'Cancelado']
 
@@ -70,9 +71,7 @@ export default function ManutencaoCreateScreen() {
         </Picker>
       </View>
 
-      <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 6 }}>Data de Abertura</Text>
-      <TextInput value={dataAbertura} onChangeText={setDataAbertura} placeholder="AAAA-MM-DD" placeholderTextColor="#9CA3AF" keyboardType="numeric"
-        style={{ borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 10, padding: 12, fontSize: 14, color: '#111827', marginBottom: 14, backgroundColor: '#F9FAFB' }} />
+      <DatePickerField label="Data de Abertura" value={dataAbertura} onChange={setDataAbertura} />
 
       <Text style={{ fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 6 }}>Observações</Text>
       <TextInput value={observacoes} onChangeText={setObservacoes} placeholder="Observações adicionais (opcional)" placeholderTextColor="#9CA3AF" multiline numberOfLines={2}
