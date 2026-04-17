@@ -3,7 +3,7 @@
     "name": "SAGE",
     "slug": "sage",
     "version": "10.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
