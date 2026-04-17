@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable, useWindowDimensions } from 'react-native'
+import { View, Text, ScrollView, Pressable, useWindowDimensions, Linking } from 'react-native'
 import { router } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
@@ -119,6 +119,17 @@ export default function HomeScreen() {
             )
           })}
         </View>
+
+        {/* Rodapé */}
+        <Pressable
+          onPress={() => Linking.openURL('https://rafaelperazzo.github.io/sage')}
+          style={({ pressed }) => ({ marginTop: 8, marginBottom: 4, alignItems: 'center', opacity: pressed ? 0.6 : 1 })}
+        >
+          <Text style={{ fontSize: 11, color: '#9CA3AF', textAlign: 'center' }}>Versão Web</Text>
+          <Text style={{ fontSize: 11, color: '#6D28D9', textDecorationLine: 'underline' }}>
+            rafaelperazzo.github.io/sage
+          </Text>
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   )
