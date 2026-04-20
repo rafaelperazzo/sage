@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, useWindowDimensions } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, useWindowDimensions, Linking } from 'react-native'
 import { router } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useReservas } from '../../src/hooks/useReservas'
@@ -78,6 +78,22 @@ export default function AuditorioScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['left', 'right', 'bottom']}>
+      {/* Banner de orientação */}
+      <TouchableOpacity
+        onPress={() => Linking.openURL('mailto:diretoria.dc@ufrpe.br')}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 8, margin: 12, marginBottom: 0, backgroundColor: '#FFFBEB', borderWidth: 1, borderColor: '#FDE68A', borderRadius: 10, padding: 12 }}
+      >
+        <Ionicons name="mail-outline" size={18} color="#D97706" />
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 12, fontWeight: '700', color: '#92400E' }}>Como solicitar uma reserva?</Text>
+          <Text style={{ fontSize: 11, color: '#78350F', marginTop: 1 }}>
+            Envie um e-mail para{' '}
+            <Text style={{ fontWeight: '700', textDecorationLine: 'underline' }}>diretoria.dc@ufrpe.br</Text>
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={14} color="#D97706" />
+      </TouchableOpacity>
+
       {/* Tabs */}
       <View style={{ flexDirection: 'row', backgroundColor: '#F3F4F6', margin: 12, borderRadius: 10, padding: 3 }}>
         {(['calendario', 'relatorio'] as const).map((t) => (
