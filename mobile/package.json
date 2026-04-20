@@ -25,6 +25,7 @@
     "expo-status-bar": "~55.0.5",
     "expo-system-ui": "~55.0.15",
     "expo-updates": "~55.0.20",
+    "hermes-compiler": "^250829098.0.2",
     "react": "19.1.0",
     "react-native": "0.81.5",
     "react-native-gesture-handler": "^2.31.1",
