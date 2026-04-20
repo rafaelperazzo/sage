@@ -53,8 +53,8 @@ else
   ok "Repositório sincronizado com o remoto"
 fi
 
-# ── 3. Teste de build local (EAS local) ──────────────────────────────────────
-step "Testando build de produção localmente (EAS local)..."
+# ── 3. Build local ────────────────────────────────────────────────────────────
+step "Gerando build de produção localmente..."
 
 cd "$MOBILE_DIR"
 
@@ -62,11 +62,18 @@ if ! eas build --platform android --profile production --local; then
   fail "Build local falhou. Corrija os erros antes de submeter."
 fi
 
-ok "Build local concluído com sucesso"
+# Encontra o .aab mais recente gerado
+AAB_FILE=$(ls -t "$MOBILE_DIR"/build-*.aab 2>/dev/null | head -1)
 
-# ── 4. EAS Build + Auto-submit (produção) ────────────────────────────────────
-step "Iniciando EAS build + submit (perfil production)..."
+if [ -z "$AAB_FILE" ]; then
+  fail "Nenhum arquivo .aab encontrado em $MOBILE_DIR"
+fi
 
-eas build --platform android --profile production --auto-submit
+ok "Build concluído: $(basename "$AAB_FILE")"
 
-ok "EAS build e submit iniciados com sucesso!"
+# ── 4. Submit direto com o .aab local ────────────────────────────────────────
+step "Submetendo à Play Store..."
+
+eas submit --platform android --profile production --path "$AAB_FILE"
+
+ok "Submit concluído com sucesso!"
