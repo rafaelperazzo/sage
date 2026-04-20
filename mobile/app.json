@@ -3,9 +3,7 @@
     "name": "SAGE",
     "slug": "sage",
     "version": "11.0.0",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": "11.0.0",
     "updates": {
       "url": "https://u.expo.dev/bb4a9eba-9c40-49d1-a03a-fada08228e32"
     },
