@@ -14,12 +14,14 @@
     },
     "preview": {
       "distribution": "internal",
+      "channel": "preview",
       "android": {
         "buildType": "apk",
         "autoIncrement": true
       }
     },
     "production": {
+      "channel": "production",
       "env": {
         "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
       },

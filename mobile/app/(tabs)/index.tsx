@@ -130,7 +130,7 @@ export default function HomeScreen() {
           <Text style={{ fontSize: 11, color: '#6D28D9', textDecorationLine: 'underline' }}>
             rafaelperazzo.github.io/sage
           </Text>
-          <Text style={{ fontSize: 10, color: '#9CA3AF', marginTop: 4, textAlign: 'center' }}>v{Constants.nativeAppVersion}</Text>
+          <Text style={{ fontSize: 10, color: '#9CA3AF', marginTop: 4, textAlign: 'center' }}>v{Constants.expoConfig?.version ?? Constants.nativeAppVersion}</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>

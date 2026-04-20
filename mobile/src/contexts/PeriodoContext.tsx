@@ -19,8 +19,12 @@ export function PeriodoProvider({ children }: { children: ReactNode }) {
     fetchPeriodos()
       .then((lista) => {
         setPeriodos(lista)
-        // Selecionar o período mais recente por padrão
-        if (lista.length > 0) setPeriodo(lista[lista.length - 1]!)
+        if (lista.length === 0) return
+        const now = new Date()
+        const semestre = now.getMonth() + 1 <= 7 ? 1 : 2
+        const periodoAtual = `${now.getFullYear()}.${semestre}`
+        const match = lista.includes(periodoAtual) ? periodoAtual : lista[lista.length - 1]!
+        setPeriodo(match)
       })
       .catch(console.error)
       .finally(() => setLoadingPeriodos(false))

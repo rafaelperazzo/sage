@@ -3,6 +3,12 @@
     "name": "SAGE",
     "slug": "sage",
     "version": "10.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/bb4a9eba-9c40-49d1-a03a-fada08228e32"
+    },
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",

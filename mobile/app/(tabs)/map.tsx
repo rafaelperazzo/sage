@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { Picker } from '@react-native-picker/picker'
 import { router } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { SALAS } from '../../src/constants/salas'
 import { useAlocacoesPorSala } from '../../src/hooks/useAlocacoes'
 import { useAuthContext } from '../../src/contexts/AuthContext'
+import { usePeriodo } from '../../src/contexts/PeriodoContext'
 import { WeekGrid } from '../../src/modules/map/WeekGrid'
 import type { Alocacao } from '../../src/types'
 
@@ -23,6 +25,7 @@ const TIPO_BG_ACTIVE: Record<string, string> = {
 export default function MapScreen() {
   const [selectedSala, setSelectedSala] = useState(SALAS[0]!.nome)
   const { isAdmin } = useAuthContext()
+  const { periodo, setPeriodo, periodos } = usePeriodo()
   const { alocacoes, loading, error } = useAlocacoesPorSala(selectedSala)
 
   function handleCellPress(alocacao: Alocacao) {
@@ -36,7 +39,6 @@ export default function MapScreen() {
 
   const currentSalaInfo = SALAS.find((s) => s.nome === selectedSala)
   const color = TIPO_BORDER[currentSalaInfo?.tipo ?? 'sala_aula'] ?? '#2563EB'
-  const bgActive = TIPO_BG_ACTIVE[currentSalaInfo?.tipo ?? 'sala_aula'] ?? '#EFF6FF'
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['left', 'right', 'bottom']}>
@@ -78,6 +80,22 @@ export default function MapScreen() {
             )
           })}
         </ScrollView>
+
+        {/* Filtro de período */}
+        {periodos.length > 1 && (
+          <View style={{ paddingHorizontal: 12, paddingBottom: 4, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
+            <Picker
+              selectedValue={periodo}
+              onValueChange={setPeriodo}
+              style={{ height: 36, color: '#374151' }}
+              dropdownIconColor="#9CA3AF"
+            >
+              {periodos.map((p) => (
+                <Picker.Item key={p} label={p} value={p} />
+              ))}
+            </Picker>
+          </View>
+        )}
 
         {/* Info da sala selecionada */}
         <View style={{ paddingHorizontal: 12, paddingBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }}>

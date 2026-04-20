@@ -1,7 +1,9 @@
 import { useState, useMemo, useRef } from 'react'
 import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Pressable } from 'react-native'
+import { Picker } from '@react-native-picker/picker'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAlocacoes } from '../../src/hooks/useAlocacoes'
+import { usePeriodo } from '../../src/contexts/PeriodoContext'
 import { DIAS, HORAS, getSalaInfo, TIPO_LABEL } from '../../src/constants/salas'
 import type { Alocacao } from '../../src/types'
 import { AllocationCard } from '../../src/modules/map/AllocationCard'
@@ -161,6 +163,7 @@ function normalize(s: string) {
 
 export default function AgendaScreen() {
   const { alocacoes, loading, error } = useAlocacoes()
+  const { periodo, setPeriodo, periodos } = usePeriodo()
   const [query, setQuery] = useState('')
   const [selectedProfessor, setSelectedProfessor] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -204,6 +207,22 @@ export default function AgendaScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['left', 'right', 'bottom']}>
+      {/* Filtro de período */}
+      {periodos.length > 1 && (
+        <View style={{ borderBottomWidth: 1, borderBottomColor: '#F3F4F6', paddingHorizontal: 12 }}>
+          <Picker
+            selectedValue={periodo}
+            onValueChange={setPeriodo}
+            style={{ height: 36, color: '#374151' }}
+            dropdownIconColor="#9CA3AF"
+          >
+            {periodos.map((p) => (
+              <Picker.Item key={p} label={p} value={p} />
+            ))}
+          </Picker>
+        </View>
+      )}
+
       {/* Busca */}
       <View style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: '#E5E7EB', zIndex: 10 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', borderRadius: 10, paddingHorizontal: 10, gap: 8 }}>
