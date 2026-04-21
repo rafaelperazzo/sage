@@ -3,6 +3,7 @@ set -e
 
 MOBILE_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(cd "$MOBILE_DIR/.." && pwd)"
+ANDROID="$MOBILE_DIR/android"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -57,26 +58,71 @@ else
   ok "Repositório sincronizado com o remoto"
 fi
 
-# ── 3. Sincronizar versionName no build.gradle ───────────────────────────────
-step "Sincronizando versionName com app.json..."
+# ── 3. Incrementar versão ─────────────────────────────────────────────────────
+step "Incrementando versão..."
 
 cd "$MOBILE_DIR"
 
-VERSION=$(node -e "console.log(require('./app.json').expo.version)")
-BUILD_GRADLE="$MOBILE_DIR/android/app/build.gradle"
+NEW_VERSION=$(node -e "
+  const app = require('./app.json');
+  const parts = app.expo.version.split('.').map(Number);
+  parts[0]++;
+  console.log(parts.join('.'));
+")
 
-sed -i "s/versionName \".*\"/versionName \"$VERSION\"/" "$BUILD_GRADLE"
+node -e "
+  const fs = require('fs');
+  const app = require('./app.json');
+  app.expo.version = '$NEW_VERSION';
+  app.expo.runtimeVersion = '$NEW_VERSION';
+  fs.writeFileSync('./app.json', JSON.stringify(app, null, 2) + '\n');
+"
 
-ok "versionName atualizado para $VERSION"
+ok "Versão atualizada para $NEW_VERSION"
 
-# ── 4. Build local ────────────────────────────────────────────────────────────
+# ── 4. Prebuild ───────────────────────────────────────────────────────────────
+step "Executando prebuild --clean..."
+
+cd "$MOBILE_DIR"
+npx expo prebuild --clean
+ok "Prebuild concluído"
+
+# ── 5. Correções pós-prebuild ─────────────────────────────────────────────────
+step "Aplicando correções pós-prebuild..."
+
+echo "  [1/4] Criando local.properties..."
+cat > "$ANDROID/local.properties" <<EOF
+sdk.dir=/home/perazzo/Android/Sdk
+ndk.dir=/home/perazzo/Android/Sdk/ndk/29.0.14033849
+EOF
+
+echo "  [2/4] Removendo hermesCommand quebrado do build.gradle..."
+sed -i '/hermesCommand.*hermes-compiler/d' "$ANDROID/app/build.gradle"
+
+echo "  [3/4] Removendo atributos depreciados de edge-to-edge do styles.xml..."
+sed -i '/android:statusBarColor/d' "$ANDROID/app/src/main/res/values/styles.xml"
+sed -i '/android:navigationBarColor/d' "$ANDROID/app/src/main/res/values/styles.xml"
+
+echo "  [4/4] Corrigindo MainApplication.kt (reactNativeHost ausente)..."
+MAIN="$ANDROID/app/src/main/java/com/rafaelperazzo/appdc/MainApplication.kt"
+
+if ! grep -q "import com.facebook.react.ReactNativeHost" "$MAIN"; then
+  sed -i 's/import com.facebook.react.ReactHost/import com.facebook.react.ReactNativeHost\nimport com.facebook.react.ReactHost/' "$MAIN"
+fi
+
+if ! grep -q "override val reactNativeHost" "$MAIN"; then
+  sed -i 's/override val reactHost: ReactHost by lazy {/@Deprecated("Replaced by ReactHost in New Architecture")\n  override val reactNativeHost: ReactNativeHost\n    get() = throw UnsupportedOperationException("New Architecture does not use ReactNativeHost")\n\n  override val reactHost: ReactHost by lazy {/' "$MAIN"
+fi
+
+ok "Correções aplicadas"
+
+# ── 6. Build local ────────────────────────────────────────────────────────────
 step "Gerando build de produção localmente..."
 
 if ! eas build --platform android --profile production --local; then
   fail "Build local falhou. Corrija os erros antes de submeter."
 fi
 
-# Encontra o .aab mais recente gerado
 AAB_FILE=$(ls -t "$MOBILE_DIR"/build-*.aab 2>/dev/null | head -1)
 
 if [ -z "$AAB_FILE" ]; then
@@ -85,7 +131,7 @@ fi
 
 ok "Build concluído: $(basename "$AAB_FILE")"
 
-# ── 4. Submit direto com o .aab local ────────────────────────────────────────
+# ── 7. Submit à Play Store ────────────────────────────────────────────────────
 step "Submetendo à Play Store..."
 
 eas submit --platform android --profile production --path "$AAB_FILE"

@@ -18,7 +18,12 @@ EOF
 echo "==> [2/3] Removendo hermesCommand quebrado do build.gradle..."
 sed -i '/hermesCommand.*hermes-compiler/d' "$ANDROID/app/build.gradle"
 
-echo "==> [3/3] Corrigindo MainApplication.kt (reactNativeHost ausente)..."
+echo "==> [3/4] Removendo atributos depreciados de edge-to-edge do styles.xml..."
+STYLES="$ANDROID/app/src/main/res/values/styles.xml"
+sed -i '/android:statusBarColor/d' "$STYLES"
+sed -i '/android:navigationBarColor/d' "$STYLES"
+
+echo "==> [4/4] Corrigindo MainApplication.kt (reactNativeHost ausente)..."
 MAIN="$ANDROID/app/src/main/java/com/rafaelperazzo/appdc/MainApplication.kt"
 
 if ! grep -q "import com.facebook.react.ReactNativeHost" "$MAIN"; then
