@@ -18,7 +18,16 @@ export function useAppUpdates() {
           'Uma nova versão do SAGE foi baixada. Deseja recarregar agora?',
           [
             { text: 'Agora não', style: 'cancel' },
-            { text: 'Recarregar', onPress: () => Updates.reloadAsync() },
+            {
+              text: 'Recarregar',
+              onPress: async () => {
+                try {
+                  await Updates.reloadAsync()
+                } catch (e) {
+                  Alert.alert('Erro ao atualizar', String(e))
+                }
+              },
+            },
           ]
         )
       } catch {
