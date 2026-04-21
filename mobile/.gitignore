@@ -43,4 +43,4 @@ yarn-error.*
 
 # generated native folders
 /ios
-# /android — mantido no git por conter correções manuais (build.gradle, MainApplication.kt)
+/android

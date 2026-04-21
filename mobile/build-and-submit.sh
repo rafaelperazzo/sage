@@ -21,6 +21,8 @@ echo -e "${CYAN}========================================${NC}"
 
 START_TIME=$(date +%s)
 
+export ANDROID_NDK_HOME="/home/perazzo/Android/Sdk/ndk/29.0.14033849"
+
 # ── 1. Alterações não commitadas ──────────────────────────────────────────────
 step "Verificando status do repositório..."
 
