@@ -12,7 +12,6 @@ echo ""
 echo "==> [1/3] Criando local.properties..."
 cat > "$ANDROID/local.properties" <<EOF
 sdk.dir=/home/perazzo/Android/Sdk
-ndk.dir=/home/perazzo/Android/Sdk/ndk/29.0.14033849
 EOF
 
 echo "==> [2/3] Removendo hermesCommand quebrado do build.gradle..."
