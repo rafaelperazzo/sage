@@ -53,10 +53,20 @@ else
   ok "Repositório sincronizado com o remoto"
 fi
 
-# ── 3. Build local ────────────────────────────────────────────────────────────
-step "Gerando build de produção localmente..."
+# ── 3. Sincronizar versionName no build.gradle ───────────────────────────────
+step "Sincronizando versionName com app.json..."
 
 cd "$MOBILE_DIR"
+
+VERSION=$(node -e "console.log(require('./app.json').expo.version)")
+BUILD_GRADLE="$MOBILE_DIR/android/app/build.gradle"
+
+sed -i "s/versionName \".*\"/versionName \"$VERSION\"/" "$BUILD_GRADLE"
+
+ok "versionName atualizado para $VERSION"
+
+# ── 4. Build local ────────────────────────────────────────────────────────────
+step "Gerando build de produção localmente..."
 
 if ! eas build --platform android --profile production --local; then
   fail "Build local falhou. Corrija os erros antes de submeter."
