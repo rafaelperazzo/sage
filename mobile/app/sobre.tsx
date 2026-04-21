@@ -106,20 +106,6 @@ export default function SobreScreen() {
           {MODULES.map((mod) => <ModuleCard key={mod.title} mod={mod} />)}
         </Section>
 
-        {/* Tech stack */}
-        <Section title="Tecnologias">
-          {[
-            { label: 'Backend', value: 'Supabase (PostgreSQL + Realtime + Auth)' },
-            { label: 'Web', value: 'React 18 + TypeScript + Vite + Tailwind CSS' },
-            { label: 'Mobile', value: 'Expo 55 + Expo Router + NativeWind' },
-            { label: 'Gráficos', value: 'victory-native (mobile) / recharts (web)' },
-          ].map((item) => (
-            <View key={item.label} style={{ flexDirection: 'row', paddingVertical: 8, borderBottomWidth: 0.5, borderBottomColor: '#E5E7EB' }}>
-              <Text style={{ fontSize: 12, fontWeight: '700', color: '#6B7280', width: 80 }}>{item.label}</Text>
-              <Text style={{ fontSize: 12, color: '#374151', flex: 1 }}>{item.value}</Text>
-            </View>
-          ))}
-        </Section>
       </ScrollView>
     </SafeAreaView>
   )
