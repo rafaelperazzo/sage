@@ -7,6 +7,7 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "prebuildCommand": "./scripts/prebuild.sh",
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleDebug"
@@ -15,6 +16,7 @@
     "preview": {
       "distribution": "internal",
       "channel": "preview",
+      "prebuildCommand": "./scripts/prebuild.sh",
       "android": {
         "buildType": "apk",
         "autoIncrement": true
@@ -22,6 +24,7 @@
     },
     "production": {
       "channel": "production",
+      "prebuildCommand": "./scripts/prebuild.sh",
       "env": {
         "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
       },
