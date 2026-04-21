@@ -1,4 +1,5 @@
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useManutencao } from '../../../src/hooks/useManutencao'
 import { useAuthContext } from '../../../src/contexts/AuthContext'
@@ -38,7 +39,8 @@ export default function ManutencaoViewScreen() {
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#FFFFFF' }} contentContainerStyle={{ padding: 20 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['bottom']}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 12, color: '#6B7280', fontWeight: '600' }}>RT #{item.numero_rt}</Text>
@@ -69,5 +71,6 @@ export default function ManutencaoViewScreen() {
         <Text style={{ color: '#6B7280', fontWeight: '600' }}>Fechar</Text>
       </TouchableOpacity>
     </ScrollView>
+    </SafeAreaView>
   )
 }

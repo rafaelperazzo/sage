@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
 import { Picker } from '@react-native-picker/picker'
 import { DIAS, HORAS } from '../../../src/constants/salas'
@@ -98,7 +99,8 @@ export default function MapEditScreen() {
   const HORAS_FIM = [...HORAS.slice(1), '22:00']
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#FFFFFF' }} contentContainerStyle={{ padding: 20 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['bottom']}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }}>
       {error && (
         <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF2F2', borderRadius: 10, padding: 12, marginBottom: 16, gap: 8 }}>
           <Ionicons name="alert-circle" size={16} color="#DC2626" />
@@ -185,5 +187,6 @@ export default function MapEditScreen() {
         <Text style={{ color: '#DC2626', fontWeight: '700' }}>Remover Alocação</Text>
       </TouchableOpacity>
     </ScrollView>
+    </SafeAreaView>
   )
 }

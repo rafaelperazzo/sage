@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
 import { Picker } from '@react-native-picker/picker'
 import { SALAS, DIAS, HORAS } from '../../src/constants/salas'
@@ -56,7 +57,8 @@ export default function MapCreateScreen() {
   const HORAS_FIM = [...HORAS.slice(1), '22:00']
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#FFFFFF' }} contentContainerStyle={{ padding: 20 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['bottom']}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }}>
       <Text style={{ fontSize: 13, color: '#6B7280', marginBottom: 16 }}>
         Período: <Text style={{ fontWeight: '700', color: '#1D4ED8' }}>{periodo}</Text>
       </Text>
@@ -146,5 +148,6 @@ export default function MapCreateScreen() {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    </SafeAreaView>
   )
 }

@@ -1,4 +1,5 @@
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useReservas } from '../../../src/hooks/useReservas'
 import { useAuthContext } from '../../../src/contexts/AuthContext'
@@ -20,7 +21,8 @@ export default function AuditorioViewScreen() {
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#FFFFFF' }} contentContainerStyle={{ padding: 20 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['bottom']}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }}>
       <View style={{ backgroundColor: '#FFFBEB', borderWidth: 1, borderColor: '#FDE68A', borderRadius: 16, padding: 20, marginBottom: 20, alignItems: 'center' }}>
         <Ionicons name="business" size={32} color="#D97706" />
         <Text style={{ fontSize: 22, fontWeight: '900', color: '#92400E', marginTop: 8 }}>
@@ -49,5 +51,6 @@ export default function AuditorioViewScreen() {
         <Text style={{ color: '#6B7280', fontWeight: '600' }}>Fechar</Text>
       </TouchableOpacity>
     </ScrollView>
+    </SafeAreaView>
   )
 }

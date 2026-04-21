@@ -25,6 +25,7 @@
         "backgroundColor": "#ffffff"
       },
       "predictiveBackGestureEnabled": false,
+      "edgeToEdgeEnabled": true,
       "package": "com.rafaelperazzo.appdc",
       "versionCode": 9
     },

@@ -1,4 +1,5 @@
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useAlocacoesPorSala } from '../../../src/hooks/useAlocacoes'
 import { getSalaInfo } from '../../../src/constants/salas'
@@ -37,7 +38,8 @@ export default function MapViewScreen() {
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#FFFFFF' }} contentContainerStyle={{ padding: 20 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['bottom']}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
         <View style={{ width: 4, height: 40, backgroundColor: color, borderRadius: 2, marginRight: 12 }} />
         <Text style={{ fontSize: 18, fontWeight: '800', color: '#111827', flex: 1 }}>
@@ -70,5 +72,6 @@ export default function MapViewScreen() {
         <Text style={{ color: '#6B7280', fontWeight: '600' }}>Fechar</Text>
       </TouchableOpacity>
     </ScrollView>
+    </SafeAreaView>
   )
 }
