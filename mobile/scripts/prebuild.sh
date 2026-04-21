@@ -7,7 +7,7 @@ ANDROID="$MOBILE_DIR/android"
 
 echo "[prebuild] Executando expo prebuild --clean..."
 cd "$MOBILE_DIR"
-npx expo prebuild --clean
+npx expo prebuild --clean "$@"
 
 echo "[prebuild] Criando local.properties..."
 cat > "$ANDROID/local.properties" <<EOF
