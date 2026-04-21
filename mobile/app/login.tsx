@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
 import { router } from 'expo-router'
 import { useAuthContext } from '../src/contexts/AuthContext'
@@ -12,10 +12,9 @@ export default function LoginScreen() {
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
 
-  if (isAdmin) {
-    router.replace('/(tabs)')
-    return null
-  }
+  useEffect(() => {
+    if (isAdmin) router.replace('/(tabs)')
+  }, [isAdmin])
 
   async function handleLogin() {
     if (!email.trim() || !password.trim()) {

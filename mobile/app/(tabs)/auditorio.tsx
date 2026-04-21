@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, useWindowDimensions, Linking } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, useWindowDimensions, Linking, Modal } from 'react-native'
 import { router } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useReservas } from '../../src/hooks/useReservas'
@@ -36,6 +36,7 @@ export default function AuditorioScreen() {
   const [ano, setAno] = useState(today.getFullYear())
   const [mes, setMes] = useState(today.getMonth() + 1)
   const [tab, setTab] = useState<'calendario' | 'relatorio'>('calendario')
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const { reservas, loading } = useReservas(ano, mes)
   const { isAdmin } = useAuthContext()
   const { width } = useWindowDimensions()
@@ -59,13 +60,13 @@ export default function AuditorioScreen() {
   }
 
   function handleDayPress(date: Date) {
-    const dateStr = formatDate(date)
-    const dayReservas = reservasByDate[dateStr] ?? []
-    if (isAdmin) {
-      router.push({ pathname: '/auditorio/create', params: { data: dateStr } } as never)
-    } else if (dayReservas.length > 0) {
-      router.push({ pathname: '/auditorio/[id]/view', params: { id: dayReservas[0]!.id } } as never)
-    }
+    setSelectedDate(formatDate(date))
+  }
+
+  const selectedReservas = selectedDate ? (reservasByDate[selectedDate] ?? []) : []
+
+  function formatDateLabel(dateStr: string): string {
+    return new Date(dateStr + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
   }
 
   const totalReservas = reservas.length
@@ -172,9 +173,6 @@ export default function AuditorioScreen() {
                             </Text>
                           </View>
                         )}
-                        {isAdmin && !hasReserva && (
-                          <Ionicons name="add" size={11} color="#D1D5DB" />
-                        )}
                       </TouchableOpacity>
                     )
                   })}
@@ -249,6 +247,60 @@ export default function AuditorioScreen() {
           </View>
         )}
       </ScrollView>
+
+      <Modal visible={selectedDate !== null} transparent animationType="slide" onRequestClose={() => setSelectedDate(null)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }} activeOpacity={1} onPress={() => setSelectedDate(null)} />
+        <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '60%' }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <Text style={{ fontSize: 15, fontWeight: '800', color: '#111827', flex: 1, textTransform: 'capitalize' }}>
+              {selectedDate ? formatDateLabel(selectedDate) : ''}
+            </Text>
+            <TouchableOpacity onPress={() => setSelectedDate(null)}>
+              <Ionicons name="close" size={22} color="#6B7280" />
+            </TouchableOpacity>
+          </View>
+          {selectedReservas.length === 0 ? (
+            <View style={{ alignItems: 'center', paddingVertical: 32 }}>
+              <Ionicons name="calendar-outline" size={36} color="#D1D5DB" />
+              <Text style={{ color: '#9CA3AF', marginTop: 8, fontSize: 13 }}>Nenhuma reserva neste dia</Text>
+            </View>
+          ) : (
+            <ScrollView style={{ marginBottom: isAdmin ? 8 : 0 }}>
+              {selectedReservas.map((r) => (
+                <TouchableOpacity
+                  key={r.id}
+                  onPress={() => {
+                    setSelectedDate(null)
+                    const path = isAdmin ? '/auditorio/[id]/edit' : '/auditorio/[id]/view'
+                    router.push({ pathname: path, params: { id: r.id } } as never)
+                  }}
+                  style={{ backgroundColor: '#FFFBEB', borderWidth: 1, borderColor: '#FDE68A', borderRadius: 10, padding: 12, marginBottom: 8 }}
+                >
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: '#92400E' }}>
+                      {r.inicio.slice(0, 5)} – {r.fim.slice(0, 5)}
+                    </Text>
+                    {isAdmin && <Ionicons name="pencil-outline" size={14} color="#D97706" />}
+                  </View>
+                  {r.responsavel && <Text style={{ fontSize: 12, color: '#78350F', marginTop: 2 }}>{r.responsavel}</Text>}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+          {isAdmin && (
+            <TouchableOpacity
+              onPress={() => {
+                setSelectedDate(null)
+                router.push({ pathname: '/auditorio/create', params: { data: selectedDate! } } as never)
+              }}
+              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#D97706', borderRadius: 12, paddingVertical: 12, marginTop: 4 }}
+            >
+              <Ionicons name="add" size={18} color="white" />
+              <Text style={{ fontSize: 14, fontWeight: '700', color: 'white' }}>Nova reserva neste dia</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </Modal>
 
       {isAdmin && (
         <TouchableOpacity

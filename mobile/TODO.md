@@ -1,6 +1,14 @@
 # TODO — SAGE Mobile
 
+## Pendente
+
 ## Concluído
+
+- [x] **SAGE Auditório — Exibir todas as reservas do dia ao clicar no calendário**
+  - Clicar em qualquer dia abre um bottom sheet (Modal) com todas as reservas daquele dia
+  - Qualquer usuário (admin ou não) pode visualizar as reservas do dia clicado
+  - Admin pode tocar em uma reserva no modal para editar; não-admin para visualizar
+  - Criação de nova reserva acessível somente pelo botão "+" (FAB, admin)
 
 - [x] **Filtro por período letivo nos módulos Map e Agenda**
   - Incluir caixa de seleção (Picker) com os valores distintos da coluna `periodo` da tabela `alocacao_2026.1`
