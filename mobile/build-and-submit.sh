@@ -94,6 +94,9 @@ cat > "$ANDROID/local.properties" <<EOF
 sdk.dir=/home/perazzo/Android/Sdk
 EOF
 
+echo "        Configurando 8 threads para o Gradle..."
+echo "org.gradle.workers.max=8" >> "$ANDROID/gradle.properties"
+
 echo "  [2/4] Removendo hermesCommand quebrado do build.gradle..."
 sed -i '/hermesCommand.*hermes-compiler/d' "$ANDROID/app/build.gradle"
 
