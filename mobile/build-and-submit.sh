@@ -19,6 +19,8 @@ echo -e "${CYAN}========================================${NC}"
 echo -e "${CYAN}   SAGE — Build & Submit Android        ${NC}"
 echo -e "${CYAN}========================================${NC}"
 
+START_TIME=$(date +%s)
+
 # ── 1. Alterações não commitadas ──────────────────────────────────────────────
 step "Verificando status do repositório..."
 
@@ -87,3 +89,6 @@ step "Submetendo à Play Store..."
 eas submit --platform android --profile production --path "$AAB_FILE"
 
 ok "Submit concluído com sucesso!"
+
+ELAPSED=$(( $(date +%s) - START_TIME ))
+echo -e "\n${CYAN}Tempo total: $(printf '%02d:%02d:%02d' $((ELAPSED/3600)) $((ELAPSED%3600/60)) $((ELAPSED%60)))${NC}"
