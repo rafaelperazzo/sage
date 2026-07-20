@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithRouter } from '../../test/renderWithRouter'
@@ -179,7 +179,18 @@ describe('AuditorioPage — aba Relatório', () => {
 })
 
 describe('AuditorioPage — exibição de reservas', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    // AuditorioPage inicializa o mês exibido com `new Date()` — fixamos apenas o
+    // Date (não os timers) no mesmo mês das reservas de teste (2026-04-10),
+    // para não depender da data real nem quebrar os delays internos do user-event.
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-04-15T12:00:00'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
 
   it('reserva exibida no calendário é clicável e abre modal de visualização', async () => {
     // MonthCalendar mostra: "{hora} {primeiraWordDoResponsavel}" no chip

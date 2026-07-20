@@ -1,7 +1,10 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { MapPin, Calendar, BarChart2, LogIn, LogOut, Building2, Info, Wrench, Home } from 'lucide-react'
+import { MapPin, Calendar, BarChart2, LogIn, LogOut, Building2, Info, Wrench, Home, GraduationCap } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { usePeriodo } from '../../contexts/PeriodoContext'
+
+const APP_REPO = 'rafaelperazzo/sage'
+const APP_VERSION_BADGE_URL = `https://img.shields.io/github/v/tag/${APP_REPO}?sort=semver&label=vers%C3%A3o&color=16a34a`
 
 const NAV_ITEMS = [
   { to: '/', label: 'Início', icon: Home },
@@ -10,6 +13,7 @@ const NAV_ITEMS = [
   { to: '/report', label: 'SAGE Report', icon: BarChart2 },
   { to: '/auditorio', label: 'SAGE Auditório', icon: Building2 },
   { to: '/manutencao', label: 'SAGE Manutenção', icon: Wrench },
+  { to: '/grade', label: 'SAGE Grade', icon: GraduationCap },
   { to: '/sobre', label: 'Sobre', icon: Info },
 ]
 
@@ -27,9 +31,12 @@ export function Header() {
     <header className="bg-white border-b border-gray-200 shadow-sm">
       <div className="max-w-screen-xl mx-auto px-4 flex items-center justify-between h-14">
         <div className="flex items-center gap-6">
-          <span className="font-bold text-lg text-gray-800 tracking-tight select-none">
-            SAGE
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-lg text-gray-800 tracking-tight select-none">
+              SAGE
+            </span>
+            <img src={APP_VERSION_BADGE_URL} alt="Versão mais recente do SAGE" className="h-5" />
+          </div>
           <nav className="flex items-center gap-1">
             {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
               <NavLink

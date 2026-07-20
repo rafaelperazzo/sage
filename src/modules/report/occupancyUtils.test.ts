@@ -16,6 +16,8 @@ function makeAlocacao(overrides: Partial<Alocacao> = {}): Alocacao {
     dia_semana: 'SEGUNDA',
     professor: null,
     periodo: '2026.1',
+    curso: 'DC',
+    semestre: 0,
     ...overrides,
   }
 }

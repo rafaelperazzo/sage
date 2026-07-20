@@ -1,5 +1,8 @@
 import { Link } from 'react-router-dom'
-import { MapPin, Calendar, BarChart2, Building2, Wrench } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
+import { MapPin, Calendar, BarChart2, Building2, Wrench, GraduationCap, Smartphone } from 'lucide-react'
+
+const APP_URL = 'https://play.google.com/store/apps/details?id=com.rafaelperazzo.appdc'
 
 interface ModuleCardProps {
   to: string
@@ -29,6 +32,35 @@ function ModuleCard({ to, icon, title, description, color, iconColor }: ModuleCa
         Acessar →
       </span>
     </Link>
+  )
+}
+
+function AppQrCard() {
+  return (
+    <a
+      href={APP_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group flex flex-col gap-3 rounded-2xl border p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 bg-white border-green-100 hover:border-green-300"
+    >
+      <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-green-50">
+        <Smartphone size={20} className="text-green-700" />
+      </div>
+      <div>
+        <h2 className="text-base font-bold text-gray-900 group-hover:text-blue-700 transition-colors">
+          App SAGE
+        </h2>
+        <p className="mt-1 text-sm text-gray-500 leading-relaxed">
+          Baixe o aplicativo do SAGE para Android e acesse pelo celular.
+        </p>
+      </div>
+      <div className="flex justify-center py-1">
+        <QRCodeSVG value={APP_URL} size={112} />
+      </div>
+      <span className="mt-auto text-xs font-medium text-blue-600 group-hover:underline">
+        Abrir na Play Store →
+      </span>
+    </a>
   )
 }
 
@@ -73,6 +105,14 @@ const MODULES: ModuleCardProps[] = [
     color: 'bg-white border-orange-100 hover:border-orange-300',
     iconColor: 'bg-orange-50',
   },
+  {
+    to: '/grade',
+    icon: <GraduationCap size={20} className="text-indigo-700" />,
+    title: 'SAGE Grade',
+    description: 'Grade curricular semestral dos cursos de Bacharelado e Licenciatura em Computação.',
+    color: 'bg-white border-indigo-100 hover:border-indigo-300',
+    iconColor: 'bg-indigo-50',
+  },
 ]
 
 export function HomePage() {
@@ -95,6 +135,7 @@ export function HomePage() {
         {MODULES.map((m) => (
           <ModuleCard key={m.to} {...m} />
         ))}
+        <AppQrCard />
       </div>
     </main>
   )

@@ -29,6 +29,11 @@ describe('HomePage', () => {
     expect(screen.getByRole('heading', { name: 'SAGE Report' })).toBeInTheDocument()
   })
 
+  it('exibe card do SAGE Grade', () => {
+    renderWithRouter(<HomePage />)
+    expect(screen.getByRole('heading', { name: 'SAGE Grade' })).toBeInTheDocument()
+  })
+
   it('exibe card do SAGE Auditório', () => {
     renderWithRouter(<HomePage />)
     expect(screen.getByRole('heading', { name: 'SAGE Auditório' })).toBeInTheDocument()
@@ -39,9 +44,9 @@ describe('HomePage', () => {
     expect(screen.getByRole('heading', { name: 'SAGE Manutenção' })).toBeInTheDocument()
   })
 
-  it('exibe 5 links "Acessar"', () => {
+  it('exibe 6 links "Acessar"', () => {
     renderWithRouter(<HomePage />)
-    expect(screen.getAllByText(/Acessar →/i)).toHaveLength(5)
+    expect(screen.getAllByText(/Acessar →/i)).toHaveLength(6)
   })
 
   it('link do SAGE Map aponta para /map', () => {
@@ -60,6 +65,12 @@ describe('HomePage', () => {
     renderWithRouter(<HomePage />)
     const link = screen.getByRole('link', { name: /SAGE Report/i })
     expect(link).toHaveAttribute('href', '/report')
+  })
+
+  it('link do SAGE Grade aponta para /grade', () => {
+    renderWithRouter(<HomePage />)
+    const link = screen.getByRole('link', { name: /SAGE Grade/i })
+    expect(link).toHaveAttribute('href', '/grade')
   })
 
   it('link do SAGE Auditório aponta para /auditorio', () => {
@@ -82,5 +93,27 @@ describe('HomePage', () => {
   it('exibe a descrição do SAGE Manutenção', () => {
     renderWithRouter(<HomePage />)
     expect(screen.getByText(/solicitações de manutenção/i)).toBeInTheDocument()
+  })
+
+  it('exibe o card do App SAGE com QR code', () => {
+    renderWithRouter(<HomePage />)
+    expect(screen.getByRole('heading', { name: 'App SAGE' })).toBeInTheDocument()
+  })
+
+  it('link do App SAGE aponta para a Play Store, em nova aba', () => {
+    renderWithRouter(<HomePage />)
+    const link = screen.getByRole('link', { name: /App SAGE/i })
+    expect(link).toHaveAttribute(
+      'href',
+      'https://play.google.com/store/apps/details?id=com.rafaelperazzo.appdc'
+    )
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'))
+  })
+
+  it('o card do App SAGE renderiza um QR code (SVG)', () => {
+    renderWithRouter(<HomePage />)
+    const link = screen.getByRole('link', { name: /App SAGE/i })
+    expect(link.querySelector('svg')).toBeInTheDocument()
   })
 })

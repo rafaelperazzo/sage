@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { PageShell } from '../../components/Layout/PageShell'
-import { MapPin, Calendar, BarChart2, Building2, Wrench, Mail } from 'lucide-react'
+import { MapPin, Calendar, BarChart2, Building2, Wrench, Mail, GraduationCap } from 'lucide-react'
 
 interface ModuleCardProps {
   icon: React.ReactNode
@@ -119,6 +119,21 @@ const MODULES: ModuleCardProps[] = [
       'Clique em uma solicitação para ver todos os detalhes, incluindo datas e observações',
       'Status visual por cor: Aberto (vermelho), Em andamento (amarelo), Concluído (verde)',
       'Atualização automática em tempo real via Supabase Realtime',
+    ],
+  },
+  {
+    icon: <GraduationCap size={20} className="text-indigo-700" />,
+    title: 'SAGE Grade',
+    route: '/grade',
+    color: 'bg-indigo-50 border-indigo-100 text-indigo-900',
+    description:
+      'Grade curricular semestral dos cursos de Bacharelado e Licenciatura em Computação, no mesmo formato do SAGE Map.',
+    features: [
+      'Alterne entre BCC e LC pelo seletor de curso no topo da página',
+      'Selecione o semestre (1º a 9º) pelas abas no topo da página',
+      'Cada célula mostra disciplina, professor e sala do horário',
+      'Horários sem nenhuma disciplina cadastrada não aparecem na grade',
+      'Filtre os dados pelo período letivo usando o seletor no topo da página',
     ],
   },
 ]

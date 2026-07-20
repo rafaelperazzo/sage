@@ -7,9 +7,11 @@ export interface Alocacao {
   dia_semana: string  // "SEGUNDA" | "TERÇA" | "QUARTA" | "QUINTA" | "SEXTA" | "SÁBADO"
   professor: string | null
   periodo: string     // "2026.1"
+  curso: string        // "BCC" | "LC" | "DC" | ...
+  semestre: number     // 1-9, 0 = não classificado
 }
 
-export type AlocacaoInput = Omit<Alocacao, 'id' | 'periodo'>
+export type AlocacaoInput = Omit<Alocacao, 'id' | 'periodo' | 'curso' | 'semestre'>
 
 export type TipoSala = 'sala_aula' | 'sala_inovacao' | 'laboratorio'
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { timeToMinutes, buildGridMatrix } from './gridUtils'
+import { timeToMinutes, buildGridMatrix, getHorasVisiveis } from './gridUtils'
 import type { Alocacao } from '../../types'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -14,6 +14,8 @@ function makeAlocacao(overrides: Partial<Alocacao> = {}): Alocacao {
     dia_semana: 'SEGUNDA',
     professor: null,
     periodo: '2026.1',
+    curso: 'DC',
+    semestre: 0,
     ...overrides,
   }
 }
@@ -135,5 +137,33 @@ describe('buildGridMatrix', () => {
     expect(matrix['08:00']!['QUINTA']).toMatchObject({ type: 'allocation', rowSpan: 2 })
     expect(matrix['14:00']!['QUINTA']).toMatchObject({ type: 'allocation', rowSpan: 2 })
     expect(matrix['11:00']!['QUINTA']).toMatchObject({ type: 'empty' })
+  })
+})
+
+// ── getHorasVisiveis ─────────────────────────────────────────────────────────
+
+describe('getHorasVisiveis', () => {
+  it('matrix vazia → nenhum horário visível', () => {
+    const matrix = buildGridMatrix([])
+    expect(getHorasVisiveis(matrix)).toEqual([])
+  })
+
+  it('uma alocação de 1h → só o horário de início é visível', () => {
+    const aloc = makeAlocacao({ inicio: '14:00', fim: '15:00', dia_semana: 'SEGUNDA' })
+    const matrix = buildGridMatrix([aloc])
+    expect(getHorasVisiveis(matrix)).toEqual(['14:00'])
+  })
+
+  it('alocação de 2h → mantém a linha do meio (skip) visível', () => {
+    const aloc = makeAlocacao({ inicio: '14:00', fim: '16:00', dia_semana: 'SEGUNDA' })
+    const matrix = buildGridMatrix([aloc])
+    expect(getHorasVisiveis(matrix)).toEqual(['14:00', '15:00'])
+  })
+
+  it('alocações em horários distintos → todos aparecem, ordenados por HORAS', () => {
+    const aloc1 = makeAlocacao({ id: 1, inicio: '18:00', fim: '19:00', dia_semana: 'SEXTA' })
+    const aloc2 = makeAlocacao({ id: 2, inicio: '08:00', fim: '09:00', dia_semana: 'TERÇA' })
+    const matrix = buildGridMatrix([aloc1, aloc2])
+    expect(getHorasVisiveis(matrix)).toEqual(['08:00', '18:00'])
   })
 })

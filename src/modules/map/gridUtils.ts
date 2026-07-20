@@ -57,3 +57,18 @@ export function buildGridMatrix(alocacoes: Alocacao[]): GridMatrix {
 
   return matrix
 }
+
+/**
+ * Retorna os horários da matriz que possuem ao menos uma alocação
+ * (célula 'allocation' ou 'skip') em algum dia. Usado para ocultar
+ * linhas 100% vazias em grades específicas (ex: Grade Semestral).
+ */
+export function getHorasVisiveis(
+  matrix: GridMatrix,
+  horas: string[] = HORAS,
+  dias: readonly string[] = DIAS
+): string[] {
+  return horas.filter((hora) =>
+    dias.some((dia) => matrix[hora]?.[dia]?.type !== 'empty')
+  )
+}
