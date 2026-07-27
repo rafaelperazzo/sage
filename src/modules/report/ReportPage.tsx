@@ -68,7 +68,7 @@ export function ReportPage() {
               <h2 className="text-sm font-semibold text-gray-800">Ocupação por Sala</h2>
             </div>
             <p className="text-xs text-gray-400 mb-4">
-              Clique em uma barra para ver detalhes. Máximo: 72h/semana = 100%.
+              Clique em uma barra para ver detalhes. Máximo: 60h/semana (seg-sex) = 100%.
             </p>
             <div className="flex gap-4 mb-3">
               {TIPO_GROUPS.map(({ tipo, label }) => (

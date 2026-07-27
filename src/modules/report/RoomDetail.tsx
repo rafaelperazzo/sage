@@ -1,6 +1,6 @@
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { DIAS_CALCULO, MAX_HORAS_SEMANA } from './occupancyUtils'
 import type { RoomOccupancy } from './occupancyUtils'
-import { DIAS } from '../../constants/salas'
 import { TIPO_LABEL, TIPO_COLOR } from '../../constants/salas'
 
 interface RoomDetailProps {
@@ -21,7 +21,7 @@ const MAX_HORAS_DIA = 12
 
 export function RoomDetail({ room, onClose }: RoomDetailProps) {
   const ocupadoHoras = parseFloat(room.totalHoras.toFixed(1))
-  const livreHoras = parseFloat((72 - room.totalHoras).toFixed(1))
+  const livreHoras = parseFloat((MAX_HORAS_SEMANA - room.totalHoras).toFixed(1))
 
   const pieData = [
     { name: 'Ocupado', value: ocupadoHoras },
@@ -91,7 +91,7 @@ export function RoomDetail({ room, onClose }: RoomDetailProps) {
               </tr>
             </thead>
             <tbody>
-              {DIAS.map((dia) => {
+              {DIAS_CALCULO.map((dia) => {
                 const horas = room.porDia[dia] ?? 0
                 const pct = Math.round((horas / MAX_HORAS_DIA) * 100)
                 return (

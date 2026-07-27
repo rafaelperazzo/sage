@@ -50,12 +50,20 @@ describe('calcularOcupacao', () => {
     expect(sala02.porDia['SEGUNDA']).toBe(1)
   })
 
-  it('percentual correto para 1h em 72h → arredondado para 1%', () => {
+  it('percentual correto para 1h em 60h → arredondado para 2%', () => {
     const aloc = makeAlocacao({ sala: 'SALA 02', inicio: '08:00', fim: '09:00' })
     const result = calcularOcupacao([aloc])
     const sala02 = result.salas.find(s => s.sala === 'SALA 02')!
-    // 1/72 = ~1.39% → arredondado para 1
-    expect(sala02.percentual).toBe(1)
+    // 1/60 = ~1.67% → arredondado para 2
+    expect(sala02.percentual).toBe(2)
+  })
+
+  it('alocação no sábado não é considerada no cálculo', () => {
+    const aloc = makeAlocacao({ sala: 'SALA 02', dia_semana: 'SÁBADO', inicio: '08:00', fim: '12:00' })
+    const result = calcularOcupacao([aloc])
+    const sala02 = result.salas.find(s => s.sala === 'SALA 02')!
+    expect(sala02.totalHoras).toBe(0)
+    expect(sala02.porDia['SÁBADO']).toBeUndefined()
   })
 
   it('2 alocações sem sobreposição → soma simples das horas', () => {
@@ -90,14 +98,14 @@ describe('calcularOcupacao', () => {
     expect(result.totalGeralHoras).toBe(0)
   })
 
-  it('sala 100% ocupada (72h/semana) → percentual 100', () => {
+  it('sala 100% ocupada (60h/semana, seg-sex) → percentual 100', () => {
     const alocacoes: Alocacao[] = DIAS.map(dia =>
       makeAlocacao({ sala: 'LAB 35', dia_semana: dia, inicio: '07:00', fim: '19:00' })
     )
     const result = calcularOcupacao(alocacoes)
     const lab35 = result.salas.find(s => s.sala === 'LAB 35')!
-    // 12h × 6 dias = 72h → percentual exato de 100%
-    expect(lab35.totalHoras).toBe(72)
+    // 12h × 5 dias (seg-sex) = 60h → percentual exato de 100%; sábado é ignorado
+    expect(lab35.totalHoras).toBe(60)
     expect(lab35.percentual).toBe(100)
   })
 

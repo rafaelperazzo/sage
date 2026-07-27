@@ -17,16 +17,19 @@ export interface ReportSummary {
   mediaOcupacao: number
 }
 
-// 12 horas por dia × 6 dias = 72h máximo por semana
+// Ocupação considerada apenas de segunda a sexta (5 dias úteis)
+export const DIAS_CALCULO = DIAS.filter((dia) => dia !== 'SÁBADO')
+
+// 12 horas por dia × 5 dias = 60h máximo por semana
 const MAX_HORAS_DIA = 12
-const MAX_HORAS_SEMANA = MAX_HORAS_DIA * DIAS.length
+export const MAX_HORAS_SEMANA = MAX_HORAS_DIA * DIAS_CALCULO.length
 
 export function calcularOcupacao(alocacoes: Alocacao[]): ReportSummary {
   const salas: RoomOccupancy[] = SALAS.map((salaInfo) => {
     const porDia: Record<string, number> = {}
     let totalHoras = 0
 
-    for (const dia of DIAS) {
+    for (const dia of DIAS_CALCULO) {
       const alocsNoDia = alocacoes.filter(
         (a) => a.sala === salaInfo.nome && a.dia_semana === dia
       )
