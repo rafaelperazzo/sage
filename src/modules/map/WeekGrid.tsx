@@ -20,6 +20,9 @@ const DIA_SHORT: Record<string, string> = {
   'SÁBADO': 'Sáb',
 }
 
+// SAGE Map exibe apenas os dias úteis (segunda a sexta); sábado fica de fora da grade.
+const DIAS_GRADE = DIAS.filter((dia) => dia !== 'SÁBADO')
+
 export function WeekGrid({ alocacoes, isAdmin, onCellClick, onEmptyCellClick }: WeekGridProps) {
   const matrix = markFreeSlots(buildGridMatrix(alocacoes))
 
@@ -38,7 +41,7 @@ export function WeekGrid({ alocacoes, isAdmin, onCellClick, onEmptyCellClick }: 
             <th className="border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-500 w-16 text-center">
               Hora
             </th>
-            {DIAS.map((dia) => (
+            {DIAS_GRADE.map((dia) => (
               <th
                 key={dia}
                 className="border border-gray-200 px-2 py-2 text-xs font-semibold text-gray-700 text-center"
@@ -54,7 +57,7 @@ export function WeekGrid({ alocacoes, isAdmin, onCellClick, onEmptyCellClick }: 
               <td className="border border-gray-200 px-2 py-1 text-xs text-gray-400 text-center whitespace-nowrap bg-gray-50 font-mono">
                 {hora}
               </td>
-              {DIAS.map((dia) => {
+              {DIAS_GRADE.map((dia) => {
                 const cell = matrix[hora]?.[dia]
                 if (!cell) return null
                 if (cell.type === 'skip') return null

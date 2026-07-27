@@ -28,7 +28,11 @@ describe('WeekGrid — estrutura da grade', () => {
     expect(screen.getByText('Qua')).toBeInTheDocument()
     expect(screen.getByText('Qui')).toBeInTheDocument()
     expect(screen.getByText('Sex')).toBeInTheDocument()
-    expect(screen.getByText('Sáb')).toBeInTheDocument()
+  })
+
+  it('não renderiza a coluna de sábado', () => {
+    render(<WeekGrid alocacoes={[]} isAdmin={false} onCellClick={vi.fn()} />)
+    expect(screen.queryByText('Sáb')).not.toBeInTheDocument()
   })
 
   it('renderiza coluna de horários de 07:00 a 21:00', () => {

@@ -89,11 +89,12 @@ describe('MapPage — estrutura básica', () => {
     expect(screen.getByText('SALA 02', { selector: 'h2' })).toBeInTheDocument()
   })
 
-  it('exibe grade semanal após carregar', () => {
+  it('exibe grade semanal após carregar, apenas de segunda a sexta', () => {
     renderWithRouter(<MapPage />)
     // WeekGrid renderiza cabeçalhos de dias
     expect(screen.getByText('Seg')).toBeInTheDocument()
-    expect(screen.getByText('Sáb')).toBeInTheDocument()
+    expect(screen.getByText('Sex')).toBeInTheDocument()
+    expect(screen.queryByText('Sáb')).not.toBeInTheDocument()
   })
 })
 
