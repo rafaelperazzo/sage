@@ -5,14 +5,17 @@ interface AllocationCellProps {
   alocacao: Alocacao
   rowSpan: number
   isAdmin: boolean
+  isNow?: boolean
   onClick: (alocacao: Alocacao) => void
 }
 
-export function AllocationCell({ alocacao, rowSpan, isAdmin, onClick }: AllocationCellProps) {
+export function AllocationCell({ alocacao, rowSpan, isAdmin, isNow, onClick }: AllocationCellProps) {
   const salaInfo = getSalaInfo(alocacao.sala)
-  const colorClass = salaInfo
-    ? TIPO_CELL_COLOR[salaInfo.tipo]
-    : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+  const colorClass = isNow
+    ? 'bg-yellow-200 border-yellow-400 hover:bg-yellow-300'
+    : salaInfo
+      ? TIPO_CELL_COLOR[salaInfo.tipo]
+      : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
 
   return (
     <td

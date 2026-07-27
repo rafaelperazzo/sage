@@ -35,7 +35,6 @@ export function Header() {
             <span className="font-bold text-lg text-gray-800 tracking-tight select-none">
               SAGE
             </span>
-            <img src={APP_VERSION_BADGE_URL} alt="Versão mais recente do SAGE" className="h-5" />
           </div>
           <nav className="flex items-center gap-1">
             {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
@@ -105,6 +104,8 @@ export function Header() {
               Admin
             </NavLink>
           )}
+
+          <img src={APP_VERSION_BADGE_URL} alt="Versão mais recente do SAGE" className="h-5" />
         </div>
       </div>
     </header>

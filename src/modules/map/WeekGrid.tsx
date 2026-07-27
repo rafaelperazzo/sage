@@ -1,6 +1,7 @@
+import { useEffect, useState } from 'react'
 import type { Alocacao } from '../../types'
 import { DIAS, HORAS } from '../../constants/salas'
-import { buildGridMatrix } from './gridUtils'
+import { buildGridMatrix, markFreeSlots, isAlocacaoAgora, formatFreeRange } from './gridUtils'
 import { AllocationCell } from './AllocationCell'
 
 interface WeekGridProps {
@@ -20,7 +21,14 @@ const DIA_SHORT: Record<string, string> = {
 }
 
 export function WeekGrid({ alocacoes, isAdmin, onCellClick, onEmptyCellClick }: WeekGridProps) {
-  const matrix = buildGridMatrix(alocacoes)
+  const matrix = markFreeSlots(buildGridMatrix(alocacoes))
+
+  // Atualiza a cada minuto para manter o destaque de "aula em andamento" correto.
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 60_000)
+    return () => clearInterval(interval)
+  }, [])
 
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
@@ -57,11 +65,31 @@ export function WeekGrid({ alocacoes, isAdmin, onCellClick, onEmptyCellClick }: 
                       alocacao={cell.alocacao}
                       rowSpan={cell.rowSpan}
                       isAdmin={isAdmin}
+                      isNow={isAlocacaoAgora(cell.alocacao, now)}
                       onClick={onCellClick}
                     />
                   )
                 }
-                // Empty cell
+                if (cell.type === 'free') {
+                  return (
+                    <td
+                      key={dia}
+                      rowSpan={cell.rowSpan}
+                      className={`border border-cyan-200 bg-cyan-50 px-2 py-1 align-top text-center ${
+                        isAdmin
+                          ? 'cursor-pointer hover:bg-cyan-100 transition-colors'
+                          : ''
+                      }`}
+                      onClick={() => isAdmin && onEmptyCellClick?.(dia, hora)}
+                    >
+                      <div className="text-xs font-medium text-cyan-700">LIVRE</div>
+                      <div className="text-[11px] text-cyan-600">
+                        {formatFreeRange(cell.hora, cell.rowSpan)}
+                      </div>
+                    </td>
+                  )
+                }
+                // Empty cell (ex: horário de almoço 12:00–13:00)
                 return (
                   <td
                     key={dia}

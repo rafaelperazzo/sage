@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { timeToMinutes, buildGridMatrix, getHorasVisiveis } from './gridUtils'
+import { timeToMinutes, buildGridMatrix, getHorasVisiveis, markFreeSlots, isAlocacaoAgora, formatFreeRange } from './gridUtils'
 import type { Alocacao } from '../../types'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -165,5 +165,124 @@ describe('getHorasVisiveis', () => {
     const aloc2 = makeAlocacao({ id: 2, inicio: '08:00', fim: '09:00', dia_semana: 'TERÇA' })
     const matrix = buildGridMatrix([aloc1, aloc2])
     expect(getHorasVisiveis(matrix)).toEqual(['08:00', '18:00'])
+  })
+})
+
+// ── markFreeSlots ─────────────────────────────────────────────────────────────
+
+describe('markFreeSlots', () => {
+  it('dia totalmente vago → agrupa em blocos de 2h, pulando 07:00, 12:00 e 13:00', () => {
+    const matrix = markFreeSlots(buildGridMatrix([]))
+    // 07:00 desconsiderado → fica vazio; 08-10, 10-12 pareados
+    expect(matrix['07:00']!['SEGUNDA']).toMatchObject({ type: 'empty' })
+    expect(matrix['08:00']!['SEGUNDA']).toMatchObject({ type: 'free', rowSpan: 2 })
+    expect(matrix['09:00']!['SEGUNDA']).toMatchObject({ type: 'skip' })
+    expect(matrix['10:00']!['SEGUNDA']).toMatchObject({ type: 'free', rowSpan: 2 })
+    expect(matrix['11:00']!['SEGUNDA']).toMatchObject({ type: 'skip' })
+    // 12:00 e 13:00 desconsiderados → ficam vazios
+    expect(matrix['12:00']!['SEGUNDA']).toMatchObject({ type: 'empty' })
+    expect(matrix['13:00']!['SEGUNDA']).toMatchObject({ type: 'empty' })
+    // 14-16, 16-18, 18-20, 20-22 pareados
+    expect(matrix['14:00']!['SEGUNDA']).toMatchObject({ type: 'free', rowSpan: 2 })
+    expect(matrix['20:00']!['SEGUNDA']).toMatchObject({ type: 'free', rowSpan: 2 })
+    expect(matrix['21:00']!['SEGUNDA']).toMatchObject({ type: 'skip' })
+  })
+
+  it('07:00, 12:00 e 13:00 nunca são marcados como livre, mesmo vagos', () => {
+    const matrix = markFreeSlots(buildGridMatrix([]))
+    for (const dia of ['SEGUNDA', 'TERÇA', 'QUARTA', 'QUINTA', 'SEXTA', 'SÁBADO']) {
+      expect(matrix['07:00']![dia]).toMatchObject({ type: 'empty' })
+      expect(matrix['12:00']![dia]).toMatchObject({ type: 'empty' })
+      expect(matrix['13:00']![dia]).toMatchObject({ type: 'empty' })
+    }
+  })
+
+  it('08:00 vago não pareia com 07:00 (desconsiderado), fica livre de 1h se 09:00 estiver ocupado', () => {
+    const aloc = makeAlocacao({ inicio: '09:00', fim: '10:00', dia_semana: 'SEGUNDA' })
+    const matrix = markFreeSlots(buildGridMatrix([aloc]))
+    expect(matrix['07:00']!['SEGUNDA']).toMatchObject({ type: 'empty' })
+    expect(matrix['08:00']!['SEGUNDA']).toMatchObject({ type: 'free', rowSpan: 1 })
+  })
+
+  it('14:00 vago não pareia com 13:00 (desconsiderado), fica livre de 1h se 15:00 estiver ocupado', () => {
+    const aloc = makeAlocacao({ inicio: '15:00', fim: '16:00', dia_semana: 'SEGUNDA' })
+    const matrix = markFreeSlots(buildGridMatrix([aloc]))
+    expect(matrix['13:00']!['SEGUNDA']).toMatchObject({ type: 'empty' })
+    expect(matrix['14:00']!['SEGUNDA']).toMatchObject({ type: 'free', rowSpan: 1 })
+  })
+
+  it('hora isolada entre duas alocações vira bloco livre de 1h', () => {
+    const aloc1 = makeAlocacao({ id: 1, inicio: '08:00', fim: '09:00', dia_semana: 'SEGUNDA' })
+    const aloc2 = makeAlocacao({ id: 2, inicio: '10:00', fim: '11:00', dia_semana: 'SEGUNDA' })
+    const matrix = markFreeSlots(buildGridMatrix([aloc1, aloc2]))
+    expect(matrix['09:00']!['SEGUNDA']).toMatchObject({ type: 'free', rowSpan: 1 })
+  })
+
+  it('célula ocupada por alocação não é sobrescrita', () => {
+    const aloc = makeAlocacao({ inicio: '08:00', fim: '10:00', dia_semana: 'SEGUNDA' })
+    const matrix = markFreeSlots(buildGridMatrix([aloc]))
+    expect(matrix['08:00']!['SEGUNDA']).toMatchObject({ type: 'allocation', rowSpan: 2 })
+    expect(matrix['09:00']!['SEGUNDA']).toMatchObject({ type: 'skip' })
+  })
+})
+
+// ── formatFreeRange ───────────────────────────────────────────────────────────
+
+describe('formatFreeRange', () => {
+  it('bloco de 2h → "14-16"', () => {
+    expect(formatFreeRange('14:00', 2)).toBe('14-16')
+  })
+
+  it('bloco de 1h → "11-12"', () => {
+    expect(formatFreeRange('11:00', 1)).toBe('11-12')
+  })
+
+  it('hora de início com um dígito → mantém zero à esquerda', () => {
+    expect(formatFreeRange('07:00', 2)).toBe('07-09')
+  })
+
+  it('último bloco do dia (21h, 1h) → "21-22"', () => {
+    expect(formatFreeRange('21:00', 1)).toBe('21-22')
+  })
+})
+
+// ── isAlocacaoAgora ───────────────────────────────────────────────────────────
+
+describe('isAlocacaoAgora', () => {
+  it('dia e horário correspondem ao intervalo → true', () => {
+    const aloc = makeAlocacao({ dia_semana: 'SEGUNDA', inicio: '14:00', fim: '16:00' })
+    // Segunda-feira, 14:35 (2026-07-27 é segunda-feira)
+    const now = new Date(2026, 6, 27, 14, 35)
+    expect(isAlocacaoAgora(aloc, now)).toBe(true)
+  })
+
+  it('mesmo dia, mas fora do intervalo de horário → false', () => {
+    const aloc = makeAlocacao({ dia_semana: 'SEGUNDA', inicio: '14:00', fim: '16:00' })
+    const now = new Date(2026, 6, 27, 16, 1)
+    expect(isAlocacaoAgora(aloc, now)).toBe(false)
+  })
+
+  it('horário bate, mas dia da semana diferente → false', () => {
+    const aloc = makeAlocacao({ dia_semana: 'TERÇA', inicio: '14:00', fim: '16:00' })
+    const now = new Date(2026, 6, 27, 14, 35) // segunda-feira
+    expect(isAlocacaoAgora(aloc, now)).toBe(false)
+  })
+
+  it('exatamente no horário de início → true (intervalo inclusivo no início)', () => {
+    const aloc = makeAlocacao({ dia_semana: 'SEGUNDA', inicio: '14:00', fim: '16:00' })
+    const now = new Date(2026, 6, 27, 14, 0)
+    expect(isAlocacaoAgora(aloc, now)).toBe(true)
+  })
+
+  it('exatamente no horário de fim → false (intervalo exclusivo no fim)', () => {
+    const aloc = makeAlocacao({ dia_semana: 'SEGUNDA', inicio: '14:00', fim: '16:00' })
+    const now = new Date(2026, 6, 27, 16, 0)
+    expect(isAlocacaoAgora(aloc, now)).toBe(false)
+  })
+
+  it('domingo (sem alocações na grade) → sempre false', () => {
+    const aloc = makeAlocacao({ dia_semana: 'SEGUNDA', inicio: '14:00', fim: '16:00' })
+    const now = new Date(2026, 6, 26, 14, 35) // domingo
+    expect(isAlocacaoAgora(aloc, now)).toBe(false)
   })
 })
