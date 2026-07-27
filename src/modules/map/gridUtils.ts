@@ -129,12 +129,12 @@ export function markFreeSlots(
 
 /**
  * Formata o intervalo de um bloco livre a partir da hora de início e do
- * rowSpan (em horas). Ex: hora "14:00", rowSpan 2 → "14-16".
+ * rowSpan (em horas). Ex: hora "14:00", rowSpan 2 → "14:00-16:00".
  */
 export function formatFreeRange(hora: string, rowSpan: number): string {
   const horaInicio = Number(hora.split(':')[0])
   const horaFim = horaInicio + rowSpan
-  return `${String(horaInicio).padStart(2, '0')}-${String(horaFim).padStart(2, '0')}`
+  return `${String(horaInicio).padStart(2, '0')}:00-${String(horaFim).padStart(2, '0')}:00`
 }
 
 /**

@@ -229,20 +229,20 @@ describe('markFreeSlots', () => {
 // ── formatFreeRange ───────────────────────────────────────────────────────────
 
 describe('formatFreeRange', () => {
-  it('bloco de 2h → "14-16"', () => {
-    expect(formatFreeRange('14:00', 2)).toBe('14-16')
+  it('bloco de 2h → "14:00-16:00"', () => {
+    expect(formatFreeRange('14:00', 2)).toBe('14:00-16:00')
   })
 
-  it('bloco de 1h → "11-12"', () => {
-    expect(formatFreeRange('11:00', 1)).toBe('11-12')
+  it('bloco de 1h → "11:00-12:00"', () => {
+    expect(formatFreeRange('11:00', 1)).toBe('11:00-12:00')
   })
 
   it('hora de início com um dígito → mantém zero à esquerda', () => {
-    expect(formatFreeRange('07:00', 2)).toBe('07-09')
+    expect(formatFreeRange('07:00', 2)).toBe('07:00-09:00')
   })
 
-  it('último bloco do dia (21h, 1h) → "21-22"', () => {
-    expect(formatFreeRange('21:00', 1)).toBe('21-22')
+  it('último bloco do dia (21h, 1h) → "21:00-22:00"', () => {
+    expect(formatFreeRange('21:00', 1)).toBe('21:00-22:00')
   })
 })
 
