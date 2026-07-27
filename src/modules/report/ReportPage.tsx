@@ -3,6 +3,7 @@ import { PageShell } from '../../components/Layout/PageShell'
 import { OccupancyBarChart } from './OccupancyBarChart'
 import { RoomDetail } from './RoomDetail'
 import { useAlocacoes } from '../../hooks/useAlocacoes'
+import { usePeriodo } from '../../contexts/PeriodoContext'
 import { calcularOcupacao } from './occupancyUtils'
 import { TIPO_COLOR } from '../../constants/salas'
 import type { TipoSala } from '../../types'
@@ -16,6 +17,7 @@ const TIPO_GROUPS: { tipo: TipoSala; label: string }[] = [
 
 export function ReportPage() {
   const { alocacoes, loading, error } = useAlocacoes()
+  const { periodo } = usePeriodo()
   const [selectedSala, setSelectedSala] = useState<string | null>(null)
 
   const summary = useMemo(() => calcularOcupacao(alocacoes), [alocacoes])
@@ -55,7 +57,7 @@ export function ReportPage() {
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-4">
               <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Período</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">2026.1</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{periodo}</p>
             </div>
           </div>
 

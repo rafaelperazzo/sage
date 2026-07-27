@@ -9,6 +9,11 @@ import { SALAS } from '../../constants/salas'
 
 vi.mock('../../hooks/useAlocacoes', () => ({ useAlocacoes: vi.fn() }))
 
+let mockPeriodo = '2026.1'
+vi.mock('../../contexts/PeriodoContext', () => ({
+  usePeriodo: () => ({ periodo: mockPeriodo, setPeriodo: vi.fn(), periodos: [], loadingPeriodos: false }),
+}))
+
 // Recharts usa ResizeObserver que não existe no jsdom — mockar componentes que usam gráficos
 vi.mock('../report/OccupancyBarChart', () => ({
   OccupancyBarChart: ({ salas, onSalaClick }: { salas: { sala: string }[]; onSalaClick: (s: string) => void }) => (
@@ -33,6 +38,8 @@ const { useAlocacoes } = await import('../../hooks/useAlocacoes')
 const mockUseAlocacoes = vi.mocked(useAlocacoes)
 
 const { ReportPage } = await import('./ReportPage')
+
+beforeEach(() => { mockPeriodo = '2026.1' })
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -63,7 +70,7 @@ function setupHooks({
 // ── Testes ────────────────────────────────────────────────────────────────────
 
 describe('ReportPage — estrutura básica', () => {
-  beforeEach(() => { vi.clearAllMocks(); setupHooks() })
+  beforeEach(() => { vi.clearAllMocks(); mockPeriodo = '2026.1'; setupHooks() })
 
   it('exibe título "SAGE Report"', () => {
     renderWithRouter(<ReportPage />)
@@ -130,8 +137,24 @@ describe('ReportPage — estados de loading e erro', () => {
   })
 })
 
+describe('ReportPage — período selecionado', () => {
+  beforeEach(() => { vi.clearAllMocks(); mockPeriodo = '2026.1'; setupHooks() })
+
+  it('exibe o período selecionado no card "Período"', () => {
+    renderWithRouter(<ReportPage />)
+    expect(screen.getByText('2026.1')).toBeInTheDocument()
+  })
+
+  it('reflete a troca de período (ex: 2026.2) em vez de um valor fixo', () => {
+    mockPeriodo = '2026.2'
+    renderWithRouter(<ReportPage />)
+    expect(screen.getByText('2026.2')).toBeInTheDocument()
+    expect(screen.queryByText('2026.1')).not.toBeInTheDocument()
+  })
+})
+
 describe('ReportPage — dados de ocupação', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => { vi.clearAllMocks(); mockPeriodo = '2026.1' })
 
   it('sem alocações → horas alocadas = 0h', () => {
     setupHooks({ alocacoes: [] })
