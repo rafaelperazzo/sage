@@ -15,6 +15,8 @@ Visualização da agenda semanal de cada sala em formato de grade (segunda a sá
 
 - Grade interativa com slots de 1 hora e alocações em blocos de 2–4 horas
 - Cores distintas por tipo de sala: salas de aula, salas de inovação e laboratórios
+- Slots livres destacados em ciano com a legenda "LIVRE" e o intervalo (ex: `14:00-16:00`), agrupados em blocos de 2 horas quando possível — os horários 07:00–08:00, 12:00–13:00 e 13:00–14:00 nunca são destacados como livres
+- Aula em andamento destacada em amarelo no momento da visualização (compara dia da semana e horário atual do dispositivo)
 - Clique em uma célula ocupada para ver os detalhes da alocação
 - Atualização automática em tempo real (Supabase Realtime)
 - **Aba "Buscar Sala"**: localize disciplinas e professores por autocomplete, com lista de salas e horários
