@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Search } from 'lucide-react'
+import { Search, Info } from 'lucide-react'
 import type { Alocacao } from '../../types'
 import { agruparDisciplinas } from './listaDisciplinasUtils'
 
@@ -40,6 +40,11 @@ export function ListaDisciplinas({ alocacoes, loading }: ListaDisciplinasProps) 
 
   return (
     <div>
+      <div className="mb-4 flex items-start gap-2.5 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-800">
+        <Info size={16} className="mt-0.5 flex-shrink-0" />
+        <span>As salas estão também indicadas no SIGAA.</span>
+      </div>
+
       <div className="relative max-w-md mb-4">
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         <input
