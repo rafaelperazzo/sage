@@ -14,6 +14,14 @@ describe('HomePage', () => {
     expect(screen.getByText(/Departamento de Computação/i)).toBeInTheDocument()
   })
 
+  it('o nome do departamento é um link para o site do DC', () => {
+    renderWithRouter(<HomePage />)
+    const link = screen.getByRole('link', { name: /Departamento de Computação/i })
+    expect(link).toHaveAttribute('href', 'https://dc.ufrpe.br')
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+  })
+
   it('exibe card do SAGE Map', () => {
     renderWithRouter(<HomePage />)
     expect(screen.getByRole('heading', { name: 'SAGE Map' })).toBeInTheDocument()

@@ -126,7 +126,14 @@ export function HomePage() {
         <p className="text-lg text-gray-500 max-w-xl mx-auto">
           Sistema de Alocação e Gestão de Espaços
           <br />
-          <span className="text-sm">Departamento de Computação · UFRPE</span>
+          <a
+            href="https://dc.ufrpe.br"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm hover:text-gray-700 hover:underline"
+          >
+            Departamento de Computação · UFRPE
+          </a>
         </p>
       </div>
 
