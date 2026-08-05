@@ -2,7 +2,7 @@
 
 [![Deploy to GitHub Pages](https://github.com/rafaelperazzo/sage/actions/workflows/deploy.yml/badge.svg)](https://github.com/rafaelperazzo/sage/actions/workflows/deploy.yml)
 
-Sistema web do **Departamento de Computação** para visualização e gestão de alocações de salas no semestre 2026.1. Dados em tempo real via Supabase.
+Sistema web do **Departamento de Computação** para visualização e gestão de alocações de salas. Dados em tempo real via Supabase.
 
 **Acesso:** [rafaelperazzo.github.io/sage](https://rafaelperazzo.github.io/sage/)
 
