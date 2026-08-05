@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { PageShell } from '../../components/Layout/PageShell'
 import { WeekGrid } from './WeekGrid'
 import { ViewModal } from './ViewModal'
 import { EditModal } from './EditModal'
 import { AllocationForm } from './AllocationForm'
 import { BuscaSala } from './BuscaSala'
+import { ListaDisciplinas } from './ListaDisciplinas'
 import { useAlocacoesPorSala, useAlocacoes } from '../../hooks/useAlocacoes'
 import { useAuth } from '../../hooks/useAuth'
 import { SALAS, TIPO_LABEL, TIPO_COLOR, getSalaInfo } from '../../constants/salas'
@@ -17,8 +19,17 @@ type ModalState =
   | { mode: 'create'; dia: string; hora: string }
   | null
 
+const TABS = ['grade', 'busca', 'lista'] as const
+type Tab = (typeof TABS)[number]
+
+function isTab(v: string | null): v is Tab {
+  return TABS.includes(v as Tab)
+}
+
 export function MapPage() {
-  const [tab, setTab] = useState<'grade' | 'busca'>('grade')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tabParam = searchParams.get('tab')
+  const tab: Tab = isTab(tabParam) ? tabParam : 'grade'
   const [selectedSala, setSelectedSala] = useState(SALAS[0]!.nome)
   const [modal, setModal] = useState<ModalState>(null)
   const { isAdmin } = useAuth()
@@ -51,6 +62,10 @@ export function MapPage() {
     await remove(id)
   }
 
+  function handleTabChange(next: Tab) {
+    setSearchParams(next === 'grade' ? {} : { tab: next }, { replace: true })
+  }
+
   return (
     <PageShell
       title="SAGE Map"
@@ -66,23 +81,27 @@ export function MapPage() {
     >
       {/* Tabs */}
       <div className="mb-5 flex gap-1 border-b border-gray-200">
-        {(['grade', 'busca'] as const).map((t) => (
+        {TABS.map((t) => (
           <button
             key={t}
-            onClick={() => setTab(t)}
+            onClick={() => handleTabChange(t)}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
               tab === t
                 ? 'border-blue-600 text-blue-700'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            {t === 'grade' ? 'Grade Semanal' : 'Buscar Sala'}
+            {t === 'grade' ? 'Grade Semanal' : t === 'busca' ? 'Buscar Sala' : 'Lista de Disciplinas'}
           </button>
         ))}
       </div>
 
       {tab === 'busca' && (
         <BuscaSala alocacoes={todasAlocacoes} loading={loadingBusca} />
+      )}
+
+      {tab === 'lista' && (
+        <ListaDisciplinas alocacoes={todasAlocacoes} loading={loadingBusca} />
       )}
 
       {tab === 'grade' && (

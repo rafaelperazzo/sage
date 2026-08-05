@@ -7,9 +7,15 @@ import type { ReactElement } from 'react'
  * Usar em testes de UI de qualquer página que dependa de hooks do react-router-dom
  * (useNavigate, useSearchParams, Link, NavLink).
  */
-export function renderWithRouter(ui: ReactElement, options?: Omit<RenderOptions, 'wrapper'>) {
+export function renderWithRouter(
+  ui: ReactElement,
+  options?: Omit<RenderOptions, 'wrapper'> & { initialEntries?: string[] }
+) {
+  const { initialEntries, ...renderOptions } = options ?? {}
   return render(ui, {
-    wrapper: ({ children }) => <MemoryRouter>{children}</MemoryRouter>,
-    ...options,
+    wrapper: ({ children }) => (
+      <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
+    ),
+    ...renderOptions,
   })
 }

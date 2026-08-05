@@ -25,7 +25,9 @@
       "Bash(./gradlew app:assembleDebug -x lint -x test --configure-on-demand)",
       "Bash(./gradlew app:compileDebugKotlin)",
       "Bash(grep -v \"^$\")",
-      "Bash(./gradlew app:compileDebugKotlin --info)"
+      "Bash(./gradlew app:compileDebugKotlin --info)",
+      "Bash(SCRATCH=/tmp/claude-1000/-home-perazzo-Projetos-sage/553ece20-9daf-42a9-88ae-866f8054104f/scratchpad timeout 60 node shot.mjs)",
+      "Bash(npx vitest *)"
     ]
   }
 }

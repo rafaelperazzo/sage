@@ -170,6 +170,58 @@ describe('MapPage — abas', () => {
 
     expect(screen.getByText('Seg')).toBeInTheDocument()
   })
+
+  it('exibe a aba "Lista de Disciplinas"', () => {
+    renderWithRouter(<MapPage />)
+    expect(screen.getByRole('button', { name: /Lista de Disciplinas/i })).toBeInTheDocument()
+  })
+
+  it('aba "Lista de Disciplinas" oculta a grade e exibe a listagem', async () => {
+    const user = userEvent.setup()
+    setupHooks({
+      alocacoes: [
+        {
+          id: 1,
+          disciplina: 'CÁLCULO I',
+          inicio: '08:00',
+          fim: '10:00',
+          sala: 'SALA 02',
+          dia_semana: 'SEGUNDA',
+          professor: 'Prof. Silva',
+          periodo: '2026.1',
+          curso: 'BCC',
+          semestre: 1,
+        },
+      ],
+    })
+    renderWithRouter(<MapPage />)
+
+    await user.click(screen.getByRole('button', { name: /Lista de Disciplinas/i }))
+
+    expect(screen.queryByText('Seg')).not.toBeInTheDocument()
+    expect(screen.getByText('CÁLCULO I')).toBeInTheDocument()
+    expect(screen.getByText('Prof. Silva')).toBeInTheDocument()
+  })
+
+  it('acessar com "?tab=lista" na URL abre direto na Lista de Disciplinas', () => {
+    renderWithRouter(<MapPage />, { initialEntries: ['/map?tab=lista'] })
+
+    expect(screen.queryByText('Seg')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Lista de Disciplinas/i })).toHaveClass('border-blue-600')
+  })
+
+  it('acessar com "?tab=busca" na URL abre direto na Buscar Sala', () => {
+    renderWithRouter(<MapPage />, { initialEntries: ['/map?tab=busca'] })
+
+    expect(screen.queryByText('Seg')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Buscar Sala/i })).toHaveClass('border-blue-600')
+  })
+
+  it('valor inválido de "tab" na URL cai para "Grade Semanal"', () => {
+    renderWithRouter(<MapPage />, { initialEntries: ['/map?tab=inexistente'] })
+
+    expect(screen.getByText('Seg')).toBeInTheDocument()
+  })
 })
 
 describe('MapPage — admin vs. usuário comum', () => {

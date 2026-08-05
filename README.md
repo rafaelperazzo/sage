@@ -20,6 +20,7 @@ Visualização da agenda semanal de cada sala em formato de grade (segunda a sá
 - Clique em uma célula ocupada para ver os detalhes da alocação
 - Atualização automática em tempo real (Supabase Realtime)
 - **Aba "Buscar Sala"**: localize disciplinas e professores por autocomplete, com lista de salas e horários
+- **Aba "Lista de Disciplinas"**: listagem única de todas as disciplinas do período letivo selecionado (exceto cursos BSI e DCC), em ordem alfabética, com curso, semestre, professor e horários/salas; sessões da mesma disciplina com o mesmo professor e curso são agrupadas em uma linha, com filtro por disciplina ou professor. Suporte a link direto: `/#/map?tab=lista`
 
 **Modo administrador** (requer login):
 - Clique em célula vazia para criar uma nova alocação
