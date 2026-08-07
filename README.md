@@ -8,6 +8,12 @@ Sistema web do **Departamento de Computação** para visualização e gestão de
 
 ---
 
+## Página Inicial
+
+Logo abaixo do cabeçalho, dois cards mostram em tempo real quais **laboratórios** e **salas** estão livres no momento, indicando até que horário (ex: `LAB 43 - Livre até as 16:00`). Visível apenas de segunda a sexta, entre 08:00 e 22:00 — fora desse horário os cards não são exibidos. Quando não há nenhum ambiente livre no momento, é exibida a mensagem "Nenhum laboratório/sala disponível no momento."
+
+---
+
 ## Módulos
 
 ### SAGE Map

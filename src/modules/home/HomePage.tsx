@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { QRCodeSVG } from 'qrcode.react'
 import { MapPin, Calendar, BarChart2, Building2, Wrench, GraduationCap, Smartphone } from 'lucide-react'
+import { FreeNowCards } from './FreeNowCards'
 
 const APP_URL = 'https://play.google.com/store/apps/details?id=com.rafaelperazzo.appdc'
 
@@ -136,6 +137,8 @@ export function HomePage() {
           </a>
         </p>
       </div>
+
+      <FreeNowCards />
 
       {/* Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 max-w-4xl mx-auto">

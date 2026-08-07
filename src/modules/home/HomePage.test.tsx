@@ -1,7 +1,13 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { screen } from '@testing-library/react'
 import { renderWithRouter } from '../../test/renderWithRouter'
 import { HomePage } from './HomePage'
+
+// FreeNowCards depende de useAlocacoes (que exige PeriodoProvider) — mockar
+// para manter estes testes focados na estrutura estática da home.
+vi.mock('../../hooks/useAlocacoes', () => ({
+  useAlocacoes: () => ({ alocacoes: [], loading: false, error: null, reload: vi.fn() }),
+}))
 
 describe('HomePage', () => {
   it('exibe o título SAGE', () => {

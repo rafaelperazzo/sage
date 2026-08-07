@@ -1,4 +1,4 @@
-import type { Alocacao } from '../../types'
+import type { Alocacao, SalaInfo, TipoSala } from '../../types'
 import { DIAS, HORAS } from '../../constants/salas'
 
 export type GridCellType =
@@ -150,4 +150,65 @@ export function isAlocacaoAgora(alocacao: Alocacao, now: Date = new Date()): boo
     minutosAgora >= timeToMinutes(alocacao.inicio) &&
     minutosAgora < timeToMinutes(alocacao.fim)
   )
+}
+
+// Janela de exibição das seções "livres agora": segunda a sexta, 08:00-22:00.
+const FIM_EXPEDIENTE = '22:00'
+
+/**
+ * Verifica se o momento atual está dentro da janela de exibição das seções
+ * "livres agora" da home: segunda a sexta, entre 08:00 e 22:00.
+ */
+export function isDentroJanelaLivresAgora(now: Date = new Date()): boolean {
+  const dia = now.getDay()
+  if (dia < 1 || dia > 5) return false
+
+  const minutosAgora = now.getHours() * 60 + now.getMinutes()
+  return minutosAgora >= timeToMinutes('08:00') && minutosAgora < timeToMinutes(FIM_EXPEDIENTE)
+}
+
+export interface SalaLivreAgora {
+  sala: string
+  tipo: TipoSala
+  livreAte: string
+}
+
+/**
+ * Para cada sala em `salas`, verifica se ela está livre neste exato momento
+ * (nenhuma alocação de hoje cobre o horário atual) e, se estiver, até que
+ * horário permanece livre — o início da próxima alocação de hoje, ou o fim
+ * do expediente (22:00) caso não haja mais nenhuma. Salas ocupadas agora
+ * não entram no resultado.
+ */
+export function getSalasLivresAgora(
+  salas: SalaInfo[],
+  alocacoes: Alocacao[],
+  now: Date = new Date()
+): SalaLivreAgora[] {
+  const diaAtual = DIA_POR_INDICE_JS[now.getDay()]
+  if (!diaAtual) return []
+
+  const minutosAgora = now.getHours() * 60 + now.getMinutes()
+  const livres: SalaLivreAgora[] = []
+
+  for (const salaInfo of salas) {
+    const alocacoesHoje = alocacoes
+      .filter((a) => a.sala === salaInfo.nome && a.dia_semana === diaAtual)
+      .sort((a, b) => timeToMinutes(a.inicio) - timeToMinutes(b.inicio))
+
+    const ocupadaAgora = alocacoesHoje.some(
+      (a) => minutosAgora >= timeToMinutes(a.inicio) && minutosAgora < timeToMinutes(a.fim)
+    )
+    if (ocupadaAgora) continue
+
+    const proxima = alocacoesHoje.find((a) => timeToMinutes(a.inicio) > minutosAgora)
+    const livreAte =
+      proxima && timeToMinutes(proxima.inicio) < timeToMinutes(FIM_EXPEDIENTE)
+        ? proxima.inicio
+        : FIM_EXPEDIENTE
+
+    livres.push({ sala: salaInfo.nome, tipo: salaInfo.tipo, livreAte })
+  }
+
+  return livres
 }
