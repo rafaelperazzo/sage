@@ -19,6 +19,7 @@ Visualização da agenda semanal de cada sala em formato de grade (segunda a sá
 - Aula em andamento destacada em amarelo no momento da visualização (compara dia da semana e horário atual do dispositivo)
 - Clique em uma célula ocupada para ver os detalhes da alocação
 - Atualização automática em tempo real (Supabase Realtime)
+- Barra de infraestrutura da sala selecionada: cadeiras, computadores, projetor, TV, cabo HDMI e ar-condicionado
 - **Aba "Buscar Sala"**: localize disciplinas e professores por autocomplete, com lista de salas e horários
 - **Aba "Lista de Disciplinas"**: listagem única de todas as disciplinas do período letivo selecionado (exceto cursos BSI e DCC), em ordem alfabética, com curso, semestre, professor e horários/salas; sessões da mesma disciplina com o mesmo professor e curso são agrupadas em uma linha, com filtro por disciplina ou professor. Suporte a link direto: `/#/map?tab=lista`
 
@@ -26,6 +27,7 @@ Visualização da agenda semanal de cada sala em formato de grade (segunda a sá
 - Clique em célula vazia para criar uma nova alocação
 - Clique em célula ocupada para editar ou remover
 - Detecção automática de conflito de horário
+- Clique na barra de infraestrutura para cadastrar ou editar os dados da sala
 
 ### SAGE Agenda
 Grade de horários de um professor específico.
@@ -61,6 +63,7 @@ Calendário mensal de reservas do auditório do Departamento de Computação.
 - Calendário mensal interativo exibindo apenas segunda a sábado
 - Navegação por mês/ano a partir do mês atual
 - Clique em uma reserva para ver os detalhes (responsável, data e horário)
+- Barra de infraestrutura do auditório (cadeiras, computadores, projetor, TV, cabo HDMI e ar-condicionado), com os dados armazenados sob a sala **SALA 07** na tabela `infra_salas`
 - Aba de relatório com ocupação diária e mensal (base: 12h/dia = 100%)
 - Gráfico de barras e tabela detalhada de utilização do mês
 
@@ -68,6 +71,7 @@ Calendário mensal de reservas do auditório do Departamento de Computação.
 - Clique em qualquer dia para cadastrar uma nova reserva
 - Clique em uma reserva para editar ou remover (com confirmação)
 - Detecção automática de conflito de horário no mesmo dia
+- Clique na barra de infraestrutura para cadastrar ou editar os dados do auditório
 
 > Para solicitar uma reserva, envie e-mail para **diretoria.dc@ufrpe.br**. As reservas são gerenciadas pela direção do Departamento.
 
@@ -80,6 +84,8 @@ Calendário mensal de reservas do auditório do Departamento de Computação.
 | Salas de Aula | SALA 02, SALA 03, SALA 36, SALA 38 |
 | Salas de Inovação | SALA 40, SALA 42 |
 | Laboratórios | LAB 35, LAB 37, LAB 39, LAB 41, LAB 43, LAB CEAGRI I-10, LAB CEAGRI I-15 |
+
+Dados de infraestrutura (cadeiras, computadores, projetor, TV, cabo HDMI, ar-condicionado) ficam na tabela `infra_salas`, uma linha por sala (chave `sala`). O auditório usa a chave **SALA 07** nessa mesma tabela.
 
 ---
 
