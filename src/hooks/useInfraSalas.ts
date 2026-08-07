@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { InfraSala } from '../types'
-import { supabase, INFRA_SALAS_TABLE, fetchInfraSalas } from '../lib/supabase'
+import type { InfraSala, InfraSalaInput } from '../types'
+import { supabase, INFRA_SALAS_TABLE, fetchInfraSalas, upsertInfraSala } from '../lib/supabase'
 
 interface UseInfraSalasReturn {
   infraSalas: InfraSala[]
   loading: boolean
   error: string | null
+  save: (data: InfraSalaInput) => Promise<void>
 }
 
 export function useInfraSalas(): UseInfraSalasReturn {
@@ -39,5 +40,10 @@ export function useInfraSalas(): UseInfraSalasReturn {
     return () => { void supabase.removeChannel(channel) }
   }, [load])
 
-  return { infraSalas, loading, error }
+  async function save(data: InfraSalaInput) {
+    await upsertInfraSala(data)
+    await load()
+  }
+
+  return { infraSalas, loading, error, save }
 }

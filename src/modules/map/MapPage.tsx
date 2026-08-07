@@ -8,11 +8,12 @@ import { AllocationForm } from './AllocationForm'
 import { BuscaSala } from './BuscaSala'
 import { ListaDisciplinas } from './ListaDisciplinas'
 import { InfraSalaInfo } from './InfraSalaInfo'
+import { EditInfraSalaModal } from './EditInfraSalaModal'
 import { useAlocacoesPorSala, useAlocacoes } from '../../hooks/useAlocacoes'
 import { useInfraSalas } from '../../hooks/useInfraSalas'
 import { useAuth } from '../../hooks/useAuth'
 import { SALAS, TIPO_LABEL, TIPO_COLOR, getSalaInfo } from '../../constants/salas'
-import type { Alocacao, AlocacaoInput } from '../../types'
+import type { Alocacao, AlocacaoInput, InfraSalaInput } from '../../types'
 import { Shield, RefreshCw } from 'lucide-react'
 
 type ModalState =
@@ -34,10 +35,11 @@ export function MapPage() {
   const tab: Tab = isTab(tabParam) ? tabParam : 'grade'
   const [selectedSala, setSelectedSala] = useState(SALAS[0]!.nome)
   const [modal, setModal] = useState<ModalState>(null)
+  const [editingInfra, setEditingInfra] = useState(false)
   const { isAdmin } = useAuth()
   const { alocacoes, loading, error, create, update, remove, hasConflict } = useAlocacoesPorSala(selectedSala)
   const { alocacoes: todasAlocacoes, loading: loadingBusca } = useAlocacoes()
-  const { infraSalas, loading: loadingInfra } = useInfraSalas()
+  const { infraSalas, loading: loadingInfra, save: saveInfra } = useInfraSalas()
   const infraSala = infraSalas.find((i) => i.sala === selectedSala)
 
   const salaInfo = getSalaInfo(selectedSala)
@@ -64,6 +66,10 @@ export function MapPage() {
 
   async function handleDelete(id: number) {
     await remove(id)
+  }
+
+  async function handleSaveInfra(data: InfraSalaInput) {
+    await saveInfra(data)
   }
 
   function handleTabChange(next: Tab) {
@@ -142,7 +148,12 @@ export function MapPage() {
         )}
       </div>
 
-      <InfraSalaInfo infraSala={infraSala} loading={loadingInfra} />
+      <InfraSalaInfo
+        infraSala={infraSala}
+        loading={loadingInfra}
+        isAdmin={isAdmin}
+        onEdit={() => setEditingInfra(true)}
+      />
 
       {error && (
         <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
@@ -191,6 +202,15 @@ export function MapPage() {
           hasConflict={hasConflict}
           onSave={handleCreate}
           onClose={() => setModal(null)}
+        />
+      )}
+
+      {editingInfra && (
+        <EditInfraSalaModal
+          sala={selectedSala}
+          infraSala={infraSala}
+          onSave={handleSaveInfra}
+          onClose={() => setEditingInfra(false)}
         />
       )}
       </>

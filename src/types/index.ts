@@ -24,11 +24,14 @@ export interface InfraSala {
   id: number
   sala: string
   cadeiras: number
+  computadores: number
   projetor: boolean
   tv: boolean
   hdmi: boolean
   arCondicionado: boolean
 }
+
+export type InfraSalaInput = Omit<InfraSala, 'id'>
 
 export interface Reserva {
   id: number

@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { Alocacao, AlocacaoInput, InfraSala, Reserva, ReservaInput, Manutencao, ManutencaoInput } from '../types'
+import type { Alocacao, AlocacaoInput, InfraSala, InfraSalaInput, Reserva, ReservaInput, Manutencao, ManutencaoInput } from '../types'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
@@ -98,6 +98,7 @@ interface InfraSalaRow {
   id: number
   sala: string
   cadeiras: number
+  computadores: number
   projetor: number
   tv: number
   hdmi: number
@@ -109,6 +110,7 @@ function mapInfraSala(row: InfraSalaRow): InfraSala {
     id: row.id,
     sala: row.sala,
     cadeiras: row.cadeiras,
+    computadores: row.computadores,
     projetor: Boolean(row.projetor),
     tv: Boolean(row.tv),
     hdmi: Boolean(row.hdmi),
@@ -124,6 +126,28 @@ export async function fetchInfraSalas(): Promise<InfraSala[]> {
 
   if (error) throw error
   return (data as InfraSalaRow[]).map(mapInfraSala)
+}
+
+export async function upsertInfraSala(input: InfraSalaInput): Promise<InfraSala> {
+  const { data, error } = await supabase
+    .from(INFRA_SALAS_TABLE)
+    .upsert(
+      {
+        sala: input.sala,
+        cadeiras: input.cadeiras,
+        computadores: input.computadores,
+        projetor: Number(input.projetor),
+        tv: Number(input.tv),
+        hdmi: Number(input.hdmi),
+        arcondicionado: Number(input.arCondicionado),
+      },
+      { onConflict: 'sala' }
+    )
+    .select()
+    .single()
+
+  if (error) throw error
+  return mapInfraSala(data as InfraSalaRow)
 }
 
 // ── Auditório ───────────────────────────────────────────────────
