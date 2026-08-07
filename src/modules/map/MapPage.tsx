@@ -7,7 +7,9 @@ import { EditModal } from './EditModal'
 import { AllocationForm } from './AllocationForm'
 import { BuscaSala } from './BuscaSala'
 import { ListaDisciplinas } from './ListaDisciplinas'
+import { InfraSalaInfo } from './InfraSalaInfo'
 import { useAlocacoesPorSala, useAlocacoes } from '../../hooks/useAlocacoes'
+import { useInfraSalas } from '../../hooks/useInfraSalas'
 import { useAuth } from '../../hooks/useAuth'
 import { SALAS, TIPO_LABEL, TIPO_COLOR, getSalaInfo } from '../../constants/salas'
 import type { Alocacao, AlocacaoInput } from '../../types'
@@ -35,6 +37,8 @@ export function MapPage() {
   const { isAdmin } = useAuth()
   const { alocacoes, loading, error, create, update, remove, hasConflict } = useAlocacoesPorSala(selectedSala)
   const { alocacoes: todasAlocacoes, loading: loadingBusca } = useAlocacoes()
+  const { infraSalas, loading: loadingInfra } = useInfraSalas()
+  const infraSala = infraSalas.find((i) => i.sala === selectedSala)
 
   const salaInfo = getSalaInfo(selectedSala)
 
@@ -137,6 +141,8 @@ export function MapPage() {
           </span>
         )}
       </div>
+
+      <InfraSalaInfo infraSala={infraSala} loading={loadingInfra} />
 
       {error && (
         <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">

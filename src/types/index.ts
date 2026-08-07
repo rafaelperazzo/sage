@@ -20,6 +20,15 @@ export interface SalaInfo {
   tipo: TipoSala
 }
 
+export interface InfraSala {
+  id: number
+  sala: string
+  cadeiras: number
+  projetor: boolean
+  tv: boolean
+  hdmi: boolean
+}
+
 export interface Reserva {
   id: number
   data: string          // "YYYY-MM-DD"

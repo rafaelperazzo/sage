@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { Alocacao, AlocacaoInput, Reserva, ReservaInput, Manutencao, ManutencaoInput } from '../types'
+import type { Alocacao, AlocacaoInput, InfraSala, Reserva, ReservaInput, Manutencao, ManutencaoInput } from '../types'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
@@ -88,6 +88,40 @@ export async function deleteAlocacao(id: number): Promise<void> {
     .eq('id', id)
 
   if (error) throw error
+}
+
+// ── Infraestrutura das salas ─────────────────────────────────────
+
+export const INFRA_SALAS_TABLE = 'infra_salas'
+
+interface InfraSalaRow {
+  id: number
+  sala: string
+  cadeiras: number
+  projetor: number
+  tv: number
+  hdmi: number
+}
+
+function mapInfraSala(row: InfraSalaRow): InfraSala {
+  return {
+    id: row.id,
+    sala: row.sala,
+    cadeiras: row.cadeiras,
+    projetor: Boolean(row.projetor),
+    tv: Boolean(row.tv),
+    hdmi: Boolean(row.hdmi),
+  }
+}
+
+export async function fetchInfraSalas(): Promise<InfraSala[]> {
+  const { data, error } = await supabase
+    .from(INFRA_SALAS_TABLE)
+    .select('*')
+    .order('sala')
+
+  if (error) throw error
+  return (data as InfraSalaRow[]).map(mapInfraSala)
 }
 
 // ── Auditório ───────────────────────────────────────────────────
