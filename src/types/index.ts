@@ -27,6 +27,7 @@ export interface InfraSala {
   projetor: boolean
   tv: boolean
   hdmi: boolean
+  arCondicionado: boolean
 }
 
 export interface Reserva {

@@ -1,5 +1,5 @@
 import type { InfraSala } from '../../types'
-import { Armchair, Projector, Tv, Cable, CheckCircle2, XCircle } from 'lucide-react'
+import { Armchair, Projector, Tv, Cable, AirVent, CheckCircle2, XCircle } from 'lucide-react'
 
 interface InfraSalaInfoProps {
   infraSala: InfraSala | undefined
@@ -40,6 +40,7 @@ export function InfraSalaInfo({ infraSala, loading }: InfraSalaInfoProps) {
       <ItemStatus label="Projetor" ok={infraSala.projetor} icon={Projector} />
       <ItemStatus label="TV" ok={infraSala.tv} icon={Tv} />
       <ItemStatus label="Cabo HDMI" ok={infraSala.hdmi} icon={Cable} />
+      <ItemStatus label="Ar-condicionado" ok={infraSala.arCondicionado} icon={AirVent} />
     </div>
   )
 }

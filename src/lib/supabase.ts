@@ -101,6 +101,7 @@ interface InfraSalaRow {
   projetor: number
   tv: number
   hdmi: number
+  arcondicionado: number
 }
 
 function mapInfraSala(row: InfraSalaRow): InfraSala {
@@ -111,6 +112,7 @@ function mapInfraSala(row: InfraSalaRow): InfraSala {
     projetor: Boolean(row.projetor),
     tv: Boolean(row.tv),
     hdmi: Boolean(row.hdmi),
+    arCondicionado: Boolean(row.arcondicionado),
   }
 }
 
