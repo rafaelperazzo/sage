@@ -5,10 +5,15 @@ import { AuditorioReport } from './AuditorioReport'
 import { ReservaViewModal } from './ReservaViewModal'
 import { ReservaForm } from './ReservaForm'
 import { ReservaEditModal } from './ReservaEditModal'
+import { InfraSalaInfo } from '../map/InfraSalaInfo'
+import { EditInfraSalaModal } from '../map/EditInfraSalaModal'
 import { useReservas } from '../../hooks/useReservas'
+import { useInfraSalas } from '../../hooks/useInfraSalas'
 import { useAuth } from '../../hooks/useAuth'
-import type { Reserva, ReservaInput } from '../../types'
+import type { Reserva, ReservaInput, InfraSalaInput } from '../../types'
 import { Shield, Mail, Calendar, BarChart2 } from 'lucide-react'
+
+const SALA_AUDITORIO = 'SALA 07'
 
 type ModalState =
   | { mode: 'view'; reserva: Reserva }
@@ -24,9 +29,12 @@ export function AuditorioPage() {
   const [mes, setMes] = useState(now.getMonth() + 1)
   const [tab, setTab] = useState<Tab>('calendario')
   const [modal, setModal] = useState<ModalState>(null)
+  const [editingInfra, setEditingInfra] = useState(false)
 
   const { isAdmin } = useAuth()
   const { reservas, loading, error, create, update, remove, hasConflict } = useReservas(ano, mes)
+  const { infraSalas, loading: loadingInfra, save: saveInfra } = useInfraSalas()
+  const infraSala = infraSalas.find((i) => i.sala === SALA_AUDITORIO)
 
   function prevMonth() {
     if (mes === 1) { setMes(12); setAno(ano - 1) }
@@ -56,6 +64,10 @@ export function AuditorioPage() {
 
   async function handleDelete(id: number) {
     await remove(id)
+  }
+
+  async function handleSaveInfra(data: InfraSalaInput) {
+    await saveInfra(data)
   }
 
   return (
@@ -110,6 +122,13 @@ export function AuditorioPage() {
           Relatório
         </button>
       </div>
+
+      <InfraSalaInfo
+        infraSala={infraSala}
+        loading={loadingInfra}
+        isAdmin={isAdmin}
+        onEdit={() => setEditingInfra(true)}
+      />
 
       {error && (
         <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
@@ -169,6 +188,15 @@ export function AuditorioPage() {
           hasConflict={hasConflict}
           onSave={handleCreate}
           onClose={() => setModal(null)}
+        />
+      )}
+
+      {editingInfra && (
+        <EditInfraSalaModal
+          sala={SALA_AUDITORIO}
+          infraSala={infraSala}
+          onSave={handleSaveInfra}
+          onClose={() => setEditingInfra(false)}
         />
       )}
     </PageShell>
