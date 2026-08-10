@@ -58,9 +58,14 @@ describe('HomePage', () => {
     expect(screen.getByRole('heading', { name: 'SAGE Manutenção' })).toBeInTheDocument()
   })
 
-  it('exibe 6 links "Acessar"', () => {
+  it('exibe card do SAGE Rural', () => {
     renderWithRouter(<HomePage />)
-    expect(screen.getAllByText(/Acessar →/i)).toHaveLength(6)
+    expect(screen.getByRole('heading', { name: 'SAGE Rural' })).toBeInTheDocument()
+  })
+
+  it('exibe 7 links "Acessar"', () => {
+    renderWithRouter(<HomePage />)
+    expect(screen.getAllByText(/Acessar →/i)).toHaveLength(7)
   })
 
   it('link do SAGE Map aponta para /map', () => {
@@ -97,6 +102,12 @@ describe('HomePage', () => {
     renderWithRouter(<HomePage />)
     const link = screen.getByRole('link', { name: /SAGE Manutenção/i })
     expect(link).toHaveAttribute('href', '/manutencao')
+  })
+
+  it('link do SAGE Rural aponta para /rural', () => {
+    renderWithRouter(<HomePage />)
+    const link = screen.getByRole('link', { name: /SAGE Rural/i })
+    expect(link).toHaveAttribute('href', '/rural')
   })
 
   it('exibe a descrição do SAGE Map', () => {

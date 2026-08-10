@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { QRCodeSVG } from 'qrcode.react'
-import { MapPin, Calendar, BarChart2, Building2, Wrench, GraduationCap, Smartphone } from 'lucide-react'
+import { MapPin, Calendar, BarChart2, Building2, Wrench, GraduationCap, Smartphone, Sprout } from 'lucide-react'
 import { FreeNowCards } from './FreeNowCards'
 
 const APP_URL = 'https://play.google.com/store/apps/details?id=com.rafaelperazzo.appdc'
@@ -113,6 +113,14 @@ const MODULES: ModuleCardProps[] = [
     description: 'Grade curricular semestral dos cursos de Bacharelado e Licenciatura em Computação.',
     color: 'bg-white border-indigo-100 hover:border-indigo-300',
     iconColor: 'bg-indigo-50',
+  },
+  {
+    to: '/rural',
+    icon: <Sprout size={20} className="text-lime-700" />,
+    title: 'SAGE Rural',
+    description: 'Grade semanal das salas de unidades externas ao departamento, com alocações em tempo real.',
+    color: 'bg-white border-lime-100 hover:border-lime-300',
+    iconColor: 'bg-lime-50',
   },
 ]
 
