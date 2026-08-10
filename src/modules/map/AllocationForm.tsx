@@ -25,6 +25,7 @@ export function AllocationForm({
   const { periodo } = usePeriodo()
   const [disciplina, setDisciplina] = useState('')
   const [professor, setProfessor] = useState('')
+  const [curso, setCurso] = useState('')
   const [dia, setDia] = useState(initialDia ?? DIAS[0]!)
   const [sala, setSala] = useState(initialSala ?? SALAS[0]!.nome)
   const [inicio, setInicio] = useState(initialHora ?? '14:00')
@@ -35,13 +36,14 @@ export function AllocationForm({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const input: AlocacaoInput = { disciplina, professor: professor || null, dia_semana: dia, sala, inicio, fim }
+  const input: AlocacaoInput = { disciplina, professor: professor || null, curso, dia_semana: dia, sala, inicio, fim }
 
   const conflict = disciplina.trim() !== '' && hasConflict(input)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!disciplina.trim()) { setError('Disciplina é obrigatória.'); return }
+    if (!curso.trim()) { setError('Curso é obrigatório.'); return }
     if (inicio >= fim) { setError('O horário de início deve ser anterior ao fim.'); return }
     if (conflict) { setError('Conflito de horário: este slot já está ocupado.'); return }
     setSaving(true)
@@ -77,6 +79,17 @@ export function AllocationForm({
             onChange={(e) => setProfessor(e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Nome completo"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Curso *</label>
+          <input
+            value={curso}
+            onChange={(e) => setCurso(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="BCC, LC, DC..."
+            required
           />
         </div>
 

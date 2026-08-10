@@ -15,6 +15,7 @@ interface EditModalProps {
 export function EditModal({ alocacao, hasConflict, onSave, onDelete, onClose }: EditModalProps) {
   const [disciplina, setDisciplina] = useState(alocacao.disciplina)
   const [professor, setProfessor] = useState(alocacao.professor ?? '')
+  const [curso, setCurso] = useState(alocacao.curso)
   const [dia, setDia] = useState(alocacao.dia_semana)
   const [sala, setSala] = useState(alocacao.sala)
   const [inicio, setInicio] = useState(alocacao.inicio)
@@ -24,12 +25,13 @@ export function EditModal({ alocacao, hasConflict, onSave, onDelete, onClose }: 
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const input: AlocacaoInput = { disciplina, professor: professor || null, dia_semana: dia, sala, inicio, fim }
+  const input: AlocacaoInput = { disciplina, professor: professor || null, curso, dia_semana: dia, sala, inicio, fim }
   const conflict = disciplina.trim() !== '' && hasConflict(input, alocacao.id)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!disciplina.trim()) { setError('Disciplina é obrigatória.'); return }
+    if (!curso.trim()) { setError('Curso é obrigatório.'); return }
     if (inicio >= fim) { setError('O horário de início deve ser anterior ao fim.'); return }
     if (conflict) { setError('Conflito de horário: este slot já está ocupado.'); return }
     setSaving(true)
@@ -110,6 +112,16 @@ export function EditModal({ alocacao, hasConflict, onSave, onDelete, onClose }: 
             value={professor}
             onChange={(e) => setProfessor(e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Curso *</label>
+          <input
+            value={curso}
+            onChange={(e) => setCurso(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
           />
         </div>
 

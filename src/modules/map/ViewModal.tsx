@@ -35,6 +35,7 @@ export function ViewModal({ alocacao, onClose, onEdit }: ViewModalProps) {
       <dl className="space-y-3">
         <Field label="Disciplina" value={alocacao.disciplina} />
         <Field label="Professor" value={alocacao.professor} />
+        <Field label="Curso" value={alocacao.curso} />
         <Field label="Sala" value={alocacao.sala} />
         {salaInfo && (
           <div>

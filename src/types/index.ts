@@ -11,7 +11,7 @@ export interface Alocacao {
   semestre: number     // 1-9, 0 = não classificado
 }
 
-export type AlocacaoInput = Omit<Alocacao, 'id' | 'periodo' | 'curso' | 'semestre'>
+export type AlocacaoInput = Omit<Alocacao, 'id' | 'periodo' | 'semestre'>
 
 export type TipoSala = 'sala_aula' | 'sala_inovacao' | 'laboratorio'
 
