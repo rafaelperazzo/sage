@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { MapPin, Calendar, BarChart2, LogIn, LogOut, Building2, Info, Wrench, Home, GraduationCap } from 'lucide-react'
+import { MapPin, Calendar, BarChart2, LogIn, LogOut, Building2, Info, Wrench, Home, GraduationCap, Sprout } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { usePeriodo } from '../../contexts/PeriodoContext'
 
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { to: '/auditorio', label: 'SAGE Auditório', icon: Building2 },
   { to: '/manutencao', label: 'SAGE Manutenção', icon: Wrench },
   { to: '/grade', label: 'SAGE Grade', icon: GraduationCap },
+  { to: '/rural', label: 'SAGE Rural', icon: Sprout },
   { to: '/sobre', label: 'Sobre', icon: Info },
 ]
 

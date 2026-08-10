@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react'
 import type { User } from '@supabase/supabase-js'
-import { supabase } from '../lib/supabase'
+import { supabase, fetchAdminRoles } from '../lib/supabase'
+
+// Escopo especial que concede admin em todos os módulos.
+const ALL_MODULES = 'all'
+
+export type ModuleKey = 'map' | 'auditorio' | 'manutencao' | 'rural'
 
 interface UseAuthReturn {
   user: User | null
@@ -10,9 +15,13 @@ interface UseAuthReturn {
   signOut: () => Promise<void>
 }
 
-export function useAuth(): UseAuthReturn {
+// Admin é definido por módulo, via a tabela `admin_roles` (user_id → module,
+// onde module = 'all' concede acesso a todos os módulos). Passar o módulo da
+// página atual para saber se o usuário logado é admin *nela*.
+export function useAuth(module?: ModuleKey): UseAuthReturn {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [roles, setRoles] = useState<string[]>([])
 
   useEffect(() => {
     // Sessão inicial
@@ -29,6 +38,13 @@ export function useAuth(): UseAuthReturn {
     return () => subscription.unsubscribe()
   }, [])
 
+  useEffect(() => {
+    if (!user) { setRoles([]); return }
+    fetchAdminRoles(user.id)
+      .then(setRoles)
+      .catch(() => setRoles([]))
+  }, [user])
+
   async function signIn(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
@@ -41,7 +57,7 @@ export function useAuth(): UseAuthReturn {
 
   return {
     user,
-    isAdmin: user !== null,
+    isAdmin: roles.includes(ALL_MODULES) || (module !== undefined && roles.includes(module)),
     loading,
     signIn,
     signOut,

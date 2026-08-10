@@ -33,7 +33,7 @@ function formatDate(dateStr: string | null): string {
 
 export function ManutencaoPage() {
   const { manutencoes, loading, error, create, update, remove } = useManutencao()
-  const { isAdmin } = useAuth()
+  const { isAdmin } = useAuth('manutencao')
   const [modal, setModal] = useState<ModalState>(null)
   const [filtroRt, setFiltroRt] = useState('')
   const [filtroLocal, setFiltroLocal] = useState('')

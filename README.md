@@ -29,11 +29,24 @@ Visualização da agenda semanal de cada sala em formato de grade (segunda a sá
 - **Aba "Buscar Sala"**: localize disciplinas e professores por autocomplete, com lista de salas e horários
 - **Aba "Lista de Disciplinas"**: listagem única de todas as disciplinas do período letivo selecionado (exceto cursos BSI e DCC), em ordem alfabética, com curso, semestre, professor e horários/salas; sessões da mesma disciplina com o mesmo professor e curso são agrupadas em uma linha, com filtro por disciplina ou professor. Suporte a link direto: `/#/map?tab=lista`
 
-**Modo administrador** (requer login):
+**Modo administrador** (requer login como administrador geral — veja [Autenticação e Permissões](#autenticação-e-permissões)):
 - Clique em célula vazia para criar uma nova alocação
 - Clique em célula ocupada para editar ou remover
 - Detecção automática de conflito de horário
 - Clique na barra de infraestrutura para cadastrar ou editar os dados da sala
+
+### SAGE Rural
+Idêntico ao SAGE Map, mas para salas de unidades externas ao Departamento de Computação — mesma grade semanal, busca por sala e lista de disciplinas, porém os dados vêm da tabela `externas` (não de `alocacao_2026.1`).
+
+- Seletor de sala em caixa de seleção, populado dinamicamente com os valores distintos da coluna `sala` da tabela `externas` (não é uma lista fixa como no SAGE Map)
+- Mesma grade semanal, aba "Buscar Sala" e aba "Lista de Disciplinas" do SAGE Map
+- Barra de infraestrutura da sala selecionada aparece **somente** se já existir um registro para aquela sala na tabela `infra_salas`; caso contrário, nada é exibido
+
+**Modo administrador** (requer login como administrador geral ou como administrador do SAGE Rural — veja [Autenticação e Permissões](#autenticação-e-permissões)):
+- Clique em célula vazia para criar uma nova alocação
+- Clique em célula ocupada para editar ou remover
+- Detecção automática de conflito de horário
+- Clique na barra de infraestrutura para editar os dados da sala (apenas se já houver registro)
 
 ### SAGE Agenda
 Grade de horários de um professor específico.
@@ -59,7 +72,7 @@ Lista pública das solicitações de manutenção (RTs) do Departamento de Compu
 - Clique em qualquer linha para ver os detalhes completos da solicitação
 - Atualização automática em tempo real (Supabase Realtime)
 
-**Modo administrador** (requer login):
+**Modo administrador** (requer login como administrador geral — veja [Autenticação e Permissões](#autenticação-e-permissões)):
 - Botão "+ Nova RT" para cadastrar uma nova solicitação
 - Clique em uma linha para editar dados ou remover (com confirmação)
 
@@ -73,7 +86,7 @@ Calendário mensal de reservas do auditório do Departamento de Computação.
 - Aba de relatório com ocupação diária e mensal (base: 12h/dia = 100%)
 - Gráfico de barras e tabela detalhada de utilização do mês
 
-**Modo administrador** (requer login):
+**Modo administrador** (requer login como administrador geral — veja [Autenticação e Permissões](#autenticação-e-permissões)):
 - Clique em qualquer dia para cadastrar uma nova reserva
 - Clique em uma reserva para editar ou remover (com confirmação)
 - Detecção automática de conflito de horário no mesmo dia
@@ -92,6 +105,20 @@ Calendário mensal de reservas do auditório do Departamento de Computação.
 | Laboratórios | LAB 35, LAB 37, LAB 39, LAB 41, LAB 43, LAB CEAGRI I-10, LAB CEAGRI I-15 |
 
 Dados de infraestrutura (cadeiras, computadores, projetor, TV, cabo HDMI, ar-condicionado) ficam na tabela `infra_salas`, uma linha por sala (chave `sala`). O auditório usa a chave **SALA 07** nessa mesma tabela.
+
+---
+
+## Autenticação e Permissões
+
+O login (`/#/login`) usa Supabase Auth (e-mail/senha) e é o mesmo formulário para todas as contas — o que muda é o que cada conta pode administrar depois de logada:
+
+- **Administrador geral**: acesso de administrador em todos os módulos (SAGE Map, SAGE Auditório, SAGE Manutenção e SAGE Rural).
+- **Administrador restrito ao SAGE Rural**: vê os controles de administrador apenas no SAGE Rural; nos demais módulos, navega como um visitante comum (sem os botões de criar/editar/remover).
+- Qualquer outra conta autenticada não tem controles de administrador em nenhum módulo.
+
+Esses papéis ficam na tabela `admin_roles` do Supabase (`user_id`, `module`), onde `module = 'all'` concede acesso geral e um valor específico (ex: `rural`) restringe o acesso àquele módulo. Não há UI neste projeto para gerenciar essa tabela — novas contas de administrador são cadastradas diretamente no painel do Supabase.
+
+> Essa restrição é aplicada na interface (o que cada perfil vê e consegue clicar). As políticas de RLS do banco continuam liberando escrita para qualquer usuário autenticado, mesmo perfis sem acesso de admin em um módulo — o mesmo modelo de confiança que o projeto já usava antes dessa mudança.
 
 ---
 

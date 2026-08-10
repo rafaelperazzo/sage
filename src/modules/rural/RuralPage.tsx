@@ -1,18 +1,18 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { PageShell } from '../../components/Layout/PageShell'
-import { WeekGrid } from './WeekGrid'
-import { ViewModal } from './ViewModal'
-import { EditModal } from './EditModal'
-import { AllocationForm } from './AllocationForm'
-import { BuscaSala } from './BuscaSala'
-import { ListaDisciplinas } from './ListaDisciplinas'
-import { InfraSalaInfo } from './InfraSalaInfo'
-import { EditInfraSalaModal } from './EditInfraSalaModal'
-import { useAlocacoesPorSala, useAlocacoes } from '../../hooks/useAlocacoes'
+import { WeekGrid } from '../map/WeekGrid'
+import { ViewModal } from '../map/ViewModal'
+import { BuscaSala } from '../map/BuscaSala'
+import { ListaDisciplinas } from '../map/ListaDisciplinas'
+import { InfraSalaInfo } from '../map/InfraSalaInfo'
+import { EditInfraSalaModal } from '../map/EditInfraSalaModal'
+import { RuralAllocationForm } from './RuralAllocationForm'
+import { RuralEditModal } from './RuralEditModal'
+import { useAlocacoesExternasPorSala, useAlocacoesExternas } from '../../hooks/useAlocacoesExternas'
+import { useSalasExternas } from '../../hooks/useSalasExternas'
 import { useInfraSalas } from '../../hooks/useInfraSalas'
 import { useAuth } from '../../hooks/useAuth'
-import { SALAS, TIPO_LABEL, TIPO_COLOR, getSalaInfo } from '../../constants/salas'
 import type { Alocacao, AlocacaoInput, InfraSalaInput } from '../../types'
 import { Shield, RefreshCw } from 'lucide-react'
 
@@ -29,20 +29,25 @@ function isTab(v: string | null): v is Tab {
   return TABS.includes(v as Tab)
 }
 
-export function MapPage() {
+export function RuralPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const tabParam = searchParams.get('tab')
   const tab: Tab = isTab(tabParam) ? tabParam : 'grade'
-  const [selectedSala, setSelectedSala] = useState(SALAS[0]!.nome)
+  const { salas, loading: loadingSalas } = useSalasExternas()
+  const [selectedSala, setSelectedSala] = useState('')
   const [modal, setModal] = useState<ModalState>(null)
   const [editingInfra, setEditingInfra] = useState(false)
-  const { isAdmin } = useAuth('map')
-  const { alocacoes, loading, error, create, update, remove, hasConflict } = useAlocacoesPorSala(selectedSala)
-  const { alocacoes: todasAlocacoes, loading: loadingBusca } = useAlocacoes()
+  const { isAdmin } = useAuth('rural')
+  const { alocacoes, loading, error, create, update, remove, hasConflict } = useAlocacoesExternasPorSala(selectedSala)
+  const { alocacoes: todasAlocacoes, loading: loadingBusca } = useAlocacoesExternas()
   const { infraSalas, loading: loadingInfra, save: saveInfra } = useInfraSalas()
   const infraSala = infraSalas.find((i) => i.sala === selectedSala)
 
-  const salaInfo = getSalaInfo(selectedSala)
+  useEffect(() => {
+    if (!selectedSala && salas.length > 0) {
+      setSelectedSala(salas[0]!)
+    }
+  }, [salas, selectedSala])
 
   function handleCellClick(alocacao: Alocacao) {
     if (isAdmin) {
@@ -78,8 +83,8 @@ export function MapPage() {
 
   return (
     <PageShell
-      title="SAGE Map"
-      subtitle="Agenda semanal de salas em tempo real"
+      title="SAGE Rural"
+      subtitle="Agenda semanal de salas externas em tempo real"
       actions={
         isAdmin && (
           <span className="flex items-center gap-1.5 text-xs text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-full font-medium">
@@ -116,30 +121,25 @@ export function MapPage() {
 
       {tab === 'grade' && (
       <>{/* Seletor de sala */}
-      <div className="mb-5 flex flex-wrap gap-2">
-        {SALAS.map((sala) => (
-          <button
-            key={sala.nome}
-            onClick={() => setSelectedSala(sala.nome)}
-            className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
-              selectedSala === sala.nome
-                ? `${TIPO_COLOR[sala.tipo]} ring-2 ring-offset-1 ring-blue-400`
-                : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            {sala.nome}
-          </button>
-        ))}
+      <div className="mb-5 max-w-xs">
+        <label className="block text-xs font-medium text-gray-700 mb-1">Sala</label>
+        <select
+          value={selectedSala}
+          onChange={(e) => setSelectedSala(e.target.value)}
+          disabled={loadingSalas || salas.length === 0}
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+        >
+          {loadingSalas && <option>Carregando...</option>}
+          {!loadingSalas && salas.length === 0 && <option>Nenhuma sala encontrada</option>}
+          {salas.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
       </div>
 
       {/* Cabeçalho da sala selecionada */}
       <div className="flex items-center gap-3 mb-3">
         <h2 className="text-base font-semibold text-gray-800">{selectedSala}</h2>
-        {salaInfo && (
-          <span className={`text-xs px-2 py-0.5 rounded border font-medium ${TIPO_COLOR[salaInfo.tipo]}`}>
-            {TIPO_LABEL[salaInfo.tipo]}
-          </span>
-        )}
         {loading && (
           <span className="flex items-center gap-1 text-xs text-gray-400">
             <RefreshCw size={12} className="animate-spin" />
@@ -148,12 +148,14 @@ export function MapPage() {
         )}
       </div>
 
-      <InfraSalaInfo
-        infraSala={infraSala}
-        loading={loadingInfra}
-        isAdmin={isAdmin}
-        onEdit={() => setEditingInfra(true)}
-      />
+      {infraSala && (
+        <InfraSalaInfo
+          infraSala={infraSala}
+          loading={loadingInfra}
+          isAdmin={isAdmin}
+          onEdit={() => setEditingInfra(true)}
+        />
+      )}
 
       {error && (
         <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
@@ -161,7 +163,7 @@ export function MapPage() {
         </div>
       )}
 
-      {!loading && !error && (
+      {!loading && !error && selectedSala && (
         <WeekGrid
           alocacoes={alocacoes}
           isAdmin={isAdmin}
@@ -185,7 +187,8 @@ export function MapPage() {
       )}
 
       {modal?.mode === 'edit' && (
-        <EditModal
+        <RuralEditModal
+          salas={salas}
           alocacao={modal.alocacao}
           hasConflict={hasConflict}
           onSave={handleUpdate}
@@ -195,7 +198,8 @@ export function MapPage() {
       )}
 
       {modal?.mode === 'create' && (
-        <AllocationForm
+        <RuralAllocationForm
+          salas={salas}
           initialDia={modal.dia}
           initialHora={modal.hora}
           initialSala={selectedSala}

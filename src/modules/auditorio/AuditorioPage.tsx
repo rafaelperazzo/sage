@@ -31,7 +31,7 @@ export function AuditorioPage() {
   const [modal, setModal] = useState<ModalState>(null)
   const [editingInfra, setEditingInfra] = useState(false)
 
-  const { isAdmin } = useAuth()
+  const { isAdmin } = useAuth('auditorio')
   const { reservas, loading, error, create, update, remove, hasConflict } = useReservas(ano, mes)
   const { infraSalas, loading: loadingInfra, save: saveInfra } = useInfraSalas()
   const infraSala = infraSalas.find((i) => i.sala === SALA_AUDITORIO)

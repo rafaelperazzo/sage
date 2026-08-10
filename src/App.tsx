@@ -10,6 +10,7 @@ import { ManutencaoPage } from './modules/manutencao/ManutencaoPage'
 import { SobrePage } from './modules/sobre/SobrePage'
 import { HomePage } from './modules/home/HomePage'
 import { GradePage } from './modules/grade/GradePage'
+import { RuralPage } from './modules/rural/RuralPage'
 
 export function App() {
   return (
@@ -23,6 +24,7 @@ export function App() {
             <Route path="/agenda" element={<AgendaPage />} />
             <Route path="/report" element={<ReportPage />} />
             <Route path="/grade" element={<GradePage />} />
+            <Route path="/rural" element={<RuralPage />} />
             <Route path="/auditorio" element={<AuditorioPage />} />
             <Route path="/manutencao" element={<ManutencaoPage />} />
             <Route path="/sobre" element={<SobrePage />} />
