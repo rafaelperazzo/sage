@@ -254,15 +254,25 @@ export async function deleteManutencao(id: number): Promise<void> {
 export const EXTERNAS_TABLE_NAME = 'externas'
 
 export async function fetchSalasExternas(): Promise<string[]> {
-  const { data, error } = await supabase
-    .from(EXTERNAS_TABLE_NAME)
-    .select('sala')
+  const pageSize = 1000
+  const salas = new Set<string>()
 
-  if (error) throw error
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabase
+      .from(EXTERNAS_TABLE_NAME)
+      .select('sala')
+      .range(from, from + pageSize - 1)
 
-  return Array.from(
-    new Set((data as { sala: string }[]).map((r) => r.sala).filter(Boolean))
-  ).sort()
+    if (error) throw error
+
+    for (const row of data as { sala: string }[]) {
+      if (row.sala) salas.add(row.sala)
+    }
+
+    if (data.length < pageSize) break
+  }
+
+  return Array.from(salas).sort()
 }
 
 export async function fetchAlocacoesExternas(periodo: string): Promise<Alocacao[]> {
