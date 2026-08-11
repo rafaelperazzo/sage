@@ -14,7 +14,7 @@ import { useSalasExternas } from '../../hooks/useSalasExternas'
 import { useInfraSalas } from '../../hooks/useInfraSalas'
 import { useAuth } from '../../hooks/useAuth'
 import type { Alocacao, AlocacaoInput, InfraSalaInput } from '../../types'
-import { Shield, RefreshCw } from 'lucide-react'
+import { Shield, RefreshCw, Info } from 'lucide-react'
 
 type ModalState =
   | { mode: 'view'; alocacao: Alocacao }
@@ -120,7 +120,13 @@ export function RuralPage() {
       )}
 
       {tab === 'grade' && (
-      <>{/* Seletor de sala */}
+      <>
+      <div className="mb-4 flex items-start gap-2.5 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 text-sm text-blue-800">
+        <Info size={16} className="mt-0.5 flex-shrink-0" />
+        <span>A gestão destes espaços é de competência da CPGA - PREG. O Departamento de Computação não interfere nestes espaços.</span>
+      </div>
+
+      {/* Seletor de sala */}
       <div className="mb-5 max-w-xs">
         <label className="block text-xs font-medium text-gray-700 mb-1">Sala</label>
         <select
