@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getSalasExternasLivresAgora } from './salasExternasLivresAgora'
+import { getSalasExternasLivresAgora, getPredioDaSala, getNomeSalaSemPredio, getPredios } from './salasExternasLivresAgora'
 import type { Alocacao } from '../../types'
 
 function makeAlocacao(overrides: Partial<Alocacao> = {}): Alocacao {
@@ -70,5 +70,36 @@ describe('getSalasExternasLivresAgora', () => {
       { sala: 'SALA RURAL 02', livreAte: '16:30' },
       { sala: 'SALA RURAL 03', livreAte: '22:00' },
     ])
+  })
+})
+
+describe('getPredioDaSala', () => {
+  it('extrai o prédio do padrão "PREDIO - SALA XX"', () => {
+    expect(getPredioDaSala('PREDIO A - SALA 01')).toBe('PREDIO A')
+  })
+
+  it('sem separador " - " → retorna o nome inteiro como prédio', () => {
+    expect(getPredioDaSala('SALA RURAL 01')).toBe('SALA RURAL 01')
+  })
+})
+
+describe('getNomeSalaSemPredio', () => {
+  it('remove o prefixo do prédio', () => {
+    expect(getNomeSalaSemPredio('PREDIO A - SALA 01')).toBe('SALA 01')
+  })
+
+  it('sem separador " - " → retorna o nome inteiro', () => {
+    expect(getNomeSalaSemPredio('SALA RURAL 01')).toBe('SALA RURAL 01')
+  })
+})
+
+describe('getPredios', () => {
+  it('lista prédios únicos em ordem alfabética', () => {
+    const salas = ['PREDIO B - SALA 01', 'PREDIO A - SALA 02', 'PREDIO A - SALA 01', 'PREDIO B - SALA 02']
+    expect(getPredios(salas)).toEqual(['PREDIO A', 'PREDIO B'])
+  })
+
+  it('lista vazia → retorna lista vazia', () => {
+    expect(getPredios([])).toEqual([])
   })
 })

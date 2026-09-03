@@ -19,6 +19,27 @@ export interface SalaExternaLivreAgora {
 }
 
 /**
+ * As salas externas seguem o padrão "PREDIO - SALA XX". Extrai o nome do
+ * prédio (tudo antes do primeiro " - "); se não houver separador, o nome
+ * inteiro é tratado como prédio.
+ */
+export function getPredioDaSala(sala: string): string {
+  const idx = sala.indexOf(' - ')
+  return idx === -1 ? sala : sala.slice(0, idx)
+}
+
+/** Parte do nome da sala após o prédio (ex: "PREDIO - SALA 01" → "SALA 01"). */
+export function getNomeSalaSemPredio(sala: string): string {
+  const idx = sala.indexOf(' - ')
+  return idx === -1 ? sala : sala.slice(idx + 3)
+}
+
+/** Lista de prédios únicos presentes em `salas`, em ordem alfabética. */
+export function getPredios(salas: string[]): string[] {
+  return Array.from(new Set(salas.map(getPredioDaSala))).sort()
+}
+
+/**
  * Versão específica do Sage Rural do cálculo de "salas livres agora" —
  * implementação própria, independente da usada no Home/Sage Map
  * (getSalasLivresAgora em modules/map/gridUtils.ts), já que as salas
