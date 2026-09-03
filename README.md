@@ -61,7 +61,7 @@ Relatórios de ocupação e disponibilidade das salas.
 
 - Gráfico de barras com percentual de ocupação de todas as salas
 - Detalhamento por sala: gráfico de pizza (ocupado vs. livre) e tabela por dia
-- Base de cálculo: 12 horas/dia × 6 dias = 72h/semana = 100% de ocupação
+- Base de cálculo: 12 horas/dia × 5 dias (segunda a sexta) = 60h/semana = 100% de ocupação
 - Salas agrupadas por tipo: salas de aula, inovação e laboratórios
 
 ### SAGE Manutenção
