@@ -40,6 +40,7 @@ Idêntico ao SAGE Map, mas para salas de unidades externas ao Departamento de Co
 
 - Seletor de sala em caixa de seleção, populado dinamicamente com os valores distintos da coluna `sala` da tabela `externas` (não é uma lista fixa como no SAGE Map)
 - Mesma grade semanal, aba "Buscar Sala" e aba "Lista de Disciplinas" do SAGE Map
+- **Aba "Salas Livres Agora"**: lista as salas externas livres no momento, agrupadas por prédio. As salas seguem o padrão `PREDIO - SALA XX`; um seletor de prédio filtra a lista para mostrar apenas as salas livres daquele prédio, com o horário até quando cada uma permanece livre. Visível apenas de segunda a sexta, entre 08:00 e 22:00
 - Barra de infraestrutura da sala selecionada aparece **somente** se já existir um registro para aquela sala na tabela `infra_salas`; caso contrário, nada é exibido
 
 **Modo administrador** (requer login como administrador geral ou como administrador do SAGE Rural — veja [Autenticação e Permissões](#autenticação-e-permissões)):
