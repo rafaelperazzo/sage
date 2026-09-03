@@ -42,10 +42,10 @@ describe('WeekGrid — estrutura da grade', () => {
     expect(screen.getByText('21:00')).toBeInTheDocument()
   })
 
-  it('renderiza 19 linhas de hora (12 diurnas + 7 noturnas)', () => {
+  it('renderiza 16 linhas de hora (12 diurnas + 4 noturnas)', () => {
     render(<WeekGrid alocacoes={[]} isAdmin={false} onCellClick={vi.fn()} />)
     const cells = screen.getAllByText(/^\d{2}:\d{2}$/)
-    expect(cells).toHaveLength(19)
+    expect(cells).toHaveLength(16)
   })
 })
 

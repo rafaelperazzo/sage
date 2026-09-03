@@ -41,9 +41,9 @@ describe('getSalaInfo', () => {
 // ── LIMITES / HORAS ─────────────────────────────────────────────────────────────
 
 describe('LIMITES', () => {
-  it('começa em 07:00 e termina em 22:00', () => {
+  it('começa em 07:00 e termina em 21:50', () => {
     expect(LIMITES[0]).toBe('07:00')
-    expect(LIMITES[LIMITES.length - 1]).toBe('22:00')
+    expect(LIMITES[LIMITES.length - 1]).toBe('21:50')
   })
 
   it('é estritamente crescente (sem marcos duplicados ou fora de ordem)', () => {
@@ -52,20 +52,20 @@ describe('LIMITES', () => {
     }
   })
 
-  it('inclui os marcos horários legados do período noturno (19:00, 20:00, 21:00)', () => {
-    expect(LIMITES).toContain('19:00')
-    expect(LIMITES).toContain('20:00')
-    expect(LIMITES).toContain('21:00')
+  it('não inclui mais os marcos horários legados do período noturno (dados já migrados no Supabase)', () => {
+    expect(LIMITES).not.toContain('19:00')
+    expect(LIMITES).not.toContain('20:00')
+    expect(LIMITES).not.toContain('22:00')
   })
 
   it('inclui os marcos reais das aulas noturnas de 50min', () => {
-    expect(LIMITES).toEqual(expect.arrayContaining(['18:30', '19:20', '20:10', '21:50']))
+    expect(LIMITES).toEqual(expect.arrayContaining(['18:30', '19:20', '20:10', '21:00', '21:50']))
   })
 })
 
 describe('HORAS', () => {
-  it('tem exatamente 19 slots (todos os marcos de LIMITES exceto o último)', () => {
-    expect(HORAS).toHaveLength(19)
+  it('tem exatamente 16 slots (12 diurnos + 4 noturnos)', () => {
+    expect(HORAS).toHaveLength(16)
     expect(HORAS).toEqual(LIMITES.slice(0, -1))
   })
 
@@ -73,8 +73,8 @@ describe('HORAS', () => {
     expect(HORAS[0]).toBe('07:00')
   })
 
-  it('termina em 21:50 (início da última linha da grade)', () => {
-    expect(HORAS[HORAS.length - 1]).toBe('21:50')
+  it('termina em 21:00 (início da última linha da grade, o 4º período noturno)', () => {
+    expect(HORAS[HORAS.length - 1]).toBe('21:00')
   })
 })
 

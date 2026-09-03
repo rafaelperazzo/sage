@@ -34,9 +34,9 @@ describe('GradeGrid — estrutura da grade', () => {
   })
 
   it('oculta linhas de horário 100% vazias', () => {
-    const aloc = makeAlocacao({ inicio: '18:00', fim: '19:00', dia_semana: 'SEXTA' })
+    const aloc = makeAlocacao({ inicio: '17:00', fim: '18:00', dia_semana: 'SEXTA' })
     render(<GradeGrid alocacoes={[aloc]} />)
-    expect(screen.getByText('18:00')).toBeInTheDocument()
+    expect(screen.getByText('17:00')).toBeInTheDocument()
     expect(screen.queryByText('07:00')).not.toBeInTheDocument()
     expect(screen.queryByText('21:00')).not.toBeInTheDocument()
   })

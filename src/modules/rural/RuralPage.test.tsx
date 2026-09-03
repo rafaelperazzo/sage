@@ -226,6 +226,20 @@ describe('RuralPage — abas', () => {
     renderWithRouter(<RuralPage />)
     expect(screen.getByRole('button', { name: /Lista de Disciplinas/i })).toBeInTheDocument()
   })
+
+  it('exibe a aba "Salas Livres Agora"', () => {
+    renderWithRouter(<RuralPage />)
+    expect(screen.getByRole('button', { name: /Salas Livres Agora/i })).toBeInTheDocument()
+  })
+
+  it('aba "Salas Livres Agora" oculta a grade', async () => {
+    const user = userEvent.setup()
+    renderWithRouter(<RuralPage />)
+
+    await user.click(screen.getByRole('button', { name: /Salas Livres Agora/i }))
+
+    expect(screen.queryByText('Seg')).not.toBeInTheDocument()
+  })
 })
 
 describe('RuralPage — admin vs. usuário comum', () => {

@@ -10,6 +10,7 @@ import { EditInfraSalaModal } from '../map/EditInfraSalaModal'
 import { ManutencaoSalaInfo } from '../map/ManutencaoSalaInfo'
 import { RuralAllocationForm } from './RuralAllocationForm'
 import { RuralEditModal } from './RuralEditModal'
+import { SalasLivresAgora } from './SalasLivresAgora'
 import { useAlocacoesExternasPorSala, useAlocacoesExternas } from '../../hooks/useAlocacoesExternas'
 import { useSalasExternas } from '../../hooks/useSalasExternas'
 import { useInfraSalas } from '../../hooks/useInfraSalas'
@@ -24,7 +25,7 @@ type ModalState =
   | { mode: 'create'; dia: string; hora: string }
   | null
 
-const TABS = ['grade', 'busca', 'lista'] as const
+const TABS = ['grade', 'busca', 'lista', 'livres'] as const
 type Tab = (typeof TABS)[number]
 
 function isTab(v: string | null): v is Tab {
@@ -110,7 +111,13 @@ export function RuralPage() {
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            {t === 'grade' ? 'Grade Semanal' : t === 'busca' ? 'Buscar Sala' : 'Lista de Disciplinas'}
+            {t === 'grade'
+              ? 'Grade Semanal'
+              : t === 'busca'
+                ? 'Buscar Sala'
+                : t === 'lista'
+                  ? 'Lista de Disciplinas'
+                  : 'Salas Livres Agora'}
           </button>
         ))}
       </div>
@@ -121,6 +128,10 @@ export function RuralPage() {
 
       {tab === 'lista' && (
         <ListaDisciplinas alocacoes={todasAlocacoes} loading={loadingBusca} />
+      )}
+
+      {tab === 'livres' && (
+        <SalasLivresAgora salas={salas} alocacoes={todasAlocacoes} loading={loadingSalas || loadingBusca} />
       )}
 
       {tab === 'grade' && (
