@@ -9,8 +9,10 @@ import { BuscaSala } from './BuscaSala'
 import { ListaDisciplinas } from './ListaDisciplinas'
 import { InfraSalaInfo } from './InfraSalaInfo'
 import { EditInfraSalaModal } from './EditInfraSalaModal'
+import { ManutencaoSalaInfo } from './ManutencaoSalaInfo'
 import { useAlocacoesPorSala, useAlocacoes } from '../../hooks/useAlocacoes'
 import { useInfraSalas } from '../../hooks/useInfraSalas'
+import { useManutencao } from '../../hooks/useManutencao'
 import { useAuth } from '../../hooks/useAuth'
 import { SALAS, TIPO_LABEL, TIPO_COLOR, getSalaInfo } from '../../constants/salas'
 import type { Alocacao, AlocacaoInput, InfraSalaInput } from '../../types'
@@ -41,6 +43,8 @@ export function MapPage() {
   const { alocacoes: todasAlocacoes, loading: loadingBusca } = useAlocacoes()
   const { infraSalas, loading: loadingInfra, save: saveInfra } = useInfraSalas()
   const infraSala = infraSalas.find((i) => i.sala === selectedSala)
+  const { manutencoes, loading: loadingManutencao } = useManutencao()
+  const manutencoesSala = manutencoes.filter((m) => m.sala_local === selectedSala && m.status !== 'Concluído')
 
   const salaInfo = getSalaInfo(selectedSala)
 
@@ -154,6 +158,8 @@ export function MapPage() {
         isAdmin={isAdmin}
         onEdit={() => setEditingInfra(true)}
       />
+
+      <ManutencaoSalaInfo manutencoes={manutencoesSala} loading={loadingManutencao} />
 
       {error && (
         <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">

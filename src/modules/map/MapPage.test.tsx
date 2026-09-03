@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithRouter } from '../../test/renderWithRouter'
-import type { Alocacao } from '../../types'
+import type { Alocacao, Manutencao } from '../../types'
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -11,12 +11,15 @@ vi.mock('../../hooks/useAlocacoes', () => ({
   useAlocacoes: vi.fn(),
 }))
 vi.mock('../../hooks/useAuth', () => ({ useAuth: vi.fn() }))
+vi.mock('../../hooks/useManutencao', () => ({ useManutencao: vi.fn() }))
 
 const { useAlocacoesPorSala, useAlocacoes } = await import('../../hooks/useAlocacoes')
 const { useAuth } = await import('../../hooks/useAuth')
+const { useManutencao } = await import('../../hooks/useManutencao')
 const mockPorSala = vi.mocked(useAlocacoesPorSala)
 const mockTodas = vi.mocked(useAlocacoes)
 const mockUseAuth = vi.mocked(useAuth)
+const mockUseManutencao = vi.mocked(useManutencao)
 
 const { MapPage } = await import('./MapPage')
 
@@ -45,11 +48,26 @@ const mockCRUD = {
   hasConflict: vi.fn().mockReturnValue(false),
 }
 
+function makeManutencao(overrides: Partial<Manutencao> = {}): Manutencao {
+  return {
+    id: 1,
+    numero_rt: 'RT-001',
+    sala_local: 'SALA 02',
+    descricao_problema: 'Ar condicionado com defeito',
+    status: 'Aberto',
+    data_abertura: '2026-03-01',
+    data_conclusao: null,
+    observacoes: null,
+    ...overrides,
+  }
+}
+
 function setupHooks({
   alocacoes = [] as Alocacao[],
   loading = false,
   error = null as string | null,
   isAdmin = false,
+  manutencoes = [] as Manutencao[],
 } = {}) {
   mockPorSala.mockReturnValue({ alocacoes, loading, error, ...mockCRUD })
   mockTodas.mockReturnValue({ alocacoes, loading, error, reload: vi.fn() })
@@ -59,6 +77,14 @@ function setupHooks({
     loading: false,
     signIn: vi.fn(),
     signOut: vi.fn(),
+  })
+  mockUseManutencao.mockReturnValue({
+    manutencoes,
+    loading: false,
+    error: null,
+    create: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn(),
   })
 }
 
@@ -145,6 +171,55 @@ describe('MapPage — seleção de sala', () => {
     await user.click(screen.getByRole('button', { name: 'LAB 35' }))
 
     expect(await screen.findByText('Laboratório')).toBeInTheDocument()
+  })
+})
+
+describe('MapPage — chamado de manutenção', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('não exibe aviso quando a sala não tem chamado em aberto', () => {
+    setupHooks({ manutencoes: [] })
+    renderWithRouter(<MapPage />)
+    expect(screen.queryByText(/Chamado de manutenção em aberto/i)).not.toBeInTheDocument()
+  })
+
+  it('exibe a descrição do problema quando a sala selecionada tem chamado em aberto', () => {
+    setupHooks({ manutencoes: [makeManutencao({ sala_local: 'SALA 02', descricao_problema: 'Ar condicionado com defeito' })] })
+    renderWithRouter(<MapPage />)
+    expect(screen.getByText(/Ar condicionado com defeito/)).toBeInTheDocument()
+  })
+
+  it('não exibe chamado de outra sala', () => {
+    setupHooks({ manutencoes: [makeManutencao({ sala_local: 'LAB 35', descricao_problema: 'Projetor não liga' })] })
+    renderWithRouter(<MapPage />)
+    expect(screen.queryByText(/Projetor não liga/)).not.toBeInTheDocument()
+  })
+
+  it('não exibe chamado com status "Concluído"', () => {
+    setupHooks({
+      manutencoes: [makeManutencao({ sala_local: 'SALA 02', status: 'Concluído', descricao_problema: 'Já resolvido' })],
+    })
+    renderWithRouter(<MapPage />)
+    expect(screen.queryByText(/Já resolvido/)).not.toBeInTheDocument()
+  })
+
+  it('trocar de sala atualiza o chamado exibido', async () => {
+    const user = userEvent.setup()
+    setupHooks({
+      manutencoes: [
+        makeManutencao({ id: 1, sala_local: 'SALA 02', descricao_problema: 'Ar condicionado com defeito' }),
+        makeManutencao({ id: 2, sala_local: 'LAB 35', descricao_problema: 'Projetor não liga' }),
+      ],
+    })
+    renderWithRouter(<MapPage />)
+
+    expect(screen.getByText(/Ar condicionado com defeito/)).toBeInTheDocument()
+    expect(screen.queryByText(/Projetor não liga/)).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'LAB 35' }))
+
+    expect(screen.getByText(/Projetor não liga/)).toBeInTheDocument()
+    expect(screen.queryByText(/Ar condicionado com defeito/)).not.toBeInTheDocument()
   })
 })
 

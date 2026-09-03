@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithRouter } from '../../test/renderWithRouter'
-import type { Alocacao } from '../../types'
+import type { Alocacao, Manutencao } from '../../types'
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -12,14 +12,17 @@ vi.mock('../../hooks/useAlocacoesExternas', () => ({
 }))
 vi.mock('../../hooks/useSalasExternas', () => ({ useSalasExternas: vi.fn() }))
 vi.mock('../../hooks/useAuth', () => ({ useAuth: vi.fn() }))
+vi.mock('../../hooks/useManutencao', () => ({ useManutencao: vi.fn() }))
 
 const { useAlocacoesExternasPorSala, useAlocacoesExternas } = await import('../../hooks/useAlocacoesExternas')
 const { useSalasExternas } = await import('../../hooks/useSalasExternas')
 const { useAuth } = await import('../../hooks/useAuth')
+const { useManutencao } = await import('../../hooks/useManutencao')
 const mockPorSala = vi.mocked(useAlocacoesExternasPorSala)
 const mockTodas = vi.mocked(useAlocacoesExternas)
 const mockSalas = vi.mocked(useSalasExternas)
 const mockUseAuth = vi.mocked(useAuth)
+const mockUseManutencao = vi.mocked(useManutencao)
 
 const { RuralPage } = await import('./RuralPage')
 
@@ -48,6 +51,20 @@ const mockCRUD = {
   hasConflict: vi.fn().mockReturnValue(false),
 }
 
+function makeManutencao(overrides: Partial<Manutencao> = {}): Manutencao {
+  return {
+    id: 1,
+    numero_rt: 'RT-001',
+    sala_local: 'SALA RURAL 01',
+    descricao_problema: 'Cerca danificada',
+    status: 'Aberto',
+    data_abertura: '2026-03-01',
+    data_conclusao: null,
+    observacoes: null,
+    ...overrides,
+  }
+}
+
 function setupHooks({
   alocacoes = [] as Alocacao[],
   loading = false,
@@ -55,6 +72,7 @@ function setupHooks({
   isAdmin = false,
   salas = ['SALA RURAL 01', 'SALA RURAL 02'],
   loadingSalas = false,
+  manutencoes = [] as Manutencao[],
 } = {}) {
   mockPorSala.mockReturnValue({ alocacoes, loading, error, ...mockCRUD })
   mockTodas.mockReturnValue({ alocacoes, loading, error, reload: vi.fn() })
@@ -65,6 +83,14 @@ function setupHooks({
     loading: false,
     signIn: vi.fn(),
     signOut: vi.fn(),
+  })
+  mockUseManutencao.mockReturnValue({
+    manutencoes,
+    loading: false,
+    error: null,
+    create: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn(),
   })
 }
 
@@ -132,6 +158,55 @@ describe('RuralPage — infraestrutura da sala', () => {
     renderWithRouter(<RuralPage />)
     expect(screen.queryByText(/não cadastrada/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/cadastrar/i)).not.toBeInTheDocument()
+  })
+})
+
+describe('RuralPage — chamado de manutenção', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('não exibe aviso quando a sala não tem chamado em aberto', () => {
+    setupHooks({ manutencoes: [] })
+    renderWithRouter(<RuralPage />)
+    expect(screen.queryByText(/Chamado de manutenção em aberto/i)).not.toBeInTheDocument()
+  })
+
+  it('exibe a descrição do problema quando a sala selecionada tem chamado em aberto', () => {
+    setupHooks({ manutencoes: [makeManutencao({ sala_local: 'SALA RURAL 01', descricao_problema: 'Cerca danificada' })] })
+    renderWithRouter(<RuralPage />)
+    expect(screen.getByText(/Cerca danificada/)).toBeInTheDocument()
+  })
+
+  it('não exibe chamado de outra sala', () => {
+    setupHooks({ manutencoes: [makeManutencao({ sala_local: 'SALA RURAL 02', descricao_problema: 'Irrigação com vazamento' })] })
+    renderWithRouter(<RuralPage />)
+    expect(screen.queryByText(/Irrigação com vazamento/)).not.toBeInTheDocument()
+  })
+
+  it('não exibe chamado com status "Concluído"', () => {
+    setupHooks({
+      manutencoes: [makeManutencao({ sala_local: 'SALA RURAL 01', status: 'Concluído', descricao_problema: 'Já resolvido' })],
+    })
+    renderWithRouter(<RuralPage />)
+    expect(screen.queryByText(/Já resolvido/)).not.toBeInTheDocument()
+  })
+
+  it('trocar de sala no select atualiza o chamado exibido', async () => {
+    const user = userEvent.setup()
+    setupHooks({
+      manutencoes: [
+        makeManutencao({ id: 1, sala_local: 'SALA RURAL 01', descricao_problema: 'Cerca danificada' }),
+        makeManutencao({ id: 2, sala_local: 'SALA RURAL 02', descricao_problema: 'Irrigação com vazamento' }),
+      ],
+    })
+    renderWithRouter(<RuralPage />)
+
+    expect(screen.getByText(/Cerca danificada/)).toBeInTheDocument()
+    expect(screen.queryByText(/Irrigação com vazamento/)).not.toBeInTheDocument()
+
+    await user.selectOptions(screen.getByRole('combobox'), 'SALA RURAL 02')
+
+    expect(screen.getByText(/Irrigação com vazamento/)).toBeInTheDocument()
+    expect(screen.queryByText(/Cerca danificada/)).not.toBeInTheDocument()
   })
 })
 

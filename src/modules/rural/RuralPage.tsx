@@ -7,11 +7,13 @@ import { BuscaSala } from '../map/BuscaSala'
 import { ListaDisciplinas } from '../map/ListaDisciplinas'
 import { InfraSalaInfo } from '../map/InfraSalaInfo'
 import { EditInfraSalaModal } from '../map/EditInfraSalaModal'
+import { ManutencaoSalaInfo } from '../map/ManutencaoSalaInfo'
 import { RuralAllocationForm } from './RuralAllocationForm'
 import { RuralEditModal } from './RuralEditModal'
 import { useAlocacoesExternasPorSala, useAlocacoesExternas } from '../../hooks/useAlocacoesExternas'
 import { useSalasExternas } from '../../hooks/useSalasExternas'
 import { useInfraSalas } from '../../hooks/useInfraSalas'
+import { useManutencao } from '../../hooks/useManutencao'
 import { useAuth } from '../../hooks/useAuth'
 import type { Alocacao, AlocacaoInput, InfraSalaInput } from '../../types'
 import { Shield, RefreshCw, Info } from 'lucide-react'
@@ -42,6 +44,8 @@ export function RuralPage() {
   const { alocacoes: todasAlocacoes, loading: loadingBusca } = useAlocacoesExternas()
   const { infraSalas, loading: loadingInfra, save: saveInfra } = useInfraSalas()
   const infraSala = infraSalas.find((i) => i.sala === selectedSala)
+  const { manutencoes, loading: loadingManutencao } = useManutencao()
+  const manutencoesSala = manutencoes.filter((m) => m.sala_local === selectedSala && m.status !== 'Concluído')
 
   useEffect(() => {
     if (!selectedSala && salas.length > 0) {
@@ -162,6 +166,8 @@ export function RuralPage() {
           onEdit={() => setEditingInfra(true)}
         />
       )}
+
+      <ManutencaoSalaInfo manutencoes={manutencoesSala} loading={loadingManutencao} />
 
       {error && (
         <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
