@@ -124,10 +124,11 @@ describe('buildGridMatrix', () => {
     expect(matrix['08:00']!['TERÇA']).toMatchObject({ type: 'empty' })
   })
 
-  it('alocação no último slot da grade (21:00–22:00) → rowSpan 1', () => {
+  it('alocação legada no último bloco horário (21:00–22:00) → rowSpan 2 (cruza o marco 21:50)', () => {
     const aloc = makeAlocacao({ inicio: '21:00', fim: '22:00', dia_semana: 'SEXTA' })
     const matrix = buildGridMatrix([aloc])
-    expect(matrix['21:00']!['SEXTA']).toMatchObject({ type: 'allocation', rowSpan: 1 })
+    expect(matrix['21:00']!['SEXTA']).toMatchObject({ type: 'allocation', rowSpan: 2 })
+    expect(matrix['21:50']!['SEXTA']).toMatchObject({ type: 'skip' })
   })
 
   it('duas alocações no mesmo dia em horários distintos', () => {
@@ -137,6 +138,45 @@ describe('buildGridMatrix', () => {
     expect(matrix['08:00']!['QUINTA']).toMatchObject({ type: 'allocation', rowSpan: 2 })
     expect(matrix['14:00']!['QUINTA']).toMatchObject({ type: 'allocation', rowSpan: 2 })
     expect(matrix['11:00']!['QUINTA']).toMatchObject({ type: 'empty' })
+  })
+
+  it('aula noturna de 50min (18:30–19:20) → rowSpan 2 (cruza o marco legado 19:00)', () => {
+    const aloc = makeAlocacao({ inicio: '18:30', fim: '19:20', dia_semana: 'SEGUNDA' })
+    const matrix = buildGridMatrix([aloc])
+    expect(matrix['18:30']!['SEGUNDA']).toMatchObject({ type: 'allocation', rowSpan: 2 })
+    expect(matrix['19:00']!['SEGUNDA']).toMatchObject({ type: 'skip' })
+    expect(matrix['19:20']!['SEGUNDA']).toMatchObject({ type: 'empty' })
+  })
+
+  it('terceiro período noturno (20:10–21:00) → rowSpan 1, sem marco legado no meio', () => {
+    const aloc = makeAlocacao({ inicio: '20:10', fim: '21:00', dia_semana: 'TERÇA' })
+    const matrix = buildGridMatrix([aloc])
+    expect(matrix['20:10']!['TERÇA']).toMatchObject({ type: 'allocation', rowSpan: 1 })
+    expect(matrix['21:00']!['TERÇA']).toMatchObject({ type: 'empty' })
+  })
+
+  it('dois períodos noturnos seguidos (18:30–20:10) → rowSpan 4 e skip nos marcos intermediários', () => {
+    const aloc = makeAlocacao({ inicio: '18:30', fim: '20:10', dia_semana: 'QUARTA' })
+    const matrix = buildGridMatrix([aloc])
+    expect(matrix['18:30']!['QUARTA']).toMatchObject({ type: 'allocation', rowSpan: 4 })
+    expect(matrix['19:00']!['QUARTA']).toMatchObject({ type: 'skip' })
+    expect(matrix['19:20']!['QUARTA']).toMatchObject({ type: 'skip' })
+    expect(matrix['20:00']!['QUARTA']).toMatchObject({ type: 'skip' })
+    expect(matrix['20:10']!['QUARTA']).toMatchObject({ type: 'empty' })
+  })
+
+  it('dado legado em hora cheia no período noturno (19:00–20:00) continua funcionando (rowSpan 2, cruza o marco 19:20)', () => {
+    const aloc = makeAlocacao({ inicio: '19:00', fim: '20:00', dia_semana: 'QUARTA' })
+    const matrix = buildGridMatrix([aloc])
+    expect(matrix['19:00']!['QUARTA']).toMatchObject({ type: 'allocation', rowSpan: 2 })
+    expect(matrix['19:20']!['QUARTA']).toMatchObject({ type: 'skip' })
+  })
+
+  it('horário não alinhado a nenhum marco da grade (18:15) → ignorado', () => {
+    const aloc = makeAlocacao({ inicio: '18:15', fim: '19:05', dia_semana: 'SEGUNDA' })
+    const matrix = buildGridMatrix([aloc])
+    const allCells = Object.values(matrix).flatMap(row => Object.values(row))
+    expect(allCells.every(c => c.type === 'empty')).toBe(true)
   })
 })
 
@@ -164,14 +204,15 @@ describe('getHorasVisiveis', () => {
     const aloc1 = makeAlocacao({ id: 1, inicio: '18:00', fim: '19:00', dia_semana: 'SEXTA' })
     const aloc2 = makeAlocacao({ id: 2, inicio: '08:00', fim: '09:00', dia_semana: 'TERÇA' })
     const matrix = buildGridMatrix([aloc1, aloc2])
-    expect(getHorasVisiveis(matrix)).toEqual(['08:00', '18:00'])
+    // 18:00–19:00 (legado) cruza o marco 18:30, então essa linha também fica visível (skip)
+    expect(getHorasVisiveis(matrix)).toEqual(['08:00', '18:00', '18:30'])
   })
 })
 
 // ── markFreeSlots ─────────────────────────────────────────────────────────────
 
 describe('markFreeSlots', () => {
-  it('dia totalmente vago → agrupa em blocos de 2h, pulando 07:00, 12:00 e 13:00', () => {
+  it('dia totalmente vago → agrupa em pares de linhas, pulando 07:00, 12:00 e 13:00', () => {
     const matrix = markFreeSlots(buildGridMatrix([]))
     // 07:00 desconsiderado → fica vazio; 08-10, 10-12 pareados
     expect(matrix['07:00']!['SEGUNDA']).toMatchObject({ type: 'empty' })
@@ -182,10 +223,43 @@ describe('markFreeSlots', () => {
     // 12:00 e 13:00 desconsiderados → ficam vazios
     expect(matrix['12:00']!['SEGUNDA']).toMatchObject({ type: 'empty' })
     expect(matrix['13:00']!['SEGUNDA']).toMatchObject({ type: 'empty' })
-    // 14-16, 16-18, 18-20, 20-22 pareados
+    // 14-16, 16-18 pareados (marcos horários, sem interferência noturna ainda)
     expect(matrix['14:00']!['SEGUNDA']).toMatchObject({ type: 'free', rowSpan: 2 })
-    expect(matrix['20:00']!['SEGUNDA']).toMatchObject({ type: 'free', rowSpan: 2 })
+    expect(matrix['16:00']!['SEGUNDA']).toMatchObject({ type: 'free', rowSpan: 2 })
+    // 18:00 é desconsiderado (folga antes do 1º período noturno) → fica vazio.
+    // A partir de 18:30, o agrupamento noturno é por AULA, não por linha:
+    // T1+T2 vagos viram um único bloco "18:30-20:10"; T3+T4 viram "20:10-21:50";
+    // a folga final (21:50-22:00) fica sozinha por não ter com quem parear.
+    expect(matrix['18:00']!['SEGUNDA']).toMatchObject({ type: 'empty' })
+    expect(matrix['18:30']!['SEGUNDA']).toMatchObject({ type: 'free', rowSpan: 4 })
+    expect(matrix['19:00']!['SEGUNDA']).toMatchObject({ type: 'skip' })
+    expect(matrix['19:20']!['SEGUNDA']).toMatchObject({ type: 'skip' })
+    expect(matrix['20:00']!['SEGUNDA']).toMatchObject({ type: 'skip' })
+    expect(matrix['20:10']!['SEGUNDA']).toMatchObject({ type: 'free', rowSpan: 2 })
     expect(matrix['21:00']!['SEGUNDA']).toMatchObject({ type: 'skip' })
+    expect(matrix['21:50']!['SEGUNDA']).toMatchObject({ type: 'free', rowSpan: 1 })
+    expect(formatFreeRange('18:30', 4)).toBe('18:30-20:10')
+    expect(formatFreeRange('20:10', 2)).toBe('20:10-21:50')
+  })
+
+  it('18:00 nunca é marcado como livre, mesmo com 18:30 vago', () => {
+    const matrix = markFreeSlots(buildGridMatrix([]))
+    expect(matrix['18:00']!['TERÇA']).toMatchObject({ type: 'empty' })
+  })
+
+  it('noite parcialmente ocupada (só o 3º período real, 20:10–21:00) → livres alinhados aos períodos reais, sem fragmentos', () => {
+    const aloc = makeAlocacao({ inicio: '20:10', fim: '21:00', dia_semana: 'QUINTA' })
+    const matrix = markFreeSlots(buildGridMatrix([aloc]))
+    expect(matrix['18:00']!['QUINTA']).toMatchObject({ type: 'empty' })
+    // T1+T2 vagos → um único bloco livre, não dois separados
+    expect(matrix['18:30']!['QUINTA']).toMatchObject({ type: 'free', rowSpan: 4 })
+    expect(formatFreeRange('18:30', 4)).toBe('18:30-20:10')
+    expect(matrix['19:00']!['QUINTA']).toMatchObject({ type: 'skip' })
+    expect(matrix['19:20']!['QUINTA']).toMatchObject({ type: 'skip' })
+    expect(matrix['20:00']!['QUINTA']).toMatchObject({ type: 'skip' })
+    expect(matrix['20:10']!['QUINTA']).toMatchObject({ type: 'allocation', rowSpan: 1 })
+    expect(matrix['21:00']!['QUINTA']).toMatchObject({ type: 'free', rowSpan: 2 })
+    expect(formatFreeRange('21:00', 2)).toBe('21:00-22:00')
   })
 
   it('07:00, 12:00 e 13:00 nunca são marcados como livre, mesmo vagos', () => {
@@ -241,8 +315,16 @@ describe('formatFreeRange', () => {
     expect(formatFreeRange('07:00', 2)).toBe('07:00-09:00')
   })
 
-  it('último bloco do dia (21h, 1h) → "21:00-22:00"', () => {
-    expect(formatFreeRange('21:00', 1)).toBe('21:00-22:00')
+  it('último bloco do dia (21:50, 1 linha) → "21:50-22:00"', () => {
+    expect(formatFreeRange('21:50', 1)).toBe('21:50-22:00')
+  })
+
+  it('bloco noturno de 4 linhas (18:30–20:10) → "18:30-20:10"', () => {
+    expect(formatFreeRange('18:30', 4)).toBe('18:30-20:10')
+  })
+
+  it('bloco noturno de 1 linha (19:20, 1) → "19:20-20:00"', () => {
+    expect(formatFreeRange('19:20', 1)).toBe('19:20-20:00')
   })
 })
 

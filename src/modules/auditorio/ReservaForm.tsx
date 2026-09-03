@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { BaseModal } from '../../components/Modal/BaseModal'
 import type { ReservaInput } from '../../types'
-import { HORAS } from '../../constants/salas'
+import { HORAS, LIMITES } from '../../constants/salas'
 import { AlertCircle } from 'lucide-react'
 
 interface ReservaFormProps {
@@ -85,7 +85,7 @@ export function ReservaForm({ initialData = '', hasConflict, onSave, onClose }: 
               onChange={(e) => setFim(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
             >
-              {[...HORAS.slice(1), '22:00'].map((h) => (
+              {LIMITES.slice(1).map((h) => (
                 <option key={h} value={h}>{h}</option>
               ))}
             </select>

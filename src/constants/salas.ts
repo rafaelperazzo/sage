@@ -27,10 +27,19 @@ export const DIAS = [
 
 export type DiaSemana = (typeof DIAS)[number]
 
-// Slots de 07:00 a 21:00; a última linha cobre 21:00–22:00
-export const HORAS: string[] = Array.from({ length: 15 }, (_, i) =>
-  `${String(7 + i).padStart(2, '0')}:00`
-)
+// Marcos que delimitam as linhas da grade. Os marcos noturnos legados de
+// hora cheia (19:00, 20:00, 21:00) convivem com os marcos reais das aulas
+// noturnas de 50min (18:30, 19:20, 20:10, 21:50) para que a grade funcione
+// tanto com dados antigos quanto após a correção no Supabase, em qualquer
+// ordem.
+export const LIMITES: string[] = [
+  '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00',
+  '14:00', '15:00', '16:00', '17:00', '18:00',
+  '18:30', '19:00', '19:20', '20:00', '20:10', '21:00', '21:50', '22:00',
+]
+
+// Início de cada linha da grade (todos os marcos exceto o último).
+export const HORAS: string[] = LIMITES.slice(0, -1)
 
 export const TIPO_LABEL: Record<TipoSala, string> = {
   sala_aula: 'Sala de Aula',

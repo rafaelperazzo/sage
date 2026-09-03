@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { BaseModal } from '../../components/Modal/BaseModal'
 import type { Alocacao, AlocacaoInput } from '../../types'
-import { DIAS, HORAS } from '../../constants/salas'
+import { DIAS, HORAS, LIMITES } from '../../constants/salas'
 import { AlertCircle, Trash2 } from 'lucide-react'
 
 interface RuralEditModalProps {
@@ -175,7 +175,7 @@ export function RuralEditModal({ salas, alocacao, hasConflict, onSave, onDelete,
               onChange={(e) => setFim(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {[...HORAS.slice(1), '22:00'].map((h) => (
+              {LIMITES.slice(1).map((h) => (
                 <option key={h} value={h}>{h}</option>
               ))}
             </select>

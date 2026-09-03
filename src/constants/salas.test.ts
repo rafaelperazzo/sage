@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { SALAS, DIAS, HORAS, getSalaInfo } from './salas'
+import { SALAS, DIAS, HORAS, LIMITES, getSalaInfo } from './salas'
+
+function toMinutes(hora: string): number {
+  const [h, m] = hora.split(':').map(Number)
+  return (h ?? 0) * 60 + (m ?? 0)
+}
 
 // ── getSalaInfo ───────────────────────────────────────────────────────────────
 
@@ -33,33 +38,43 @@ describe('getSalaInfo', () => {
   })
 })
 
-// ── HORAS ─────────────────────────────────────────────────────────────────────
+// ── LIMITES / HORAS ─────────────────────────────────────────────────────────────
+
+describe('LIMITES', () => {
+  it('começa em 07:00 e termina em 22:00', () => {
+    expect(LIMITES[0]).toBe('07:00')
+    expect(LIMITES[LIMITES.length - 1]).toBe('22:00')
+  })
+
+  it('é estritamente crescente (sem marcos duplicados ou fora de ordem)', () => {
+    for (let i = 1; i < LIMITES.length; i++) {
+      expect(toMinutes(LIMITES[i]!)).toBeGreaterThan(toMinutes(LIMITES[i - 1]!))
+    }
+  })
+
+  it('inclui os marcos horários legados do período noturno (19:00, 20:00, 21:00)', () => {
+    expect(LIMITES).toContain('19:00')
+    expect(LIMITES).toContain('20:00')
+    expect(LIMITES).toContain('21:00')
+  })
+
+  it('inclui os marcos reais das aulas noturnas de 50min', () => {
+    expect(LIMITES).toEqual(expect.arrayContaining(['18:30', '19:20', '20:10', '21:50']))
+  })
+})
 
 describe('HORAS', () => {
-  it('tem exatamente 15 slots (07:00 a 21:00)', () => {
-    expect(HORAS).toHaveLength(15)
+  it('tem exatamente 19 slots (todos os marcos de LIMITES exceto o último)', () => {
+    expect(HORAS).toHaveLength(19)
+    expect(HORAS).toEqual(LIMITES.slice(0, -1))
   })
 
   it('começa em 07:00', () => {
     expect(HORAS[0]).toBe('07:00')
   })
 
-  it('termina em 21:00', () => {
-    expect(HORAS[HORAS.length - 1]).toBe('21:00')
-  })
-
-  it('todos os slots estão no formato HH:00', () => {
-    HORAS.forEach(h => {
-      expect(h).toMatch(/^\d{2}:00$/)
-    })
-  })
-
-  it('slots são consecutivos de hora em hora', () => {
-    for (let i = 1; i < HORAS.length; i++) {
-      const prev = parseInt(HORAS[i - 1]!.split(':')[0]!, 10)
-      const curr = parseInt(HORAS[i]!.split(':')[0]!, 10)
-      expect(curr - prev).toBe(1)
-    }
+  it('termina em 21:50 (início da última linha da grade)', () => {
+    expect(HORAS[HORAS.length - 1]).toBe('21:50')
   })
 })
 

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { BaseModal } from '../../components/Modal/BaseModal'
 import type { Reserva, ReservaInput } from '../../types'
-import { HORAS } from '../../constants/salas'
+import { HORAS, LIMITES } from '../../constants/salas'
 import { normalizeTime } from './MonthCalendar'
 import { AlertCircle, Trash2 } from 'lucide-react'
 
@@ -135,7 +135,7 @@ export function ReservaEditModal({ reserva, hasConflict, onSave, onDelete, onClo
               onChange={(e) => setFim(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
             >
-              {[...HORAS.slice(1), '22:00'].map((h) => (
+              {LIMITES.slice(1).map((h) => (
                 <option key={h} value={h}>{h}</option>
               ))}
             </select>
