@@ -7,9 +7,12 @@ import { ReservaForm } from './ReservaForm'
 import { ReservaEditModal } from './ReservaEditModal'
 import { InfraSalaInfo } from '../map/InfraSalaInfo'
 import { EditInfraSalaModal } from '../map/EditInfraSalaModal'
+import { ManutencaoSalaInfo } from '../map/ManutencaoSalaInfo'
 import { useReservas } from '../../hooks/useReservas'
 import { useInfraSalas } from '../../hooks/useInfraSalas'
 import { useAuth } from '../../hooks/useAuth'
+import { useManutencao } from '../../hooks/useManutencao'
+import { SALA_AUDITORIO_MANUTENCAO } from '../../hooks/useSalasManutencao'
 import type { Reserva, ReservaInput, InfraSalaInput } from '../../types'
 import { Shield, Mail, Calendar, BarChart2 } from 'lucide-react'
 
@@ -35,6 +38,10 @@ export function AuditorioPage() {
   const { reservas, loading, error, create, update, remove, hasConflict } = useReservas(ano, mes)
   const { infraSalas, loading: loadingInfra, save: saveInfra } = useInfraSalas()
   const infraSala = infraSalas.find((i) => i.sala === SALA_AUDITORIO)
+  const { manutencoes, loading: loadingManutencao } = useManutencao()
+  const manutencoesSala = manutencoes.filter(
+    (m) => m.sala_local === SALA_AUDITORIO_MANUTENCAO && m.status !== 'Concluído'
+  )
 
   function prevMonth() {
     if (mes === 1) { setMes(12); setAno(ano - 1) }
@@ -129,6 +136,8 @@ export function AuditorioPage() {
         isAdmin={isAdmin}
         onEdit={() => setEditingInfra(true)}
       />
+
+      <ManutencaoSalaInfo manutencoes={manutencoesSala} loading={loadingManutencao} />
 
       {error && (
         <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">

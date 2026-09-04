@@ -8,6 +8,10 @@ import type { Manutencao, ManutencaoInput } from '../../types'
 
 vi.mock('../../hooks/useManutencao', () => ({ useManutencao: vi.fn() }))
 vi.mock('../../hooks/useAuth', () => ({ useAuth: vi.fn() }))
+// LocalField busca salas via Supabase de verdade — mockar para não bater na rede nos testes
+vi.mock('../../hooks/useSalasManutencao', () => ({
+  useSalasManutencao: vi.fn(() => ({ salas: ['SALA 02', 'SALA 42', 'Auditório - Sala 07'], loading: false, error: null })),
+}))
 
 const { useManutencao } = await import('../../hooks/useManutencao')
 const { useAuth } = await import('../../hooks/useAuth')

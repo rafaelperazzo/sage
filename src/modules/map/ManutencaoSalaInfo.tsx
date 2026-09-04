@@ -15,7 +15,7 @@ export function ManutencaoSalaInfo({ manutencoes, loading }: ManutencaoSalaInfoP
         <span key={m.id} className="flex items-start gap-1.5 text-amber-800">
           <AlertTriangle size={15} className="flex-shrink-0 mt-0.5" />
           <span>
-            <span className="font-medium">Chamado de manutenção em aberto:</span> {m.descricao_problema}
+            <span className="font-medium">Chamado de manutenção em aberto ({m.numero_rt}):</span> {m.descricao_problema}
           </span>
         </span>
       ))}
