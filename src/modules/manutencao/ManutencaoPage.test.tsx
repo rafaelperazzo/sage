@@ -341,7 +341,10 @@ describe('ManutencaoPage — submit do formulário de criação', () => {
 
     // ManutencaoForm não usa htmlFor — buscar pelos placeholders
     await user.type(screen.getByPlaceholderText(/Ex: RT-2024-001/i), 'RT-100')
-    await user.type(screen.getByPlaceholderText(/Ex: LAB 35/i), 'SALA 42')
+    // Local agora é um select (Status é o primeiro combobox, Local o segundo) com opção "Outro..."
+    const [, localSelect] = screen.getAllByRole('combobox')
+    await user.selectOptions(localSelect, 'Outro...')
+    await user.type(screen.getByPlaceholderText(/Digite o local/i), 'SALA 42')
     await user.type(screen.getByPlaceholderText(/Descreva o problema/i), 'Lâmpada queimada')
 
     await user.click(screen.getByRole('button', { name: /Salvar/i }))

@@ -43,6 +43,28 @@ export async function fetchAlocacoes(periodo: string): Promise<Alocacao[]> {
   return data as Alocacao[]
 }
 
+export async function fetchSalasAlocacao(): Promise<string[]> {
+  const pageSize = 1000
+  const salas = new Set<string>()
+
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabase
+      .from(TABLE_NAME)
+      .select('sala')
+      .range(from, from + pageSize - 1)
+
+    if (error) throw error
+
+    for (const row of data as { sala: string }[]) {
+      if (row.sala) salas.add(row.sala)
+    }
+
+    if (data.length < pageSize) break
+  }
+
+  return Array.from(salas).sort()
+}
+
 export async function fetchAlocacoesPorSala(sala: string, periodo: string): Promise<Alocacao[]> {
   const { data, error } = await supabase
     .from(TABLE_NAME)

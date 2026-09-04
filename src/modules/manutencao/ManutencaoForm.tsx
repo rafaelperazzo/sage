@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { BaseModal } from '../../components/Modal/BaseModal'
+import { LocalField } from './LocalField'
 import type { ManutencaoInput } from '../../types'
 import { AlertCircle } from 'lucide-react'
 
@@ -68,8 +69,7 @@ export function ManutencaoForm({ onSave, onClose }: Props) {
 
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">Local *</label>
-          <input value={local} onChange={(e) => setLocal(e.target.value)}
-            className={input} placeholder="Ex: LAB 35" required />
+          <LocalField value={local} onChange={setLocal} inputClassName={input} />
         </div>
 
         <div>
