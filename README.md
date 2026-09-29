@@ -42,7 +42,7 @@ Visualização da agenda semanal de cada sala em formato de grade (segunda a sex
 ### SAGE Rural
 Idêntico ao SAGE Map, mas para salas de unidades externas ao Departamento de Computação — mesma grade semanal, busca por sala e lista de disciplinas, porém os dados vêm da tabela `externas` (não de `alocacao_2026.1`).
 
-- Seletor de sala em caixa de seleção, populado dinamicamente com os valores distintos da coluna `sala` da tabela `externas` (não é uma lista fixa como no SAGE Map)
+- Seleção em duas etapas: primeiro o **prédio**, depois a **sala** daquele prédio, e então a grade semanal da sala escolhida. As listas vêm dinamicamente dos valores distintos da coluna `sala` da tabela `externas` (não é uma lista fixa como no SAGE Map), que seguem o padrão `PREDIO - SALA XX`; o seletor de sala mostra só o nome da sala (ex: `SALA 01`). Trocar o prédio seleciona automaticamente a primeira sala dele
 - Mesma grade semanal (incluindo as reservas pontuais), aba "Buscar Sala" e aba "Lista de Disciplinas" do SAGE Map
 - **Aba "Salas Livres Agora"**: lista as salas externas livres no momento (considerando alocações e reservas pontuais do dia), agrupadas por prédio. As salas seguem o padrão `PREDIO - SALA XX`; um seletor de prédio filtra a lista para mostrar apenas as salas livres daquele prédio, com o horário até quando cada uma permanece livre (21:50 quando não há mais aulas no dia). Visível apenas de segunda a sexta, entre 08:00 e 21:50
 - Barra de infraestrutura da sala selecionada aparece **somente** se já existir um registro para aquela sala na tabela `infra_salas`; caso contrário, nada é exibido

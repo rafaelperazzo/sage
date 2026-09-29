@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithRouter } from '../../test/renderWithRouter'
 import type { Alocacao, Manutencao, ReservaPontual } from '../../types'
@@ -37,7 +37,7 @@ function makeAlocacao(overrides: Partial<Alocacao> = {}): Alocacao {
     disciplina: 'AGRONOMIA I',
     inicio: '08:00',
     fim: '09:00',
-    sala: 'SALA RURAL 01',
+    sala: 'PREDIO A - SALA 01',
     dia_semana: 'SEGUNDA',
     professor: 'Prof. Souza',
     periodo: '2026.1',
@@ -59,7 +59,7 @@ function makeManutencao(overrides: Partial<Manutencao> = {}): Manutencao {
   return {
     id: 1,
     numero_rt: 'RT-001',
-    sala_local: 'SALA RURAL 01',
+    sala_local: 'PREDIO A - SALA 01',
     descricao_problema: 'Cerca danificada',
     status: 'Aberto',
     data_abertura: '2026-03-01',
@@ -74,7 +74,7 @@ function setupHooks({
   loading = false,
   error = null as string | null,
   isAdmin = false,
-  salas = ['SALA RURAL 01', 'SALA RURAL 02'],
+  salas = ['PREDIO A - SALA 01', 'PREDIO A - SALA 02', 'PREDIO B - SALA 10'],
   loadingSalas = false,
   manutencoes = [] as Manutencao[],
   reservas = [] as ReservaPontual[],
@@ -124,17 +124,22 @@ describe('RuralPage — estrutura básica', () => {
     expect(screen.getByRole('button', { name: /Buscar Sala/i })).toBeInTheDocument()
   })
 
-  it('exibe caixa de seleção de salas com os valores dinâmicos', () => {
+  it('exibe seletor de prédio e, nele, apenas as salas do prédio (sem o prefixo)', () => {
     renderWithRouter(<RuralPage />)
-    const select = screen.getByRole('combobox')
-    expect(screen.getByRole('option', { name: 'SALA RURAL 01' })).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'SALA RURAL 02' })).toBeInTheDocument()
-    expect(select).toHaveValue('SALA RURAL 01')
+    const predio = screen.getByLabelText('Prédio')
+    const sala = screen.getByLabelText('Sala')
+    expect(within(predio).getByRole('option', { name: 'PREDIO A' })).toBeInTheDocument()
+    expect(within(predio).getByRole('option', { name: 'PREDIO B' })).toBeInTheDocument()
+    expect(predio).toHaveValue('PREDIO A')
+    expect(within(sala).getByRole('option', { name: 'SALA 01' })).toBeInTheDocument()
+    expect(within(sala).getByRole('option', { name: 'SALA 02' })).toBeInTheDocument()
+    expect(within(sala).queryByRole('option', { name: 'SALA 10' })).not.toBeInTheDocument()
+    expect(sala).toHaveValue('PREDIO A - SALA 01')
   })
 
   it('primeira sala da lista está selecionada por padrão', () => {
     renderWithRouter(<RuralPage />)
-    expect(screen.getByText('SALA RURAL 01', { selector: 'h2' })).toBeInTheDocument()
+    expect(screen.getByText('PREDIO A - SALA 01', { selector: 'h2' })).toBeInTheDocument()
   })
 
   it('exibe grade semanal após carregar, apenas de segunda a sexta', () => {
@@ -152,15 +157,36 @@ describe('RuralPage — seleção de sala dinâmica', () => {
     const user = userEvent.setup()
     renderWithRouter(<RuralPage />)
 
-    await user.selectOptions(screen.getByRole('combobox'), 'SALA RURAL 02')
+    await user.selectOptions(screen.getByLabelText('Sala'), 'PREDIO A - SALA 02')
 
-    expect(screen.getByText('SALA RURAL 02', { selector: 'h2' })).toBeInTheDocument()
+    expect(screen.getByText('PREDIO A - SALA 02', { selector: 'h2' })).toBeInTheDocument()
   })
 
-  it('caixa de seleção fica desabilitada enquanto as salas carregam', () => {
+  it('trocar o prédio seleciona a primeira sala dele e atualiza a lista de salas', async () => {
+    const user = userEvent.setup()
+    renderWithRouter(<RuralPage />)
+
+    await user.selectOptions(screen.getByLabelText('Prédio'), 'PREDIO B')
+
+    expect(screen.getByText('PREDIO B - SALA 10', { selector: 'h2' })).toBeInTheDocument()
+    const sala = screen.getByLabelText('Sala')
+    expect(sala).toHaveValue('PREDIO B - SALA 10')
+    expect(within(sala).queryByRole('option', { name: 'SALA 01' })).not.toBeInTheDocument()
+    expect(mockPorSala).toHaveBeenLastCalledWith('PREDIO B - SALA 10')
+  })
+
+  it('sala sem o padrão "PREDIO - SALA" vira um prédio com ela mesma', () => {
+    setupHooks({ salas: ['AUDITORIO CENTRAL'] })
+    renderWithRouter(<RuralPage />)
+    expect(screen.getByLabelText('Prédio')).toHaveValue('AUDITORIO CENTRAL')
+    expect(screen.getByLabelText('Sala')).toHaveValue('AUDITORIO CENTRAL')
+  })
+
+  it('seletores ficam desabilitados enquanto as salas carregam', () => {
     setupHooks({ loadingSalas: true, salas: [] })
     renderWithRouter(<RuralPage />)
-    expect(screen.getByRole('combobox')).toBeDisabled()
+    expect(screen.getByLabelText('Prédio')).toBeDisabled()
+    expect(screen.getByLabelText('Sala')).toBeDisabled()
   })
 })
 
@@ -185,20 +211,20 @@ describe('RuralPage — chamado de manutenção', () => {
   })
 
   it('exibe a descrição do problema quando a sala selecionada tem chamado em aberto', () => {
-    setupHooks({ manutencoes: [makeManutencao({ sala_local: 'SALA RURAL 01', descricao_problema: 'Cerca danificada' })] })
+    setupHooks({ manutencoes: [makeManutencao({ sala_local: 'PREDIO A - SALA 01', descricao_problema: 'Cerca danificada' })] })
     renderWithRouter(<RuralPage />)
     expect(screen.getByText(/Cerca danificada/)).toBeInTheDocument()
   })
 
   it('não exibe chamado de outra sala', () => {
-    setupHooks({ manutencoes: [makeManutencao({ sala_local: 'SALA RURAL 02', descricao_problema: 'Irrigação com vazamento' })] })
+    setupHooks({ manutencoes: [makeManutencao({ sala_local: 'PREDIO A - SALA 02', descricao_problema: 'Irrigação com vazamento' })] })
     renderWithRouter(<RuralPage />)
     expect(screen.queryByText(/Irrigação com vazamento/)).not.toBeInTheDocument()
   })
 
   it('não exibe chamado com status "Concluído"', () => {
     setupHooks({
-      manutencoes: [makeManutencao({ sala_local: 'SALA RURAL 01', status: 'Concluído', descricao_problema: 'Já resolvido' })],
+      manutencoes: [makeManutencao({ sala_local: 'PREDIO A - SALA 01', status: 'Concluído', descricao_problema: 'Já resolvido' })],
     })
     renderWithRouter(<RuralPage />)
     expect(screen.queryByText(/Já resolvido/)).not.toBeInTheDocument()
@@ -208,8 +234,8 @@ describe('RuralPage — chamado de manutenção', () => {
     const user = userEvent.setup()
     setupHooks({
       manutencoes: [
-        makeManutencao({ id: 1, sala_local: 'SALA RURAL 01', descricao_problema: 'Cerca danificada' }),
-        makeManutencao({ id: 2, sala_local: 'SALA RURAL 02', descricao_problema: 'Irrigação com vazamento' }),
+        makeManutencao({ id: 1, sala_local: 'PREDIO A - SALA 01', descricao_problema: 'Cerca danificada' }),
+        makeManutencao({ id: 2, sala_local: 'PREDIO A - SALA 02', descricao_problema: 'Irrigação com vazamento' }),
       ],
     })
     renderWithRouter(<RuralPage />)
@@ -217,7 +243,7 @@ describe('RuralPage — chamado de manutenção', () => {
     expect(screen.getByText(/Cerca danificada/)).toBeInTheDocument()
     expect(screen.queryByText(/Irrigação com vazamento/)).not.toBeInTheDocument()
 
-    await user.selectOptions(screen.getByRole('combobox'), 'SALA RURAL 02')
+    await user.selectOptions(screen.getByLabelText('Sala'), 'PREDIO A - SALA 02')
 
     expect(screen.getByText(/Irrigação com vazamento/)).toBeInTheDocument()
     expect(screen.queryByText(/Cerca danificada/)).not.toBeInTheDocument()
@@ -317,14 +343,14 @@ describe('RuralPage — reservas pontuais', () => {
     await user.click(screen.getAllByText('LIVRE')[0]!)
     await user.click(await screen.findByRole('button', { name: /Reserva pontual/i }))
 
-    expect(await screen.findByText(/Nova Reserva Pontual — SALA RURAL 01/i)).toBeInTheDocument()
+    expect(await screen.findByText(/Nova Reserva Pontual — PREDIO A - SALA 01/i)).toBeInTheDocument()
   })
 
   it('reserva da sala selecionada aparece na grade; de outra sala não', () => {
     setupHooks({
       reservas: [
-        { id: 1, disciplina: 'OFICINA', professor: null, data: '2099-01-05', inicio: '14:00', fim: '16:00', sala: 'SALA RURAL 01', modulo: 'rural' },
-        { id: 2, disciplina: 'SEMINARIO', professor: null, data: '2099-01-05', inicio: '14:00', fim: '16:00', sala: 'SALA RURAL 02', modulo: 'rural' },
+        { id: 1, disciplina: 'OFICINA', professor: null, data: '2099-01-05', inicio: '14:00', fim: '16:00', sala: 'PREDIO A - SALA 01', modulo: 'rural' },
+        { id: 2, disciplina: 'SEMINARIO', professor: null, data: '2099-01-05', inicio: '14:00', fim: '16:00', sala: 'PREDIO A - SALA 02', modulo: 'rural' },
       ],
     })
     renderWithRouter(<RuralPage />)

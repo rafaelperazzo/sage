@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { PageShell } from '../../components/Layout/PageShell'
 import { WeekGrid } from '../map/WeekGrid'
@@ -11,6 +11,7 @@ import { ManutencaoSalaInfo } from '../map/ManutencaoSalaInfo'
 import { RuralAllocationForm } from './RuralAllocationForm'
 import { RuralEditModal } from './RuralEditModal'
 import { SalasLivresAgora } from './SalasLivresAgora'
+import { getPredios, getPredioDaSala, getNomeSalaSemPredio } from './salasExternasLivresAgora'
 import { useAlocacoesExternasPorSala, useAlocacoesExternas } from '../../hooks/useAlocacoesExternas'
 import { useSalasExternas } from '../../hooks/useSalasExternas'
 import { useInfraSalas } from '../../hooks/useInfraSalas'
@@ -65,6 +66,20 @@ export function RuralPage() {
   const infraSala = infraSalas.find((i) => i.sala === selectedSala)
   const { manutencoes, loading: loadingManutencao } = useManutencao()
   const manutencoesSala = manutencoes.filter((m) => m.sala_local === selectedSala && m.status !== 'Concluído')
+
+  // O prédio não tem estado próprio: é derivado da sala selecionada (padrão
+  // "PREDIO - SALA XX"). Trocar o prédio seleciona a primeira sala dele.
+  const predios = useMemo(() => getPredios(salas), [salas])
+  const selectedPredio = selectedSala ? getPredioDaSala(selectedSala) : ''
+  const salasDoPredio = useMemo(
+    () => salas.filter((s) => getPredioDaSala(s) === selectedPredio),
+    [salas, selectedPredio]
+  )
+
+  function handlePredioChange(predio: string) {
+    const primeira = salas.find((s) => getPredioDaSala(s) === predio)
+    if (primeira) setSelectedSala(primeira)
+  }
 
   useEffect(() => {
     if (!selectedSala && salas.length > 0) {
@@ -195,21 +210,41 @@ export function RuralPage() {
         <span>A gestão destes espaços é de competência da CPGA - PREG. O Departamento de Computação não interfere nestes espaços.</span>
       </div>
 
-      {/* Seletor de sala */}
-      <div className="mb-5 max-w-xs">
-        <label className="block text-xs font-medium text-gray-700 mb-1">Sala</label>
-        <select
-          value={selectedSala}
-          onChange={(e) => setSelectedSala(e.target.value)}
-          disabled={loadingSalas || salas.length === 0}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-        >
-          {loadingSalas && <option>Carregando...</option>}
-          {!loadingSalas && salas.length === 0 && <option>Nenhuma sala encontrada</option>}
-          {salas.map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
+      {/* Seletor de prédio e sala */}
+      <div className="mb-5 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl">
+        <div>
+          <label htmlFor="rural-predio" className="block text-xs font-medium text-gray-700 mb-1">Prédio</label>
+          <select
+            id="rural-predio"
+            value={selectedPredio}
+            onChange={(e) => handlePredioChange(e.target.value)}
+            disabled={loadingSalas || predios.length === 0}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          >
+            {loadingSalas && <option>Carregando...</option>}
+            {!loadingSalas && predios.length === 0 && <option>Nenhum prédio encontrado</option>}
+            {predios.map((p) => (
+              <option key={p} value={p}>{p}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="rural-sala" className="block text-xs font-medium text-gray-700 mb-1">Sala</label>
+          <select
+            id="rural-sala"
+            value={selectedSala}
+            onChange={(e) => setSelectedSala(e.target.value)}
+            disabled={loadingSalas || salasDoPredio.length === 0}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          >
+            {loadingSalas && <option>Carregando...</option>}
+            {!loadingSalas && salas.length === 0 && <option>Nenhuma sala encontrada</option>}
+            {salasDoPredio.map((s) => (
+              <option key={s} value={s}>{getNomeSalaSemPredio(s)}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Cabeçalho da sala selecionada */}
