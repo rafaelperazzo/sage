@@ -10,7 +10,7 @@ Sistema web do **Departamento de Computação** para visualização e gestão de
 
 ## Página Inicial
 
-Logo abaixo do cabeçalho, dois cards mostram em tempo real quais **laboratórios** e **salas** estão livres no momento, indicando até que horário (ex: `LAB 43 - Livre até as 16:00`). Visível apenas de segunda a sexta, entre 08:00 e 22:00 — fora desse horário os cards não são exibidos. Quando não há nenhum ambiente livre no momento, é exibida a mensagem "Nenhum laboratório/sala disponível no momento."
+Logo abaixo do cabeçalho, dois cards mostram em tempo real quais **laboratórios** e **salas** estão livres no momento, indicando até que horário (ex: `LAB 43 - Livre até as 16:00`). Reservas pontuais do dia (veja o SAGE Map) também contam como ocupação: uma reserva em andamento tira a sala da lista, e uma reserva mais tarde antecipa o "livre até". Visível apenas de segunda a sexta, entre 08:00 e 22:00 — fora desse horário os cards não são exibidos. Quando não há nenhum ambiente livre no momento, é exibida a mensagem "Nenhum laboratório/sala disponível no momento."
 
 ---
 
@@ -24,29 +24,32 @@ Visualização da agenda semanal de cada sala em formato de grade (segunda a sá
 - Slots livres destacados em ciano com a legenda "LIVRE" e o intervalo (ex: `14:00-16:00`), agrupados em blocos de 2 horas quando possível — os horários 07:00–08:00, 12:00–13:00 e 13:00–14:00 nunca são destacados como livres
 - Aula em andamento destacada em amarelo no momento da visualização (compara dia da semana e horário atual do dispositivo)
 - Clique em uma célula ocupada para ver os detalhes da alocação
+- **Reservas pontuais**: usos de uma sala em uma data específica (ex: palestra, prova de reposição), sem ocupar o horário no semestre inteiro. As reservas futuras aparecem dentro das células livres do dia da semana correspondente, em destaque âmbar, com data, disciplina e horário (ex: `05/10 · PALESTRA 14:00–16:00`); clique para ver disciplina, professor, sala, data e horário
 - Atualização automática em tempo real (Supabase Realtime)
 - Barra de infraestrutura da sala selecionada: cadeiras, computadores, projetor, TV, cabo HDMI e ar-condicionado
 - **Aba "Buscar Sala"**: localize disciplinas e professores por autocomplete, com lista de salas e horários
 - **Aba "Lista de Disciplinas"**: listagem única de todas as disciplinas do período letivo selecionado (exceto cursos BSI e DCC), em ordem alfabética, com curso, semestre, professor e horários/salas; sessões da mesma disciplina com o mesmo professor e curso são agrupadas em uma linha, com filtro por disciplina ou professor. Suporte a link direto: `/#/map?tab=lista`
 
 **Modo administrador** (requer login como administrador geral — veja [Autenticação e Permissões](#autenticação-e-permissões)):
-- Clique em célula vazia para criar uma nova alocação
-- Clique em célula ocupada para editar ou remover
-- Detecção automática de conflito de horário
+- Clique em célula livre e escolha entre **Nova alocação** (semanal, no período letivo) ou **Reserva pontual** (disciplina, professor, data, início e fim)
+- Clique em célula ocupada para editar ou remover a alocação; clique em uma reserva para editá-la ou removê-la
+- Detecção automática de conflito de horário:
+  - uma reserva só pode ser feita em horário livre de alocações (mesma sala, mesmo dia da semana da data) e sem sobrepor outra reserva da mesma sala e data
+  - uma alocação não pode ser criada/editada sobre uma reserva pontual futura da mesma sala e dia da semana — a mensagem indica qual reserva impede a alocação
 - Clique na barra de infraestrutura para cadastrar ou editar os dados da sala
 
 ### SAGE Rural
 Idêntico ao SAGE Map, mas para salas de unidades externas ao Departamento de Computação — mesma grade semanal, busca por sala e lista de disciplinas, porém os dados vêm da tabela `externas` (não de `alocacao_2026.1`).
 
 - Seletor de sala em caixa de seleção, populado dinamicamente com os valores distintos da coluna `sala` da tabela `externas` (não é uma lista fixa como no SAGE Map)
-- Mesma grade semanal, aba "Buscar Sala" e aba "Lista de Disciplinas" do SAGE Map
-- **Aba "Salas Livres Agora"**: lista as salas externas livres no momento, agrupadas por prédio. As salas seguem o padrão `PREDIO - SALA XX`; um seletor de prédio filtra a lista para mostrar apenas as salas livres daquele prédio, com o horário até quando cada uma permanece livre. Visível apenas de segunda a sexta, entre 08:00 e 22:00
+- Mesma grade semanal (incluindo as reservas pontuais), aba "Buscar Sala" e aba "Lista de Disciplinas" do SAGE Map
+- **Aba "Salas Livres Agora"**: lista as salas externas livres no momento (considerando alocações e reservas pontuais do dia), agrupadas por prédio. As salas seguem o padrão `PREDIO - SALA XX`; um seletor de prédio filtra a lista para mostrar apenas as salas livres daquele prédio, com o horário até quando cada uma permanece livre. Visível apenas de segunda a sexta, entre 08:00 e 22:00
 - Barra de infraestrutura da sala selecionada aparece **somente** se já existir um registro para aquela sala na tabela `infra_salas`; caso contrário, nada é exibido
 
 **Modo administrador** (requer login como administrador geral ou como administrador do SAGE Rural — veja [Autenticação e Permissões](#autenticação-e-permissões)):
-- Clique em célula vazia para criar uma nova alocação
-- Clique em célula ocupada para editar ou remover
-- Detecção automática de conflito de horário
+- Clique em célula livre e escolha entre **Nova alocação** ou **Reserva pontual**, como no SAGE Map
+- Clique em célula ocupada para editar ou remover a alocação; clique em uma reserva para editá-la ou removê-la
+- Detecção automática de conflito de horário entre alocações e reservas pontuais, com as mesmas regras do SAGE Map
 - Clique na barra de infraestrutura para editar os dados da sala (apenas se já houver registro)
 
 ### SAGE Agenda
@@ -106,6 +109,8 @@ Calendário mensal de reservas do auditório do Departamento de Computação.
 | Laboratórios | LAB 35, LAB 37, LAB 39, LAB 41, LAB 43, LAB CEAGRI I-10, LAB CEAGRI I-15 |
 
 Dados de infraestrutura (cadeiras, computadores, projetor, TV, cabo HDMI, ar-condicionado) ficam na tabela `infra_salas`, uma linha por sala (chave `sala`). O auditório usa a chave **SALA 07** nessa mesma tabela.
+
+As reservas pontuais do SAGE Map e do SAGE Rural ficam na tabela `reservas_pontuais` (`id`, `disciplina`, `professor`, `data`, `inicio`, `fim`, `sala`, `modulo`), onde `modulo` é `map` ou `rural`. Horários no formato `HH:MM`, iguais aos das tabelas de alocação.
 
 ---
 

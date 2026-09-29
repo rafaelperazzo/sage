@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { PageShell } from '../../components/Layout/PageShell'
-import { MapPin, Calendar, BarChart2, Building2, Wrench, Mail, GraduationCap } from 'lucide-react'
+import { MapPin, Calendar, BarChart2, Building2, Wrench, Mail, GraduationCap, Sprout } from 'lucide-react'
 
 interface ModuleCardProps {
   icon: React.ReactNode
@@ -59,7 +59,24 @@ const MODULES: ModuleCardProps[] = [
       'Clique em uma alocação para ver os detalhes: disciplina, professor, sala e horário',
       'As salas são coloridas por tipo: salas de aula (azul), inovação (roxo) e laboratórios (verde)',
       'Veja a infraestrutura da sala selecionada: cadeiras, computadores, projetor, TV, cabo HDMI e ar-condicionado',
+      'Reservas pontuais (em datas específicas) aparecem nas células livres da grade, com a data — clique para ver os detalhes',
       'Aba "Buscar Sala": localize disciplinas e professores com autocomplete e veja todas as salas e horários',
+      'A grade é atualizada automaticamente em tempo real',
+      'Filtre os dados pelo período letivo usando o seletor no topo da página',
+    ],
+  },
+  {
+    icon: <Sprout size={20} className="text-lime-700" />,
+    title: 'SAGE Rural',
+    route: '/rural',
+    color: 'bg-lime-50 border-lime-100 text-lime-900',
+    description:
+      'Agenda semanal das salas de unidades externas ao Departamento de Computação, geridas pela CPGA - PREG, no mesmo formato do SAGE Map.',
+    features: [
+      'Selecione a sala em uma lista dinâmica com todas as salas externas cadastradas',
+      'Grade semanal com as alocações e as reservas pontuais de cada sala',
+      'Abas "Buscar Sala" e "Lista de Disciplinas", como no SAGE Map',
+      'Aba "Salas Livres Agora": salas livres no momento, agrupadas por prédio, considerando alocações e reservas pontuais',
       'A grade é atualizada automaticamente em tempo real',
       'Filtre os dados pelo período letivo usando o seletor no topo da página',
     ],

@@ -1,5 +1,5 @@
-import type { Alocacao } from '../../types'
-import { timeToMinutes } from '../map/gridUtils'
+import type { Alocacao, ReservaPontual } from '../../types'
+import { timeToMinutes, getOcupacoesDoDia } from '../map/gridUtils'
 
 const DIA_POR_INDICE_JS: Record<number, string> = {
   1: 'SEGUNDA',
@@ -49,13 +49,14 @@ export function getPredios(salas: string[]): string[] {
  * Para cada nome em `nomesSalas`, verifica se ela está livre neste exato
  * momento (nenhuma alocação de hoje cobre o horário atual) e, se estiver,
  * até que horário permanece livre — o início da próxima alocação de hoje, ou
- * o fim do expediente (22:00) caso não haja mais nenhuma. Salas ocupadas
- * agora não entram no resultado.
+ * o fim do expediente (22:00) caso não haja mais nenhuma. Reservas pontuais
+ * de hoje também ocupam a sala. Salas ocupadas agora não entram no resultado.
  */
 export function getSalasExternasLivresAgora(
   nomesSalas: string[],
   alocacoes: Alocacao[],
-  now: Date = new Date()
+  now: Date = new Date(),
+  reservas: ReservaPontual[] = []
 ): SalaExternaLivreAgora[] {
   const diaAtual = DIA_POR_INDICE_JS[now.getDay()]
   if (!diaAtual) return []
@@ -64,16 +65,14 @@ export function getSalasExternasLivresAgora(
   const livres: SalaExternaLivreAgora[] = []
 
   for (const nome of nomesSalas) {
-    const alocacoesHoje = alocacoes
-      .filter((a) => a.sala === nome && a.dia_semana === diaAtual)
-      .sort((a, b) => timeToMinutes(a.inicio) - timeToMinutes(b.inicio))
+    const ocupacoesHoje = getOcupacoesDoDia(nome, alocacoes, reservas, now)
 
-    const ocupadaAgora = alocacoesHoje.some(
+    const ocupadaAgora = ocupacoesHoje.some(
       (a) => minutosAgora >= timeToMinutes(a.inicio) && minutosAgora < timeToMinutes(a.fim)
     )
     if (ocupadaAgora) continue
 
-    const proxima = alocacoesHoje.find((a) => timeToMinutes(a.inicio) > minutosAgora)
+    const proxima = ocupacoesHoje.find((a) => timeToMinutes(a.inicio) > minutosAgora)
     const livreAte =
       proxima && timeToMinutes(proxima.inicio) < timeToMinutes(FIM_EXPEDIENTE)
         ? proxima.inicio

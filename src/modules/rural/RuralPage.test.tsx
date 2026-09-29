@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithRouter } from '../../test/renderWithRouter'
-import type { Alocacao, Manutencao } from '../../types'
+import type { Alocacao, Manutencao, ReservaPontual } from '../../types'
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -13,16 +13,19 @@ vi.mock('../../hooks/useAlocacoesExternas', () => ({
 vi.mock('../../hooks/useSalasExternas', () => ({ useSalasExternas: vi.fn() }))
 vi.mock('../../hooks/useAuth', () => ({ useAuth: vi.fn() }))
 vi.mock('../../hooks/useManutencao', () => ({ useManutencao: vi.fn() }))
+vi.mock('../../hooks/useReservasPontuais', () => ({ useReservasPontuais: vi.fn() }))
 
 const { useAlocacoesExternasPorSala, useAlocacoesExternas } = await import('../../hooks/useAlocacoesExternas')
 const { useSalasExternas } = await import('../../hooks/useSalasExternas')
 const { useAuth } = await import('../../hooks/useAuth')
 const { useManutencao } = await import('../../hooks/useManutencao')
+const { useReservasPontuais } = await import('../../hooks/useReservasPontuais')
 const mockPorSala = vi.mocked(useAlocacoesExternasPorSala)
 const mockTodas = vi.mocked(useAlocacoesExternas)
 const mockSalas = vi.mocked(useSalasExternas)
 const mockUseAuth = vi.mocked(useAuth)
 const mockUseManutencao = vi.mocked(useManutencao)
+const mockUseReservas = vi.mocked(useReservasPontuais)
 
 const { RuralPage } = await import('./RuralPage')
 
@@ -73,7 +76,17 @@ function setupHooks({
   salas = ['SALA RURAL 01', 'SALA RURAL 02'],
   loadingSalas = false,
   manutencoes = [] as Manutencao[],
+  reservas = [] as ReservaPontual[],
 } = {}) {
+  mockUseReservas.mockReturnValue({
+    reservas,
+    loading: false,
+    error: null,
+    create: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn(),
+    getConflito: vi.fn().mockReturnValue(null),
+  })
   mockPorSala.mockReturnValue({ alocacoes, loading, error, ...mockCRUD })
   mockTodas.mockReturnValue({ alocacoes, loading, error, reload: vi.fn() })
   mockSalas.mockReturnValue({ salas, loading: loadingSalas, error: null })
@@ -283,5 +296,38 @@ describe('RuralPage — abertura de modais', () => {
     await user.click(screen.getByText('IRRIGAÇÃO'))
 
     expect(await screen.findByRole('button', { name: /Salvar/i })).toBeInTheDocument()
+  })
+})
+
+describe('RuralPage — reservas pontuais', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('carrega as reservas do módulo rural', () => {
+    setupHooks()
+    renderWithRouter(<RuralPage />)
+    expect(mockUseReservas).toHaveBeenCalledWith('rural', expect.any(Array))
+  })
+
+  it('admin clica em slot livre e escolhe reserva → formulário com a sala selecionada', async () => {
+    setupHooks({ isAdmin: true })
+    const user = userEvent.setup()
+    renderWithRouter(<RuralPage />)
+
+    await user.click(screen.getAllByText('LIVRE')[0]!)
+    await user.click(await screen.findByRole('button', { name: /Reserva pontual/i }))
+
+    expect(await screen.findByText(/Nova Reserva Pontual — SALA RURAL 01/i)).toBeInTheDocument()
+  })
+
+  it('reserva da sala selecionada aparece na grade; de outra sala não', () => {
+    setupHooks({
+      reservas: [
+        { id: 1, disciplina: 'OFICINA', professor: null, data: '2099-01-05', inicio: '14:00', fim: '16:00', sala: 'SALA RURAL 01', modulo: 'rural' },
+        { id: 2, disciplina: 'SEMINARIO', professor: null, data: '2099-01-05', inicio: '14:00', fim: '16:00', sala: 'SALA RURAL 02', modulo: 'rural' },
+      ],
+    })
+    renderWithRouter(<RuralPage />)
+    expect(screen.getByText(/OFICINA/)).toBeInTheDocument()
+    expect(screen.queryByText(/SEMINARIO/)).not.toBeInTheDocument()
   })
 })

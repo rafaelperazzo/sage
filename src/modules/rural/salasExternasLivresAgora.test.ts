@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { getSalasExternasLivresAgora, getPredioDaSala, getNomeSalaSemPredio, getPredios } from './salasExternasLivresAgora'
-import type { Alocacao } from '../../types'
+import type { Alocacao, ReservaPontual } from '../../types'
 
 function makeAlocacao(overrides: Partial<Alocacao> = {}): Alocacao {
   return {
@@ -19,6 +19,28 @@ function makeAlocacao(overrides: Partial<Alocacao> = {}): Alocacao {
 }
 
 describe('getSalasExternasLivresAgora', () => {
+  const reserva = (overrides: Partial<ReservaPontual>): ReservaPontual => ({
+    id: 1, disciplina: 'Reserva', professor: null, data: '2026-07-27', inicio: '13:00', fim: '15:00',
+    sala: 'SALA RURAL 01', modulo: 'rural', ...overrides,
+  })
+
+  it('reserva pontual de hoje cobrindo agora → sala ocupada', () => {
+    const now = new Date(2026, 6, 27, 14, 0) // segunda-feira
+    expect(getSalasExternasLivresAgora(['SALA RURAL 01'], [], now, [reserva({})])).toEqual([])
+  })
+
+  it('reserva pontual mais tarde hoje → livre até o início dela', () => {
+    const now = new Date(2026, 6, 27, 14, 0)
+    const result = getSalasExternasLivresAgora(['SALA RURAL 01'], [], now, [reserva({ inicio: '16:00', fim: '17:00' })])
+    expect(result).toEqual([{ sala: 'SALA RURAL 01', livreAte: '16:00' }])
+  })
+
+  it('reserva pontual de outra data (mesmo dia da semana) é ignorada', () => {
+    const now = new Date(2026, 6, 27, 14, 0)
+    const result = getSalasExternasLivresAgora(['SALA RURAL 01'], [], now, [reserva({ data: '2026-08-03' })])
+    expect(result).toEqual([{ sala: 'SALA RURAL 01', livreAte: '22:00' }])
+  })
+
   it('sala sem nenhuma alocação hoje → livre até o fim do expediente (22:00)', () => {
     const now = new Date(2026, 6, 27, 14, 0) // segunda-feira
     const result = getSalasExternasLivresAgora(['SALA RURAL 01'], [], now)

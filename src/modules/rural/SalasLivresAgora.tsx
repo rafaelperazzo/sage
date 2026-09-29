@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
 import { DoorOpen, Clock } from 'lucide-react'
-import type { Alocacao } from '../../types'
+import type { Alocacao, ReservaPontual } from '../../types'
 import { useSalasExternasLivresAgora } from '../../hooks/useSalasExternasLivresAgora'
 import { getPredioDaSala, getPredios, getNomeSalaSemPredio } from './salasExternasLivresAgora'
 
 interface SalasLivresAgoraProps {
   salas: string[]
   alocacoes: Alocacao[]
+  reservas?: ReservaPontual[]
   loading: boolean
 }
 
-export function SalasLivresAgora({ salas, alocacoes, loading }: SalasLivresAgoraProps) {
+export function SalasLivresAgora({ salas, alocacoes, reservas = [], loading }: SalasLivresAgoraProps) {
   const predios = useMemo(() => getPredios(salas), [salas])
   const [selectedPredio, setSelectedPredio] = useState('')
 
@@ -26,7 +27,7 @@ export function SalasLivresAgora({ salas, alocacoes, loading }: SalasLivresAgora
     [salas, selectedPredio]
   )
 
-  const { visivel, livres } = useSalasExternasLivresAgora(salasDoPredio, alocacoes)
+  const { visivel, livres } = useSalasExternasLivresAgora(salasDoPredio, alocacoes, reservas)
 
   if (loading) {
     return <p className="text-sm text-gray-400">Carregando dados...</p>

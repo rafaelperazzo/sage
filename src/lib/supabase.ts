@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { Alocacao, AlocacaoInput, InfraSala, InfraSalaInput, Reserva, ReservaInput, Manutencao, ManutencaoInput } from '../types'
+import type { Alocacao, AlocacaoInput, InfraSala, InfraSalaInput, Reserva, ReservaInput, Manutencao, ManutencaoInput, ModuloReserva, ReservaPontual, ReservaPontualInput } from '../types'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
@@ -366,4 +366,53 @@ export async function fetchAdminRoles(userId: string): Promise<string[]> {
 
   if (error) throw error
   return (data as { module: string }[]).map((r) => r.module)
+}
+
+// ── Reservas pontuais (SAGE Map e SAGE Rural) ────────────────────
+
+export const RESERVAS_PONTUAIS_TABLE = 'reservas_pontuais'
+
+export async function fetchReservasPontuaisDesde(modulo: ModuloReserva, desde: string): Promise<ReservaPontual[]> {
+  const { data, error } = await supabase
+    .from(RESERVAS_PONTUAIS_TABLE)
+    .select('*')
+    .eq('modulo', modulo)
+    .gte('data', desde)
+    .order('data')
+    .order('inicio')
+
+  if (error) throw error
+  return data as ReservaPontual[]
+}
+
+export async function insertReservaPontual(input: ReservaPontualInput): Promise<ReservaPontual> {
+  const { data, error } = await supabase
+    .from(RESERVAS_PONTUAIS_TABLE)
+    .insert(input)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data as ReservaPontual
+}
+
+export async function updateReservaPontual(id: number, input: ReservaPontualInput): Promise<ReservaPontual> {
+  const { data, error } = await supabase
+    .from(RESERVAS_PONTUAIS_TABLE)
+    .update(input)
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data as ReservaPontual
+}
+
+export async function deleteReservaPontual(id: number): Promise<void> {
+  const { error } = await supabase
+    .from(RESERVAS_PONTUAIS_TABLE)
+    .delete()
+    .eq('id', id)
+
+  if (error) throw error
 }

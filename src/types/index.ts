@@ -55,3 +55,18 @@ export interface Manutencao {
 }
 
 export type ManutencaoInput = Omit<Manutencao, 'id'>
+
+export type ModuloReserva = 'map' | 'rural'
+
+export interface ReservaPontual {
+  id: number
+  disciplina: string
+  professor: string | null
+  data: string        // "YYYY-MM-DD"
+  inicio: string      // "HH:MM"
+  fim: string         // "HH:MM"
+  sala: string
+  modulo: ModuloReserva
+}
+
+export type ReservaPontualInput = Omit<ReservaPontual, 'id'>

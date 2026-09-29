@@ -8,6 +8,9 @@ import { HomePage } from './HomePage'
 vi.mock('../../hooks/useAlocacoes', () => ({
   useAlocacoes: () => ({ alocacoes: [], loading: false, error: null, reload: vi.fn() }),
 }))
+vi.mock('../../hooks/useReservasPontuais', () => ({
+  useReservasPontuais: () => ({ reservas: [], loading: false, error: null }),
+}))
 
 describe('HomePage', () => {
   it('exibe o título SAGE', () => {

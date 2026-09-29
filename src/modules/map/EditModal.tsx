@@ -7,12 +7,14 @@ import { AlertCircle, Trash2 } from 'lucide-react'
 interface EditModalProps {
   alocacao: Alocacao
   hasConflict: (data: AlocacaoInput, excludeId?: number) => boolean
+  // Mensagem de conflito com uma reserva pontual futura (null se não houver).
+  getConflitoReserva?: (data: AlocacaoInput) => string | null
   onSave: (id: number, data: AlocacaoInput) => Promise<void>
   onDelete: (id: number) => Promise<void>
   onClose: () => void
 }
 
-export function EditModal({ alocacao, hasConflict, onSave, onDelete, onClose }: EditModalProps) {
+export function EditModal({ alocacao, hasConflict, getConflitoReserva, onSave, onDelete, onClose }: EditModalProps) {
   const [disciplina, setDisciplina] = useState(alocacao.disciplina)
   const [professor, setProfessor] = useState(alocacao.professor ?? '')
   const [curso, setCurso] = useState(alocacao.curso)
@@ -27,6 +29,7 @@ export function EditModal({ alocacao, hasConflict, onSave, onDelete, onClose }: 
 
   const input: AlocacaoInput = { disciplina, professor: professor || null, curso, dia_semana: dia, sala, inicio, fim }
   const conflict = disciplina.trim() !== '' && hasConflict(input, alocacao.id)
+  const conflitoReserva = disciplina.trim() !== '' && !conflict ? getConflitoReserva?.(input) ?? null : null
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -34,6 +37,7 @@ export function EditModal({ alocacao, hasConflict, onSave, onDelete, onClose }: 
     if (!curso.trim()) { setError('Curso é obrigatório.'); return }
     if (inicio >= fim) { setError('O horário de início deve ser anterior ao fim.'); return }
     if (conflict) { setError('Conflito de horário: este slot já está ocupado.'); return }
+    if (conflitoReserva) { setError(conflitoReserva); return }
     setSaving(true)
     setError(null)
     try {
@@ -181,10 +185,10 @@ export function EditModal({ alocacao, hasConflict, onSave, onDelete, onClose }: 
           </div>
         </div>
 
-        {(error ?? conflict) && (
+        {(error ?? (conflict || conflitoReserva)) && (
           <div className="flex items-start gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
             <AlertCircle size={15} className="mt-0.5 flex-shrink-0" />
-            {error ?? 'Conflito de horário: este slot já está ocupado.'}
+            {error ?? (conflict ? 'Conflito de horário: este slot já está ocupado.' : conflitoReserva)}
           </div>
         )}
 
@@ -206,7 +210,7 @@ export function EditModal({ alocacao, hasConflict, onSave, onDelete, onClose }: 
           </button>
           <button
             type="submit"
-            disabled={saving || !!conflict}
+            disabled={saving || !!conflict || !!conflitoReserva}
             className="flex-1 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {saving ? 'Salvando...' : 'Salvar'}

@@ -1,11 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { screen } from '@testing-library/react'
 import { renderWithRouter } from '../../test/renderWithRouter'
-import type { Alocacao } from '../../types'
+import type { Alocacao, ReservaPontual } from '../../types'
 
 let mockAlocacoes: Alocacao[] = []
 vi.mock('../../hooks/useAlocacoes', () => ({
   useAlocacoes: () => ({ alocacoes: mockAlocacoes, loading: false, error: null, reload: vi.fn() }),
+}))
+let mockReservas: ReservaPontual[] = []
+vi.mock('../../hooks/useReservasPontuais', () => ({
+  useReservasPontuais: () => ({ reservas: mockReservas, loading: false, error: null }),
 }))
 
 const { FreeNowCards } = await import('./FreeNowCards')
@@ -38,6 +42,7 @@ function alocacao(overrides: Partial<Alocacao>): Alocacao {
 describe('FreeNowCards', () => {
   beforeEach(() => {
     mockAlocacoes = []
+    mockReservas = []
     vi.useFakeTimers({ toFake: ['Date'] })
   })
 
@@ -102,5 +107,22 @@ describe('FreeNowCards', () => {
 
     expect(screen.getByText('Nenhum laboratório disponível no momento.')).toBeInTheDocument()
     expect(screen.getByText('Nenhuma sala disponível no momento.')).toBeInTheDocument()
+  })
+
+  it('considera reservas pontuais de hoje (ocupa agora / antecipa o "livre até")', () => {
+    const reserva = (sala: string, inicio: string, fim: string, data = '2026-08-03'): ReservaPontual => ({
+      id: Math.random(), disciplina: 'Reserva', professor: null, data, inicio, fim, sala, modulo: 'map',
+    })
+    mockReservas = [
+      reserva('LAB 37', '14:00', '15:00'),              // ocupa agora
+      reserva('LAB 43', '17:00', '18:00'),              // livre até 17:00
+      reserva('LAB 35', '14:00', '16:00', '2026-08-10'), // outra data: ignorada
+    ]
+    vi.setSystemTime(new Date('2026-08-03T14:03:00'))
+    renderWithRouter(<FreeNowCards />)
+
+    expect(screen.queryByText(/LAB 37/)).not.toBeInTheDocument()
+    expect(getLine('LAB 43', '17:00')).toBeInTheDocument()
+    expect(getLine('LAB 35', '22:00')).toBeInTheDocument()
   })
 })

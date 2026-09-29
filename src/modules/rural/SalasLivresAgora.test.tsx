@@ -62,7 +62,7 @@ describe('SalasLivresAgora — agrupamento por prédio', () => {
     setup()
     render(<SalasLivresAgora salas={salas} alocacoes={[]} loading={false} />)
 
-    expect(mockHook).toHaveBeenLastCalledWith(['PREDIO A - SALA 02', 'PREDIO A - SALA 01'], [])
+    expect(mockHook).toHaveBeenLastCalledWith(['PREDIO A - SALA 02', 'PREDIO A - SALA 01'], [], [])
   })
 
   it('trocar o prédio no select passa ao hook apenas as salas do novo prédio', () => {
@@ -71,7 +71,7 @@ describe('SalasLivresAgora — agrupamento por prédio', () => {
 
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'PREDIO B' } })
 
-    expect(mockHook).toHaveBeenLastCalledWith(['PREDIO B - SALA 01'], [])
+    expect(mockHook).toHaveBeenLastCalledWith(['PREDIO B - SALA 01'], [], [])
   })
 
   it('sem nenhuma sala cadastrada → não exibe o select de prédio', () => {

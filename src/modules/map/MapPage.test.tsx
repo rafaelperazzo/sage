@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithRouter } from '../../test/renderWithRouter'
-import type { Alocacao, Manutencao } from '../../types'
+import type { Alocacao, Manutencao, ReservaPontual } from '../../types'
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -12,14 +12,19 @@ vi.mock('../../hooks/useAlocacoes', () => ({
 }))
 vi.mock('../../hooks/useAuth', () => ({ useAuth: vi.fn() }))
 vi.mock('../../hooks/useManutencao', () => ({ useManutencao: vi.fn() }))
+vi.mock('../../hooks/useReservasPontuais', () => ({ useReservasPontuais: vi.fn() }))
+// AllocationForm lê o período atual do contexto.
+vi.mock('../../contexts/PeriodoContext', () => ({ usePeriodo: () => ({ periodo: '2026.2' }) }))
 
 const { useAlocacoesPorSala, useAlocacoes } = await import('../../hooks/useAlocacoes')
 const { useAuth } = await import('../../hooks/useAuth')
 const { useManutencao } = await import('../../hooks/useManutencao')
+const { useReservasPontuais } = await import('../../hooks/useReservasPontuais')
 const mockPorSala = vi.mocked(useAlocacoesPorSala)
 const mockTodas = vi.mocked(useAlocacoes)
 const mockUseAuth = vi.mocked(useAuth)
 const mockUseManutencao = vi.mocked(useManutencao)
+const mockUseReservas = vi.mocked(useReservasPontuais)
 
 const { MapPage } = await import('./MapPage')
 
@@ -37,6 +42,20 @@ function makeAlocacao(overrides: Partial<Alocacao> = {}): Alocacao {
     periodo: '2026.1',
     curso: 'DC',
     semestre: 0,
+    ...overrides,
+  }
+}
+
+function makeReserva(overrides: Partial<ReservaPontual> = {}): ReservaPontual {
+  return {
+    id: 1,
+    disciplina: 'PALESTRA IA',
+    professor: 'Prof. Souza',
+    data: '2099-01-05', // segunda-feira
+    inicio: '14:00',
+    fim: '16:00',
+    sala: 'SALA 02',
+    modulo: 'map',
     ...overrides,
   }
 }
@@ -68,7 +87,17 @@ function setupHooks({
   error = null as string | null,
   isAdmin = false,
   manutencoes = [] as Manutencao[],
+  reservas = [] as ReservaPontual[],
 } = {}) {
+  mockUseReservas.mockReturnValue({
+    reservas,
+    loading: false,
+    error: null,
+    create: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn(),
+    getConflito: vi.fn().mockReturnValue(null),
+  })
   mockPorSala.mockReturnValue({ alocacoes, loading, error, ...mockCRUD })
   mockTodas.mockReturnValue({ alocacoes, loading, error, reload: vi.fn() })
   mockUseAuth.mockReturnValue({
@@ -317,13 +346,13 @@ describe('MapPage — admin vs. usuário comum', () => {
   it('admin vê dica de interação com as células', () => {
     setupHooks({ isAdmin: true })
     renderWithRouter(<MapPage />)
-    expect(screen.getByText(/Clique em uma célula vazia/i)).toBeInTheDocument()
+    expect(screen.getByText(/Clique em uma célula livre/i)).toBeInTheDocument()
   })
 
   it('usuário comum NÃO vê dica de interação', () => {
     setupHooks({ isAdmin: false })
     renderWithRouter(<MapPage />)
-    expect(screen.queryByText(/Clique em uma célula vazia/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Clique em uma célula livre/i)).not.toBeInTheDocument()
   })
 })
 
@@ -352,5 +381,81 @@ describe('MapPage — abertura de modais', () => {
     await user.click(screen.getByText('COMPILADORES'))
 
     expect(await screen.findByRole('button', { name: /Salvar/i })).toBeInTheDocument()
+  })
+})
+
+describe('MapPage — reservas pontuais', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('admin clica em slot livre → pergunta entre alocação e reserva', async () => {
+    setupHooks({ isAdmin: true })
+    const user = userEvent.setup()
+    renderWithRouter(<MapPage />)
+
+    await user.click(screen.getAllByText('LIVRE')[0]!)
+
+    expect(await screen.findByRole('button', { name: /Nova alocação/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Reserva pontual/i })).toBeInTheDocument()
+  })
+
+  it('escolher "Reserva pontual" abre o formulário de reserva', async () => {
+    setupHooks({ isAdmin: true })
+    const user = userEvent.setup()
+    renderWithRouter(<MapPage />)
+
+    await user.click(screen.getAllByText('LIVRE')[0]!)
+    await user.click(await screen.findByRole('button', { name: /Reserva pontual/i }))
+
+    expect(await screen.findByText(/Nova Reserva Pontual — SALA 02/i)).toBeInTheDocument()
+    expect(screen.getByText('Data *')).toBeInTheDocument()
+  })
+
+  it('escolher "Nova alocação" abre o formulário de alocação existente', async () => {
+    setupHooks({ isAdmin: true })
+    const user = userEvent.setup()
+    renderWithRouter(<MapPage />)
+
+    await user.click(screen.getAllByText('LIVRE')[0]!)
+    await user.click(await screen.findByRole('button', { name: /Nova alocação/i }))
+
+    expect(await screen.findByText(/Nova Alocação —/i)).toBeInTheDocument()
+  })
+
+  it('reserva aparece na célula livre e usuário comum abre os detalhes', async () => {
+    setupHooks({ isAdmin: false, reservas: [makeReserva()] })
+    const user = userEvent.setup()
+    renderWithRouter(<MapPage />)
+
+    await user.click(screen.getByText(/PALESTRA IA/))
+
+    expect(await screen.findByText('Detalhes da Reserva Pontual')).toBeInTheDocument()
+    expect(screen.getByText(/05\/01\/2099/)).toBeInTheDocument()
+  })
+
+  it('admin clica na reserva → abre edição com botão Remover', async () => {
+    setupHooks({ isAdmin: true, reservas: [makeReserva()] })
+    const user = userEvent.setup()
+    renderWithRouter(<MapPage />)
+
+    await user.click(screen.getByText(/PALESTRA IA/))
+
+    expect(await screen.findByText(/Editar Reserva Pontual/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Remover/i })).toBeInTheDocument()
+  })
+
+  it('nova alocação sobre reserva futura é bloqueada com a reserva indicada', async () => {
+    setupHooks({ isAdmin: true, reservas: [makeReserva({ inicio: '08:00', fim: '10:00' })] })
+    const user = userEvent.setup()
+    renderWithRouter(<MapPage />)
+
+    // Primeiro slot livre é segunda 08:00–10:00, onde está a reserva.
+    await user.click(screen.getAllByText('LIVRE')[0]!)
+    await user.click(await screen.findByRole('button', { name: /Nova alocação/i }))
+    await user.type(await screen.findByPlaceholderText('Nome da disciplina'), 'REDES')
+
+    expect(
+      await screen.findByText(/Conflito com a reserva pontual: PALESTRA IA — Prof. Souza em Segunda-feira, 05\/01\/2099, 08:00–10:00/)
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Salvar/i })).toBeDisabled()
   })
 })

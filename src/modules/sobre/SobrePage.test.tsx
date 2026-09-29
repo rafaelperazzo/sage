@@ -20,6 +20,17 @@ describe('SobrePage', () => {
     expect(screen.getByRole('heading', { name: 'SAGE Map' })).toBeInTheDocument()
   })
 
+  it('exibe card do módulo SAGE Rural', () => {
+    renderWithRouter(<SobrePage />)
+    expect(screen.getByRole('heading', { name: 'SAGE Rural' })).toBeInTheDocument()
+  })
+
+  it('link do SAGE Rural aponta para /rural', () => {
+    renderWithRouter(<SobrePage />)
+    const links = screen.getAllByRole('link', { name: /Acessar módulo/i })
+    expect(links.map(l => l.getAttribute('href'))).toContain('/rural')
+  })
+
   it('exibe card do módulo SAGE Agenda', () => {
     renderWithRouter(<SobrePage />)
     expect(screen.getByRole('heading', { name: 'SAGE Agenda' })).toBeInTheDocument()
@@ -45,10 +56,10 @@ describe('SobrePage', () => {
     expect(screen.getByRole('heading', { name: 'SAGE Manutenção' })).toBeInTheDocument()
   })
 
-  it('exibe 6 links "Acessar módulo"', () => {
+  it('exibe 7 links "Acessar módulo"', () => {
     renderWithRouter(<SobrePage />)
     const links = screen.getAllByText(/Acessar módulo/i)
-    expect(links).toHaveLength(6)
+    expect(links).toHaveLength(7)
   })
 
   it('link do SAGE Map aponta para /map', () => {

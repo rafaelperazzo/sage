@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { Alocacao } from '../types'
+import type { Alocacao, ReservaPontual } from '../types'
 import { isDentroJanelaLivresAgora } from '../modules/map/gridUtils'
 import { getSalasExternasLivresAgora, type SalaExternaLivreAgora } from '../modules/rural/salasExternasLivresAgora'
 
@@ -8,7 +8,7 @@ interface UseSalasExternasLivresAgoraReturn {
   livres: SalaExternaLivreAgora[]
 }
 
-// Recebe `salas` e `alocacoes` já carregadas pelo RuralPage (em vez de
+// Recebe `salas`, `alocacoes` e `reservas` já carregadas pelo RuralPage (em vez de
 // buscar de novo aqui) para não abrir uma segunda assinatura realtime no
 // mesmo canal (`externas-all-<periodo>`) — o Supabase rejeita registrar
 // callbacks `postgres_changes` duas vezes no mesmo nome de canal.
@@ -16,7 +16,8 @@ interface UseSalasExternasLivresAgoraReturn {
 // exibição (08h-22h, seg-sex) sempre corretos sem exigir reload da página.
 export function useSalasExternasLivresAgora(
   salas: string[],
-  alocacoes: Alocacao[]
+  alocacoes: Alocacao[],
+  reservas: ReservaPontual[] = []
 ): UseSalasExternasLivresAgoraReturn {
   const [now, setNow] = useState(() => new Date())
 
@@ -26,7 +27,7 @@ export function useSalasExternasLivresAgora(
   }, [])
 
   const visivel = isDentroJanelaLivresAgora(now)
-  const livres = visivel ? getSalasExternasLivresAgora(salas, alocacoes, now) : []
+  const livres = visivel ? getSalasExternasLivresAgora(salas, alocacoes, now, reservas) : []
 
   return { visivel, livres }
 }

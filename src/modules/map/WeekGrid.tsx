@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import type { Alocacao } from '../../types'
-import { DIAS, HORAS } from '../../constants/salas'
+import type { Alocacao, ReservaPontual } from '../../types'
+import { DIAS, HORAS, LIMITES } from '../../constants/salas'
 import { buildGridMatrix, markFreeSlots, isAlocacaoAgora, formatFreeRange } from './gridUtils'
+import { reservasNoBloco, formatarDataCurta } from './reservasPontuaisUtils'
 import { AllocationCell } from './AllocationCell'
 
 interface WeekGridProps {
@@ -9,6 +10,9 @@ interface WeekGridProps {
   isAdmin: boolean
   onCellClick: (alocacao: Alocacao) => void
   onEmptyCellClick?: (dia: string, hora: string) => void
+  // Reservas pontuais futuras da sala, exibidas nas células sem alocação.
+  reservas?: ReservaPontual[]
+  onReservaClick?: (reserva: ReservaPontual) => void
 }
 
 const DIA_SHORT: Record<string, string> = {
@@ -23,8 +27,42 @@ const DIA_SHORT: Record<string, string> = {
 // SAGE Map exibe apenas os dias úteis (segunda a sexta); sábado fica de fora da grade.
 const DIAS_GRADE = DIAS.filter((dia) => dia !== 'SÁBADO')
 
-export function WeekGrid({ alocacoes, isAdmin, onCellClick, onEmptyCellClick }: WeekGridProps) {
+export function WeekGrid({
+  alocacoes,
+  isAdmin,
+  onCellClick,
+  onEmptyCellClick,
+  reservas = [],
+  onReservaClick,
+}: WeekGridProps) {
   const matrix = markFreeSlots(buildGridMatrix(alocacoes))
+
+  function renderReservas(dia: string, inicio: string, rowSpan: number) {
+    const fim = LIMITES[LIMITES.indexOf(inicio) + rowSpan] ?? inicio
+    const doBloco = reservasNoBloco(reservas, dia, inicio, fim)
+    if (doBloco.length === 0) return null
+    return (
+      <div className="mt-1 space-y-0.5 max-h-24 overflow-y-auto">
+        {doBloco.map((r) => (
+          <button
+            key={r.id}
+            type="button"
+            title={`${r.disciplina}${r.professor ? ` — ${r.professor}` : ''}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              onReservaClick?.(r)
+            }}
+            className="block w-full text-left text-[11px] leading-tight px-1.5 py-0.5 rounded border border-amber-300 bg-amber-100 text-amber-900 hover:bg-amber-200 transition-colors"
+          >
+            <span className="block truncate">
+              <span className="font-semibold">{formatarDataCurta(r.data)}</span> · {r.disciplina}
+            </span>
+            <span className="block text-amber-700">{r.inicio}–{r.fim}</span>
+          </button>
+        ))}
+      </div>
+    )
+  }
 
   // Atualiza a cada minuto para manter o destaque de "aula em andamento" correto.
   const [now, setNow] = useState(() => new Date())
@@ -89,6 +127,7 @@ export function WeekGrid({ alocacoes, isAdmin, onCellClick, onEmptyCellClick }: 
                       <div className="text-[11px] text-cyan-600">
                         {formatFreeRange(cell.hora, cell.rowSpan)}
                       </div>
+                      {renderReservas(dia, cell.hora, cell.rowSpan)}
                     </td>
                   )
                 }
@@ -102,7 +141,9 @@ export function WeekGrid({ alocacoes, isAdmin, onCellClick, onEmptyCellClick }: 
                         : ''
                     }`}
                     onClick={() => isAdmin && onEmptyCellClick?.(dia, hora)}
-                  />
+                  >
+                    {renderReservas(dia, hora, 1)}
+                  </td>
                 )
               })}
             </tr>

@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { WeekGrid } from './WeekGrid'
-import type { Alocacao } from '../../types'
+import type { Alocacao, ReservaPontual } from '../../types'
 
 function makeAlocacao(overrides: Partial<Alocacao> = {}): Alocacao {
   return {
@@ -159,5 +159,49 @@ describe('WeekGrid — rowSpan de alocações multi-hora', () => {
     render(<WeekGrid alocacoes={[aloc]} isAdmin={false} onCellClick={vi.fn()} />)
     const cell = screen.getByText('ENGENHARIA DE SOFTWARE').closest('td')!
     expect(within(cell).getByText(/Prof. Costa/i)).toBeInTheDocument()
+  })
+})
+
+describe('WeekGrid — reservas pontuais', () => {
+  const reserva: ReservaPontual = {
+    id: 7,
+    disciplina: 'PALESTRA IA',
+    professor: null,
+    data: '2099-01-05', // segunda-feira
+    inicio: '14:00',
+    fim: '16:00',
+    sala: 'SALA 02',
+    modulo: 'map',
+  }
+
+  it('mostra a reserva (com data) na célula livre do dia da semana', () => {
+    render(<WeekGrid alocacoes={[]} isAdmin={false} onCellClick={vi.fn()} reservas={[reserva]} />)
+    expect(screen.getByText(/05\/01/)).toBeInTheDocument()
+    expect(screen.getByText(/PALESTRA IA/)).toBeInTheDocument()
+  })
+
+  it('não mostra reserva em slot ocupado por alocação', () => {
+    const aloc = makeAlocacao({ inicio: '14:00', fim: '16:00', dia_semana: 'SEGUNDA' })
+    render(<WeekGrid alocacoes={[aloc]} isAdmin={false} onCellClick={vi.fn()} reservas={[reserva]} />)
+    expect(screen.queryByText(/PALESTRA IA/)).not.toBeInTheDocument()
+  })
+
+  it('clique na reserva chama onReservaClick e não onEmptyCellClick', async () => {
+    const onReservaClick = vi.fn()
+    const onEmptyCellClick = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <WeekGrid
+        alocacoes={[]}
+        isAdmin
+        onCellClick={vi.fn()}
+        onEmptyCellClick={onEmptyCellClick}
+        reservas={[reserva]}
+        onReservaClick={onReservaClick}
+      />
+    )
+    await user.click(screen.getByText(/PALESTRA IA/))
+    expect(onReservaClick).toHaveBeenCalledWith(reserva)
+    expect(onEmptyCellClick).not.toHaveBeenCalled()
   })
 })

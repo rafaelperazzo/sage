@@ -10,6 +10,8 @@ interface AllocationFormProps {
   initialHora?: string
   initialSala?: string
   hasConflict: (data: AlocacaoInput) => boolean
+  // Mensagem de conflito com uma reserva pontual futura (null se não houver).
+  getConflitoReserva?: (data: AlocacaoInput) => string | null
   onSave: (data: AlocacaoInput) => Promise<void>
   onClose: () => void
 }
@@ -19,6 +21,7 @@ export function AllocationForm({
   initialHora = HORAS[7],  // 14:00
   initialSala = SALAS[0]!.nome,
   hasConflict,
+  getConflitoReserva,
   onSave,
   onClose,
 }: AllocationFormProps) {
@@ -39,6 +42,7 @@ export function AllocationForm({
   const input: AlocacaoInput = { disciplina, professor: professor || null, curso, dia_semana: dia, sala, inicio, fim }
 
   const conflict = disciplina.trim() !== '' && hasConflict(input)
+  const conflitoReserva = disciplina.trim() !== '' && !conflict ? getConflitoReserva?.(input) ?? null : null
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -46,6 +50,7 @@ export function AllocationForm({
     if (!curso.trim()) { setError('Curso é obrigatório.'); return }
     if (inicio >= fim) { setError('O horário de início deve ser anterior ao fim.'); return }
     if (conflict) { setError('Conflito de horário: este slot já está ocupado.'); return }
+    if (conflitoReserva) { setError(conflitoReserva); return }
     setSaving(true)
     setError(null)
     try {
@@ -149,10 +154,10 @@ export function AllocationForm({
           </div>
         </div>
 
-        {(error ?? conflict) && (
+        {(error ?? (conflict || conflitoReserva)) && (
           <div className="flex items-start gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
             <AlertCircle size={15} className="mt-0.5 flex-shrink-0" />
-            {error ?? 'Conflito de horário: este slot já está ocupado.'}
+            {error ?? (conflict ? 'Conflito de horário: este slot já está ocupado.' : conflitoReserva)}
           </div>
         )}
 
@@ -166,7 +171,7 @@ export function AllocationForm({
           </button>
           <button
             type="submit"
-            disabled={saving || !!conflict}
+            disabled={saving || !!conflict || !!conflitoReserva}
             className="flex-1 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {saving ? 'Salvando...' : 'Salvar'}

@@ -1,4 +1,4 @@
-import type { Alocacao, SalaInfo, TipoSala } from '../../types'
+import type { Alocacao, ReservaPontual, SalaInfo, TipoSala } from '../../types'
 import { DIAS, HORAS, LIMITES } from '../../constants/salas'
 
 export type GridCellType =
@@ -15,7 +15,7 @@ export type GridMatrix = Record<string, Record<string, GridCellType>>
 // representa uma aula, então nunca aparece como "livre".
 const HORAS_DESCONSIDERADAS = new Set(['07:00', '12:00', '13:00', '18:00'])
 
-const DIA_POR_INDICE_JS: Record<number, (typeof DIAS)[number]> = {
+export const DIA_POR_INDICE_JS: Record<number, (typeof DIAS)[number]> = {
   1: 'SEGUNDA',
   2: 'TERÇA',
   3: 'QUARTA',
@@ -156,6 +156,38 @@ export function isAlocacaoAgora(alocacao: Alocacao, now: Date = new Date()): boo
   )
 }
 
+/** Data local no formato "YYYY-MM-DD" (sem conversão para UTC). */
+export function dataISO(date: Date = new Date()): string {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+export interface Ocupacao {
+  inicio: string
+  fim: string
+}
+
+/**
+ * Intervalos em que `sala` está ocupada no dia de `now`: as alocações do dia
+ * da semana atual somadas às reservas pontuais com a data de hoje, ordenados
+ * pelo início.
+ */
+export function getOcupacoesDoDia(
+  sala: string,
+  alocacoes: Alocacao[],
+  reservas: ReservaPontual[],
+  now: Date = new Date()
+): Ocupacao[] {
+  const diaAtual = DIA_POR_INDICE_JS[now.getDay()]
+  const hoje = dataISO(now)
+  return [
+    ...alocacoes.filter((a) => a.sala === sala && a.dia_semana === diaAtual),
+    ...reservas.filter((r) => r.sala === sala && r.data === hoje),
+  ].sort((a, b) => timeToMinutes(a.inicio) - timeToMinutes(b.inicio))
+}
+
 // Janela de exibição das seções "livres agora": segunda a sexta, 08:00-22:00.
 const FIM_EXPEDIENTE = '22:00'
 
@@ -181,13 +213,14 @@ export interface SalaLivreAgora {
  * Para cada sala em `salas`, verifica se ela está livre neste exato momento
  * (nenhuma alocação de hoje cobre o horário atual) e, se estiver, até que
  * horário permanece livre — o início da próxima alocação de hoje, ou o fim
- * do expediente (22:00) caso não haja mais nenhuma. Salas ocupadas agora
- * não entram no resultado.
+ * do expediente (22:00) caso não haja mais nenhuma. Reservas pontuais de
+ * hoje também ocupam a sala. Salas ocupadas agora não entram no resultado.
  */
 export function getSalasLivresAgora(
   salas: SalaInfo[],
   alocacoes: Alocacao[],
-  now: Date = new Date()
+  now: Date = new Date(),
+  reservas: ReservaPontual[] = []
 ): SalaLivreAgora[] {
   const diaAtual = DIA_POR_INDICE_JS[now.getDay()]
   if (!diaAtual) return []
@@ -196,16 +229,14 @@ export function getSalasLivresAgora(
   const livres: SalaLivreAgora[] = []
 
   for (const salaInfo of salas) {
-    const alocacoesHoje = alocacoes
-      .filter((a) => a.sala === salaInfo.nome && a.dia_semana === diaAtual)
-      .sort((a, b) => timeToMinutes(a.inicio) - timeToMinutes(b.inicio))
+    const ocupacoesHoje = getOcupacoesDoDia(salaInfo.nome, alocacoes, reservas, now)
 
-    const ocupadaAgora = alocacoesHoje.some(
+    const ocupadaAgora = ocupacoesHoje.some(
       (a) => minutosAgora >= timeToMinutes(a.inicio) && minutosAgora < timeToMinutes(a.fim)
     )
     if (ocupadaAgora) continue
 
-    const proxima = alocacoesHoje.find((a) => timeToMinutes(a.inicio) > minutosAgora)
+    const proxima = ocupacoesHoje.find((a) => timeToMinutes(a.inicio) > minutosAgora)
     const livreAte =
       proxima && timeToMinutes(proxima.inicio) < timeToMinutes(FIM_EXPEDIENTE)
         ? proxima.inicio

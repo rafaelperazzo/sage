@@ -16,13 +16,23 @@ import { useSalasExternas } from '../../hooks/useSalasExternas'
 import { useInfraSalas } from '../../hooks/useInfraSalas'
 import { useManutencao } from '../../hooks/useManutencao'
 import { useAuth } from '../../hooks/useAuth'
-import type { Alocacao, AlocacaoInput, InfraSalaInput } from '../../types'
+import { useReservasPontuais } from '../../hooks/useReservasPontuais'
+import { SlotChoiceModal } from '../map/SlotChoiceModal'
+import { ReservaPontualForm } from '../map/ReservaPontualForm'
+import { ReservaPontualViewModal } from '../map/ReservaPontualViewModal'
+import { alocacaoConflitaComReserva, mensagemConflitoReserva, proximaDataDoDia } from '../map/reservasPontuaisUtils'
+import { LIMITES } from '../../constants/salas'
+import type { Alocacao, AlocacaoInput, InfraSalaInput, ReservaPontual, ReservaPontualInput } from '../../types'
 import { Shield, RefreshCw, Info } from 'lucide-react'
 
 type ModalState =
   | { mode: 'view'; alocacao: Alocacao }
   | { mode: 'edit'; alocacao: Alocacao }
   | { mode: 'create'; dia: string; hora: string }
+  | { mode: 'choose'; dia: string; hora: string }
+  | { mode: 'createReserva'; dia: string; hora: string }
+  | { mode: 'editReserva'; reserva: ReservaPontual }
+  | { mode: 'viewReserva'; reserva: ReservaPontual }
   | null
 
 const TABS = ['grade', 'busca', 'lista', 'livres'] as const
@@ -42,6 +52,14 @@ export function RuralPage() {
   const [editingInfra, setEditingInfra] = useState(false)
   const { isAdmin } = useAuth('rural')
   const { alocacoes, loading, error, create, update, remove, hasConflict } = useAlocacoesExternasPorSala(selectedSala)
+  const {
+    reservas,
+    create: createReserva,
+    update: updateReserva,
+    remove: removeReserva,
+    getConflito: getConflitoReservaPontual,
+  } = useReservasPontuais('rural', alocacoes)
+  const reservasSala = reservas.filter((r) => r.sala === selectedSala)
   const { alocacoes: todasAlocacoes, loading: loadingBusca } = useAlocacoesExternas()
   const { infraSalas, loading: loadingInfra, save: saveInfra } = useInfraSalas()
   const infraSala = infraSalas.find((i) => i.sala === selectedSala)
@@ -63,15 +81,43 @@ export function RuralPage() {
   }
 
   function handleEmptyCellClick(dia: string, hora: string) {
-    setModal({ mode: 'create', dia, hora })
+    setModal({ mode: 'choose', dia, hora })
+  }
+
+  function handleReservaClick(reserva: ReservaPontual) {
+    setModal(isAdmin ? { mode: 'editReserva', reserva } : { mode: 'viewReserva', reserva })
+  }
+
+  function getConflitoReserva(data: AlocacaoInput): string | null {
+    const reserva = alocacaoConflitaComReserva(data, reservas)
+    return reserva ? mensagemConflitoReserva(reserva) : null
   }
 
   async function handleCreate(data: AlocacaoInput) {
+    const conflito = getConflitoReserva(data)
+    if (conflito) throw new Error(conflito)
     await create(data)
   }
 
   async function handleUpdate(id: number, data: AlocacaoInput) {
+    const conflito = getConflitoReserva(data)
+    if (conflito) throw new Error(conflito)
     await update(id, data)
+  }
+
+  async function handleCreateReserva(data: ReservaPontualInput) {
+    await createReserva(data)
+  }
+
+  async function handleUpdateReserva(id: number, data: ReservaPontualInput) {
+    await updateReserva(id, data)
+  }
+
+  // Fim sugerido para uma nova reserva: fim do bloco livre de 2 horas
+  // começando em `hora` (ou o próximo marco da grade).
+  function fimSugerido(hora: string): string {
+    const idx = LIMITES.indexOf(hora)
+    return LIMITES[idx + 2] ?? LIMITES[idx + 1] ?? hora
   }
 
   async function handleDelete(id: number) {
@@ -131,7 +177,7 @@ export function RuralPage() {
       )}
 
       {tab === 'livres' && (
-        <SalasLivresAgora salas={salas} alocacoes={todasAlocacoes} loading={loadingSalas || loadingBusca} />
+        <SalasLivresAgora salas={salas} alocacoes={todasAlocacoes} reservas={reservas} loading={loadingSalas || loadingBusca} />
       )}
 
       {tab === 'grade' && (
@@ -192,12 +238,14 @@ export function RuralPage() {
           isAdmin={isAdmin}
           onCellClick={handleCellClick}
           onEmptyCellClick={handleEmptyCellClick}
+          reservas={reservasSala}
+          onReservaClick={handleReservaClick}
         />
       )}
 
       {isAdmin && !loading && (
         <p className="mt-2 text-xs text-gray-400">
-          Clique em uma célula vazia para adicionar, ou em uma alocação para editar/remover.
+          Clique em uma célula livre para adicionar uma alocação ou reserva pontual, ou em uma alocação/reserva para editar/remover.
         </p>
       )}
 
@@ -214,6 +262,7 @@ export function RuralPage() {
           salas={salas}
           alocacao={modal.alocacao}
           hasConflict={hasConflict}
+          getConflitoReserva={getConflitoReserva}
           onSave={handleUpdate}
           onDelete={handleDelete}
           onClose={() => setModal(null)}
@@ -227,7 +276,50 @@ export function RuralPage() {
           initialHora={modal.hora}
           initialSala={selectedSala}
           hasConflict={hasConflict}
+          getConflitoReserva={getConflitoReserva}
           onSave={handleCreate}
+          onClose={() => setModal(null)}
+        />
+      )}
+
+      {modal?.mode === 'choose' && (
+        <SlotChoiceModal
+          dia={modal.dia}
+          hora={modal.hora}
+          onAlocacao={() => setModal({ mode: 'create', dia: modal.dia, hora: modal.hora })}
+          onReserva={() => setModal({ mode: 'createReserva', dia: modal.dia, hora: modal.hora })}
+          onClose={() => setModal(null)}
+        />
+      )}
+
+      {modal?.mode === 'createReserva' && (
+        <ReservaPontualForm
+          modulo="rural"
+          sala={selectedSala}
+          initialData={proximaDataDoDia(modal.dia)}
+          initialInicio={modal.hora}
+          initialFim={fimSugerido(modal.hora)}
+          getConflito={getConflitoReservaPontual}
+          onSave={handleCreateReserva}
+          onClose={() => setModal(null)}
+        />
+      )}
+
+      {modal?.mode === 'editReserva' && (
+        <ReservaPontualForm
+          modulo="rural"
+          sala={modal.reserva.sala}
+          reserva={modal.reserva}
+          getConflito={getConflitoReservaPontual}
+          onSave={(data) => handleUpdateReserva(modal.reserva.id, data)}
+          onDelete={removeReserva}
+          onClose={() => setModal(null)}
+        />
+      )}
+
+      {modal?.mode === 'viewReserva' && (
+        <ReservaPontualViewModal
+          reserva={modal.reserva}
           onClose={() => setModal(null)}
         />
       )}
