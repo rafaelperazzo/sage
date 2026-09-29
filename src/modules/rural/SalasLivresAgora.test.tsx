@@ -23,10 +23,10 @@ describe('SalasLivresAgora', () => {
     expect(screen.getByText(/Carregando/i)).toBeInTheDocument()
   })
 
-  it('fora da janela de exibição (08h-22h, seg-sex) → exibe mensagem informativa', () => {
+  it('fora da janela de exibição (08h-21h50, seg-sex) → exibe mensagem informativa', () => {
     setup({ visivel: false })
     render(<SalasLivresAgora {...props} />)
-    expect(screen.getByText(/segunda a sexta, das 08:00 às 22:00/i)).toBeInTheDocument()
+    expect(screen.getByText(/segunda a sexta, das 08:00 às 21:50/i)).toBeInTheDocument()
   })
 
   it('sem nenhuma sala livre → exibe mensagem de indisponibilidade', () => {
@@ -36,12 +36,12 @@ describe('SalasLivresAgora', () => {
   })
 
   it('exibe as salas livres (sem o prefixo do prédio) com o horário até quando permanecem livres', () => {
-    setup({ livres: [{ sala: 'PREDIO A - SALA 01', livreAte: '16:00' }, { sala: 'PREDIO A - SALA 02', livreAte: '22:00' }] })
+    setup({ livres: [{ sala: 'PREDIO A - SALA 01', livreAte: '16:00' }, { sala: 'PREDIO A - SALA 02', livreAte: '21:50' }] })
     render(<SalasLivresAgora {...props} />)
     expect(screen.getByText('SALA 01')).toBeInTheDocument()
     expect(screen.getByText(/Livre até as 16:00/)).toBeInTheDocument()
     expect(screen.getByText('SALA 02')).toBeInTheDocument()
-    expect(screen.getByText(/Livre até as 22:00/)).toBeInTheDocument()
+    expect(screen.getByText(/Livre até as 21:50/)).toBeInTheDocument()
   })
 })
 

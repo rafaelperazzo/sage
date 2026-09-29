@@ -10,14 +10,14 @@ Sistema web do **Departamento de Computação** para visualização e gestão de
 
 ## Página Inicial
 
-Logo abaixo do cabeçalho, dois cards mostram em tempo real quais **laboratórios** e **salas** estão livres no momento, indicando até que horário (ex: `LAB 43 - Livre até as 16:00`). Reservas pontuais do dia (veja o SAGE Map) também contam como ocupação: uma reserva em andamento tira a sala da lista, e uma reserva mais tarde antecipa o "livre até". Visível apenas de segunda a sexta, entre 08:00 e 22:00 — fora desse horário os cards não são exibidos. Quando não há nenhum ambiente livre no momento, é exibida a mensagem "Nenhum laboratório/sala disponível no momento."
+Logo abaixo do cabeçalho, dois cards mostram em tempo real quais **laboratórios** e **salas** estão livres no momento, indicando até que horário (ex: `LAB 43 - Livre até as 16:00`). Reservas pontuais do dia (veja o SAGE Map) também contam como ocupação: uma reserva em andamento tira a sala da lista, e uma reserva mais tarde antecipa o "livre até". Quando não há mais aulas no dia, a sala aparece livre até 21:50 (fim da última aula noturna). Visível apenas de segunda a sexta, entre 08:00 e 21:50 — fora desse horário os cards não são exibidos. Quando não há nenhum ambiente livre no momento, é exibida a mensagem "Nenhum laboratório/sala disponível no momento."
 
 ---
 
 ## Módulos
 
 ### SAGE Map
-Visualização da agenda semanal de cada sala em formato de grade (segunda a sábado, 07:00–22:00).
+Visualização da agenda semanal de cada sala em formato de grade (segunda a sexta, 07:00–21:50).
 
 - Grade interativa com slots de 1 hora e alocações em blocos de 2–4 horas
 - Cores distintas por tipo de sala: salas de aula, salas de inovação e laboratórios
@@ -44,7 +44,7 @@ Idêntico ao SAGE Map, mas para salas de unidades externas ao Departamento de Co
 
 - Seletor de sala em caixa de seleção, populado dinamicamente com os valores distintos da coluna `sala` da tabela `externas` (não é uma lista fixa como no SAGE Map)
 - Mesma grade semanal (incluindo as reservas pontuais), aba "Buscar Sala" e aba "Lista de Disciplinas" do SAGE Map
-- **Aba "Salas Livres Agora"**: lista as salas externas livres no momento (considerando alocações e reservas pontuais do dia), agrupadas por prédio. As salas seguem o padrão `PREDIO - SALA XX`; um seletor de prédio filtra a lista para mostrar apenas as salas livres daquele prédio, com o horário até quando cada uma permanece livre. Visível apenas de segunda a sexta, entre 08:00 e 22:00
+- **Aba "Salas Livres Agora"**: lista as salas externas livres no momento (considerando alocações e reservas pontuais do dia), agrupadas por prédio. As salas seguem o padrão `PREDIO - SALA XX`; um seletor de prédio filtra a lista para mostrar apenas as salas livres daquele prédio, com o horário até quando cada uma permanece livre (21:50 quando não há mais aulas no dia). Visível apenas de segunda a sexta, entre 08:00 e 21:50
 - Barra de infraestrutura da sala selecionada aparece **somente** se já existir um registro para aquela sala na tabela `infra_salas`; caso contrário, nada é exibido
 
 **Modo administrador** (requer login como administrador geral ou como administrador do SAGE Rural — veja [Autenticação e Permissões](#autenticação-e-permissões)):

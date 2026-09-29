@@ -1,5 +1,5 @@
 import type { Alocacao, ReservaPontual } from '../../types'
-import { timeToMinutes, getOcupacoesDoDia } from '../map/gridUtils'
+import { timeToMinutes, getOcupacoesDoDia, FIM_EXPEDIENTE } from '../map/gridUtils'
 
 const DIA_POR_INDICE_JS: Record<number, string> = {
   1: 'SEGUNDA',
@@ -10,8 +10,6 @@ const DIA_POR_INDICE_JS: Record<number, string> = {
   6: 'SÁBADO',
 }
 
-// Fim do expediente considerado quando não há mais nenhuma alocação hoje.
-const FIM_EXPEDIENTE = '22:00'
 
 export interface SalaExternaLivreAgora {
   sala: string
@@ -49,7 +47,7 @@ export function getPredios(salas: string[]): string[] {
  * Para cada nome em `nomesSalas`, verifica se ela está livre neste exato
  * momento (nenhuma alocação de hoje cobre o horário atual) e, se estiver,
  * até que horário permanece livre — o início da próxima alocação de hoje, ou
- * o fim do expediente (22:00) caso não haja mais nenhuma. Reservas pontuais
+ * o fim do expediente (21:50) caso não haja mais nenhuma. Reservas pontuais
  * de hoje também ocupam a sala. Salas ocupadas agora não entram no resultado.
  */
 export function getSalasExternasLivresAgora(

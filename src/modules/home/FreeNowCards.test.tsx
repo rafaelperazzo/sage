@@ -50,8 +50,14 @@ describe('FreeNowCards', () => {
     vi.useRealTimers()
   })
 
-  it('não renderiza nada fora do horário 08h-22h', () => {
+  it('não renderiza nada fora do horário 08h-21h50', () => {
     vi.setSystemTime(new Date('2026-08-03T07:59:00'))
+    const { container } = renderWithRouter(<FreeNowCards />)
+    expect(container).toBeEmptyDOMElement()
+  })
+
+  it('não renderiza nada depois da última aula noturna (21:50)', () => {
+    vi.setSystemTime(new Date('2026-08-03T21:55:00')) // segunda
     const { container } = renderWithRouter(<FreeNowCards />)
     expect(container).toBeEmptyDOMElement()
   })
@@ -62,7 +68,7 @@ describe('FreeNowCards', () => {
     expect(container).toBeEmptyDOMElement()
   })
 
-  it('exibe os dois cards dentro do horário comercial (seg-sex, 08h-22h)', () => {
+  it('exibe os dois cards dentro do horário comercial (seg-sex, 08h-21h50)', () => {
     vi.setSystemTime(new Date('2026-08-03T14:03:00')) // segunda
     renderWithRouter(<FreeNowCards />)
     expect(screen.getByText('Laboratórios Livres Agora')).toBeInTheDocument()
@@ -84,13 +90,13 @@ describe('FreeNowCards', () => {
     expect(screen.queryByText(/LAB 37/)).not.toBeInTheDocument()
   })
 
-  it('assume fim de expediente (22:00) quando não há mais alocações no dia', () => {
+  it('assume fim de expediente (21:50, última aula noturna) quando não há mais alocações no dia', () => {
     mockAlocacoes = []
     vi.setSystemTime(new Date('2026-08-03T14:03:00'))
     renderWithRouter(<FreeNowCards />)
 
-    expect(getLine('LAB 35', '22:00')).toBeInTheDocument()
-    expect(getLine('SALA 02', '22:00')).toBeInTheDocument()
+    expect(getLine('LAB 35', '21:50')).toBeInTheDocument()
+    expect(getLine('SALA 02', '21:50')).toBeInTheDocument()
   })
 
   it('mostra mensagem de indisponibilidade quando não há laboratórios/salas livres', () => {
@@ -123,6 +129,6 @@ describe('FreeNowCards', () => {
 
     expect(screen.queryByText(/LAB 37/)).not.toBeInTheDocument()
     expect(getLine('LAB 43', '17:00')).toBeInTheDocument()
-    expect(getLine('LAB 35', '22:00')).toBeInTheDocument()
+    expect(getLine('LAB 35', '21:50')).toBeInTheDocument()
   })
 })

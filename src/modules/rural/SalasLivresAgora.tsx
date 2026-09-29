@@ -36,7 +36,7 @@ export function SalasLivresAgora({ salas, alocacoes, reservas = [], loading }: S
   if (!visivel) {
     return (
       <p className="text-sm text-gray-400">
-        Disponível apenas de segunda a sexta, das 08:00 às 22:00.
+        Disponível apenas de segunda a sexta, das 08:00 às 21:50.
       </p>
     )
   }

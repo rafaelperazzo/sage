@@ -38,13 +38,13 @@ describe('getSalasExternasLivresAgora', () => {
   it('reserva pontual de outra data (mesmo dia da semana) é ignorada', () => {
     const now = new Date(2026, 6, 27, 14, 0)
     const result = getSalasExternasLivresAgora(['SALA RURAL 01'], [], now, [reserva({ data: '2026-08-03' })])
-    expect(result).toEqual([{ sala: 'SALA RURAL 01', livreAte: '22:00' }])
+    expect(result).toEqual([{ sala: 'SALA RURAL 01', livreAte: '21:50' }])
   })
 
-  it('sala sem nenhuma alocação hoje → livre até o fim do expediente (22:00)', () => {
+  it('sala sem nenhuma alocação hoje → livre até o fim do expediente (21:50, última aula noturna)', () => {
     const now = new Date(2026, 6, 27, 14, 0) // segunda-feira
     const result = getSalasExternasLivresAgora(['SALA RURAL 01'], [], now)
-    expect(result).toEqual([{ sala: 'SALA RURAL 01', livreAte: '22:00' }])
+    expect(result).toEqual([{ sala: 'SALA RURAL 01', livreAte: '21:50' }])
   })
 
   it('sala ocupada agora → não aparece no resultado', () => {
@@ -65,14 +65,14 @@ describe('getSalasExternasLivresAgora', () => {
     const aloc = makeAlocacao({ inicio: '13:00', fim: '15:00', dia_semana: 'TERÇA' })
     const now = new Date(2026, 6, 27, 14, 0) // segunda-feira
     const result = getSalasExternasLivresAgora(['SALA RURAL 01'], [aloc], now)
-    expect(result).toEqual([{ sala: 'SALA RURAL 01', livreAte: '22:00' }])
+    expect(result).toEqual([{ sala: 'SALA RURAL 01', livreAte: '21:50' }])
   })
 
   it('ignora alocações de outras salas', () => {
     const aloc = makeAlocacao({ sala: 'SALA RURAL 02', inicio: '13:00', fim: '15:00', dia_semana: 'SEGUNDA' })
     const now = new Date(2026, 6, 27, 14, 0)
     const result = getSalasExternasLivresAgora(['SALA RURAL 01'], [aloc], now)
-    expect(result).toEqual([{ sala: 'SALA RURAL 01', livreAte: '22:00' }])
+    expect(result).toEqual([{ sala: 'SALA RURAL 01', livreAte: '21:50' }])
   })
 
   it('domingo (fora da grade) → nenhuma sala livre', () => {
@@ -90,7 +90,7 @@ describe('getSalasExternasLivresAgora', () => {
     const result = getSalasExternasLivresAgora(['SALA RURAL 01', 'SALA RURAL 02', 'SALA RURAL 03'], alocs, now)
     expect(result).toEqual([
       { sala: 'SALA RURAL 02', livreAte: '16:30' },
-      { sala: 'SALA RURAL 03', livreAte: '22:00' },
+      { sala: 'SALA RURAL 03', livreAte: '21:50' },
     ])
   })
 })

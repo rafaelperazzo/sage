@@ -188,12 +188,14 @@ export function getOcupacoesDoDia(
   ].sort((a, b) => timeToMinutes(a.inicio) - timeToMinutes(b.inicio))
 }
 
-// Janela de exibição das seções "livres agora": segunda a sexta, 08:00-22:00.
-const FIM_EXPEDIENTE = '22:00'
+// Janela de exibição das seções "livres agora": segunda a sexta, das 08:00
+// até o último marco da grade (21:50, fim da última aula noturna). Derivado de
+// LIMITES para acompanhar mudanças nos horários da grade.
+export const FIM_EXPEDIENTE = LIMITES[LIMITES.length - 1]!
 
 /**
  * Verifica se o momento atual está dentro da janela de exibição das seções
- * "livres agora" da home: segunda a sexta, entre 08:00 e 22:00.
+ * "livres agora" da home: segunda a sexta, entre 08:00 e o fim do expediente (21:50).
  */
 export function isDentroJanelaLivresAgora(now: Date = new Date()): boolean {
   const dia = now.getDay()
@@ -213,7 +215,7 @@ export interface SalaLivreAgora {
  * Para cada sala em `salas`, verifica se ela está livre neste exato momento
  * (nenhuma alocação de hoje cobre o horário atual) e, se estiver, até que
  * horário permanece livre — o início da próxima alocação de hoje, ou o fim
- * do expediente (22:00) caso não haja mais nenhuma. Reservas pontuais de
+ * do expediente (21:50) caso não haja mais nenhuma. Reservas pontuais de
  * hoje também ocupam a sala. Salas ocupadas agora não entram no resultado.
  */
 export function getSalasLivresAgora(

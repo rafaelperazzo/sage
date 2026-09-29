@@ -53,7 +53,7 @@ const MODULES: ModuleCardProps[] = [
     route: '/map',
     color: 'bg-blue-50 border-blue-100 text-blue-900',
     description:
-      'Visualize a agenda semanal de cada sala do departamento em formato de grade, de segunda a sábado, das 07:00 às 22:00.',
+      'Visualize a agenda semanal de cada sala do departamento em formato de grade, de segunda a sexta, das 07:00 às 21:50.',
     features: [
       'Selecione qualquer sala para ver sua grade da semana',
       'Clique em uma alocação para ver os detalhes: disciplina, professor, sala e horário',
