@@ -15,13 +15,17 @@ vi.mock('../../hooks/useManutencao', () => ({ useManutencao: vi.fn() }))
 vi.mock('../../hooks/useReservasPontuais', () => ({ useReservasPontuais: vi.fn() }))
 // AllocationForm lê o período atual do contexto.
 vi.mock('../../contexts/PeriodoContext', () => ({ usePeriodo: () => ({ periodo: '2026.2' }) }))
-vi.mock('./exportarGradePdf', () => ({ exportarGradePdf: vi.fn().mockResolvedValue(undefined) }))
+vi.mock('./exportarGradePdf', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./exportarGradePdf')>()),
+  exportarGradePdf: vi.fn().mockResolvedValue(undefined),
+  exportarGradesPdf: vi.fn().mockResolvedValue(undefined),
+}))
 
 const { useAlocacoesPorSala, useAlocacoes } = await import('../../hooks/useAlocacoes')
 const { useAuth } = await import('../../hooks/useAuth')
 const { useManutencao } = await import('../../hooks/useManutencao')
 const { useReservasPontuais } = await import('../../hooks/useReservasPontuais')
-const { exportarGradePdf } = await import('./exportarGradePdf')
+const { exportarGradePdf, exportarGradesPdf } = await import('./exportarGradePdf')
 const mockPorSala = vi.mocked(useAlocacoesPorSala)
 const mockTodas = vi.mocked(useAlocacoes)
 const mockUseAuth = vi.mocked(useAuth)
@@ -533,7 +537,7 @@ describe('MapPage — exportar PDF', () => {
     const user = userEvent.setup()
     renderWithRouter(<MapPage />)
 
-    await user.click(screen.getByRole('button', { name: /Exportar PDF/i }))
+    await user.click(screen.getByRole('button', { name: /^Exportar PDF$/i }))
 
     await waitFor(() => expect(exportarGradePdf).toHaveBeenCalledOnce())
     expect(exportarGradePdf).toHaveBeenCalledWith({
@@ -549,6 +553,37 @@ describe('MapPage — exportar PDF', () => {
   it('botão desabilitado enquanto a grade carrega', () => {
     setupHooks({ loading: true })
     renderWithRouter(<MapPage />)
-    expect(screen.getByRole('button', { name: /Exportar PDF/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /^Exportar PDF$/i })).toBeDisabled()
+  })
+})
+
+describe('MapPage — exportar grade de todas as salas', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('gera um único PDF com uma página por sala, na ordem dos botões', async () => {
+    const a02 = makeAlocacao({ id: 1, sala: 'SALA 02', disciplina: 'REDES' })
+    const aLab = makeAlocacao({ id: 2, sala: 'LAB 35', disciplina: 'COMPILADORES' })
+    const reservaLab = makeReserva({ sala: 'LAB 35' })
+    setupHooks({ alocacoes: [a02, aLab], reservas: [reservaLab] })
+    const user = userEvent.setup()
+    renderWithRouter(<MapPage />)
+
+    await user.click(screen.getByRole('button', { name: /Exportar grade de todas as salas/i }))
+
+    await waitFor(() => expect(exportarGradesPdf).toHaveBeenCalledOnce())
+    const params = vi.mocked(exportarGradesPdf).mock.calls[0]![0]
+    expect(params).toMatchObject({ modulo: 'SAGE Map', periodo: '2026.2', nomeArquivo: 'grades-sage-map-2026.2.pdf' })
+    expect(params.paginas.map((p) => p.sala)).toEqual([
+      'SALA 02', 'SALA 03', 'SALA 36', 'SALA 38', 'SALA 40', 'SALA 42',
+      'LAB 35', 'LAB 37', 'LAB 39', 'LAB 41', 'LAB 43', 'LAB CEAGRI I - 10', 'LAB CEAGRI I - 15',
+    ])
+    expect(params.paginas[0]).toEqual({ sala: 'SALA 02', tipoSala: 'Sala de Aula', alocacoes: [a02], reservas: [] })
+    expect(params.paginas[6]).toEqual({ sala: 'LAB 35', tipoSala: 'Laboratório', alocacoes: [aLab], reservas: [reservaLab] })
+  })
+
+  it('botão desabilitado enquanto as alocações do período carregam', () => {
+    setupHooks({ loading: true })
+    renderWithRouter(<MapPage />)
+    expect(screen.getByRole('button', { name: /Exportar grade de todas as salas/i })).toBeDisabled()
   })
 })

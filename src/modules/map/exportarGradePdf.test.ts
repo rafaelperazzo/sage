@@ -1,25 +1,53 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Alocacao, ReservaPontual } from '../../types'
 
-const saveMock = vi.fn()
-const textMock = vi.fn()
+interface DocFake {
+  paginas: number
+  setFont: ReturnType<typeof vi.fn>
+  setFontSize: ReturnType<typeof vi.fn>
+  setTextColor: ReturnType<typeof vi.fn>
+  text: ReturnType<typeof vi.fn>
+  save: ReturnType<typeof vi.fn>
+  addPage: () => void
+  setPage: ReturnType<typeof vi.fn>
+  getNumberOfPages: () => number
+  internal: { pageSize: { getWidth: () => number; getHeight: () => number } }
+}
+
+// Cada documento (o final e os rascunhos usados para escolher a escala) tem
+// seu próprio contador de páginas.
+let docs: DocFake[] = []
 const autoTableMock = vi.fn()
 
 vi.mock('jspdf', () => ({
   jsPDF: vi.fn().mockImplementation(function () {
-    return {
+    const doc: DocFake = {
+      paginas: 1,
       setFont: vi.fn(),
       setFontSize: vi.fn(),
       setTextColor: vi.fn(),
-      text: textMock,
-      save: saveMock,
-      internal: { pageSize: { getWidth: () => 297 } },
+      text: vi.fn(),
+      save: vi.fn(),
+      addPage: () => { doc.paginas++ },
+      setPage: vi.fn(),
+      getNumberOfPages: () => doc.paginas,
+      internal: { pageSize: { getWidth: () => 297, getHeight: () => 210 } },
     }
+    docs.push(doc)
+    return doc
   }),
 }))
 vi.mock('jspdf-autotable', () => ({ default: autoTableMock }))
 
-const { montarLinhasGradePdf, nomeArquivoGradePdf, exportarGradePdf, CABECALHO_PDF } = await import('./exportarGradePdf')
+const { montarLinhasGradePdf, nomeArquivoGradePdf, nomeArquivoGradesPredioPdf, exportarGradePdf, exportarGradesPdf, CABECALHO_PDF } = await import('./exportarGradePdf')
+
+/** Documento salvo (o PDF final) e as chamadas do autotable feitas nele. */
+function docFinal(): DocFake {
+  return docs.find((d) => d.save.mock.calls.length > 0)!
+}
+function tabelasDoFinal() {
+  return autoTableMock.mock.calls.filter(([doc]) => doc === docFinal()).map(([, opts]) => opts)
+}
 
 function makeAlocacao(overrides: Partial<Alocacao> = {}): Alocacao {
   return {
@@ -87,6 +115,8 @@ describe('nomeArquivoGradePdf', () => {
 })
 
 describe('exportarGradePdf', () => {
+  beforeEach(() => { vi.clearAllMocks(); docs = [] })
+
   it('monta o documento com título, tabela e salva com o nome da sala', async () => {
     await exportarGradePdf({
       modulo: 'SAGE Map',
@@ -97,16 +127,71 @@ describe('exportarGradePdf', () => {
       now: new Date(2026, 8, 29, 10, 30),
     })
 
-    expect(textMock).toHaveBeenCalledWith('SAGE Map - SALA 02', expect.any(Number), expect.any(Number))
-    expect(textMock).toHaveBeenCalledWith(
+    const doc = docFinal()
+    expect(doc.text).toHaveBeenCalledWith('SAGE Map - SALA 02', expect.any(Number), expect.any(Number))
+    expect(doc.text).toHaveBeenCalledWith(
       expect.stringMatching(/Sala de Aula {2}\| {2}Período 2026\.2 {2}\| {2}Gerado em 29\/09\/2026 10:30/),
       expect.any(Number),
       expect.any(Number)
     )
-    expect(autoTableMock).toHaveBeenCalledOnce()
-    const opts = autoTableMock.mock.calls[0]![1]
-    expect(opts.head).toEqual([CABECALHO_PDF])
-    expect(opts.body).toHaveLength(16)
-    expect(saveMock).toHaveBeenCalledWith('grade-sala-02-2026.2.pdf')
+    const tabelas = tabelasDoFinal()
+    expect(tabelas).toHaveLength(1)
+    expect(tabelas[0].head).toEqual([CABECALHO_PDF])
+    expect(tabelas[0].body).toHaveLength(16)
+    expect(tabelas[0].styles.fontSize).toBe(7.5)
+    expect(doc.save).toHaveBeenCalledWith('grade-sala-02-2026.2.pdf')
+    // Uma página só: sem numeração no rodapé
+    expect(doc.paginas).toBe(1)
+    expect(doc.text).not.toHaveBeenCalledWith(expect.stringMatching(/^Página/), expect.anything(), expect.anything(), expect.anything())
+  })
+
+  it('grade que não cabe em uma página é redesenhada com fonte menor', async () => {
+    // Simula o autotable: na fonte 7.5 a tabela transborda para a 2ª página.
+    autoTableMock.mockImplementation((doc: DocFake, opts: { styles: { fontSize: number } }) => {
+      if (opts.styles.fontSize === 7.5) doc.paginas++
+    })
+
+    await exportarGradePdf({ modulo: 'SAGE Rural', sala: 'CEGOE - SALA 20', periodo: '2026.2', alocacoes: [] })
+
+    const tabelas = tabelasDoFinal()
+    expect(tabelas).toHaveLength(1)
+    expect(tabelas[0].styles.fontSize).toBe(6.5)
+    expect(docFinal().paginas).toBe(1)
+    autoTableMock.mockReset()
+  })
+})
+
+describe('exportarGradesPdf (várias salas)', () => {
+  beforeEach(() => { vi.clearAllMocks(); docs = [] })
+
+  it('uma página por sala, cada uma com sua grade, numeradas no rodapé', async () => {
+    await exportarGradesPdf({
+      modulo: 'SAGE Rural',
+      periodo: '2026.2',
+      nomeArquivo: 'grades-cegoe-2026.2.pdf',
+      paginas: [
+        { sala: 'CEGOE - SALA 01', alocacoes: [makeAlocacao({ sala: 'CEGOE - SALA 01', disciplina: 'FILOSOFIA' })] },
+        { sala: 'CEGOE - SALA 02', alocacoes: [] },
+        { sala: 'CEGOE - SALA 03', alocacoes: [], reservas: [{ ...reserva, sala: 'CEGOE - SALA 03' }] },
+      ],
+    })
+
+    const doc = docFinal()
+    const tabelas = tabelasDoFinal()
+    expect(doc.paginas).toBe(3)
+    expect(tabelas).toHaveLength(3)
+    for (const sala of ['CEGOE - SALA 01', 'CEGOE - SALA 02', 'CEGOE - SALA 03']) {
+      expect(doc.text).toHaveBeenCalledWith(`SAGE Rural - ${sala}`, expect.any(Number), expect.any(Number))
+    }
+    // Primeira página traz a alocação da sala 01; a terceira, a reserva
+    expect(JSON.stringify(tabelas[0].body)).toContain('FILOSOFIA')
+    expect(JSON.stringify(tabelas[1].body)).not.toContain('FILOSOFIA')
+    expect(JSON.stringify(tabelas[2].body)).toContain('Reserva 06/01: PALESTRA')
+    expect(doc.text).toHaveBeenCalledWith('Página 3 de 3', expect.any(Number), expect.any(Number), { align: 'right' })
+    expect(doc.save).toHaveBeenCalledWith('grades-cegoe-2026.2.pdf')
+  })
+
+  it('nome do arquivo do prédio', () => {
+    expect(nomeArquivoGradesPredioPdf('CEAGRI 1', '2026.2')).toBe('grades-ceagri-1-2026.2.pdf')
   })
 })

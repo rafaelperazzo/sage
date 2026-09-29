@@ -17,7 +17,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useReservasPontuais } from '../../hooks/useReservasPontuais'
 import { usePeriodo } from '../../contexts/PeriodoContext'
 import { ExportarPdfButton } from './ExportarPdfButton'
-import { exportarGradePdf } from './exportarGradePdf'
+import { exportarGradePdf, exportarGradesPdf, nomeArquivoGradesPredioPdf } from './exportarGradePdf'
 import { SALAS, LIMITES, TIPO_LABEL, TIPO_COLOR, getSalaInfo } from '../../constants/salas'
 import { SlotChoiceModal } from './SlotChoiceModal'
 import { ReservaPontualForm } from './ReservaPontualForm'
@@ -73,6 +73,22 @@ export function MapPage() {
     })
   }
   const { alocacoes: todasAlocacoes, loading: loadingBusca } = useAlocacoes()
+
+  // Um único PDF com a grade de todas as salas do departamento (uma por página,
+  // na mesma ordem dos botões de sala).
+  async function handleExportarTodasPdf() {
+    await exportarGradesPdf({
+      modulo: 'SAGE Map',
+      periodo,
+      paginas: SALAS.map((sala) => ({
+        sala: sala.nome,
+        tipoSala: TIPO_LABEL[sala.tipo],
+        alocacoes: todasAlocacoes.filter((a) => a.sala === sala.nome),
+        reservas: reservas.filter((r) => r.sala === sala.nome),
+      })),
+      nomeArquivo: nomeArquivoGradesPredioPdf('SAGE Map', periodo),
+    })
+  }
   const { infraSalas, loading: loadingInfra, save: saveInfra } = useInfraSalas()
   const infraSala = infraSalas.find((i) => i.sala === selectedSala)
   const { manutencoes, loading: loadingManutencao } = useManutencao()
@@ -202,6 +218,11 @@ export function MapPage() {
             {sala.nome}
           </button>
         ))}
+        <ExportarPdfButton
+          label="Exportar grade de todas as salas"
+          onExport={handleExportarTodasPdf}
+          disabled={loadingBusca}
+        />
       </div>
 
       {/* Cabeçalho da sala selecionada */}

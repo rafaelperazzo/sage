@@ -15,14 +15,18 @@ vi.mock('../../hooks/useAuth', () => ({ useAuth: vi.fn() }))
 vi.mock('../../hooks/useManutencao', () => ({ useManutencao: vi.fn() }))
 vi.mock('../../hooks/useReservasPontuais', () => ({ useReservasPontuais: vi.fn() }))
 vi.mock('../../contexts/PeriodoContext', () => ({ usePeriodo: () => ({ periodo: '2026.2' }) }))
-vi.mock('../map/exportarGradePdf', () => ({ exportarGradePdf: vi.fn().mockResolvedValue(undefined) }))
+vi.mock('../map/exportarGradePdf', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../map/exportarGradePdf')>()),
+  exportarGradePdf: vi.fn().mockResolvedValue(undefined),
+  exportarGradesPdf: vi.fn().mockResolvedValue(undefined),
+}))
 
 const { useAlocacoesExternasPorSala, useAlocacoesExternas } = await import('../../hooks/useAlocacoesExternas')
 const { useSalasExternas } = await import('../../hooks/useSalasExternas')
 const { useAuth } = await import('../../hooks/useAuth')
 const { useManutencao } = await import('../../hooks/useManutencao')
 const { useReservasPontuais } = await import('../../hooks/useReservasPontuais')
-const { exportarGradePdf } = await import('../map/exportarGradePdf')
+const { exportarGradePdf, exportarGradesPdf } = await import('../map/exportarGradePdf')
 const mockPorSala = vi.mocked(useAlocacoesExternasPorSala)
 const mockTodas = vi.mocked(useAlocacoesExternas)
 const mockSalas = vi.mocked(useSalasExternas)
@@ -371,11 +375,43 @@ describe('RuralPage — exportar PDF', () => {
     renderWithRouter(<RuralPage />)
 
     await user.selectOptions(screen.getByLabelText('Prédio'), 'PREDIO B')
-    await user.click(screen.getByRole('button', { name: /Exportar PDF/i }))
+    await user.click(screen.getByRole('button', { name: /^Exportar PDF$/i }))
 
     await waitFor(() => expect(exportarGradePdf).toHaveBeenCalledOnce())
     expect(exportarGradePdf).toHaveBeenCalledWith(
       expect.objectContaining({ modulo: 'SAGE Rural', sala: 'PREDIO B - SALA 10', periodo: '2026.2', tipoSala: undefined })
     )
+  })
+})
+
+describe('RuralPage — exportar grade do prédio', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('gera um único PDF com uma página por sala do prédio selecionado', async () => {
+    const a1 = makeAlocacao({ id: 1, sala: 'PREDIO A - SALA 01', disciplina: 'FILOSOFIA' })
+    const a2 = makeAlocacao({ id: 2, sala: 'PREDIO A - SALA 02', disciplina: 'HISTÓRIA' })
+    const outroPredio = makeAlocacao({ id: 3, sala: 'PREDIO B - SALA 10', disciplina: 'QUÍMICA' })
+    setupHooks({ alocacoes: [a1, a2, outroPredio] })
+    const user = userEvent.setup()
+    renderWithRouter(<RuralPage />)
+
+    await user.click(screen.getByRole('button', { name: /Exportar grade do prédio/i }))
+
+    await waitFor(() => expect(exportarGradesPdf).toHaveBeenCalledOnce())
+    expect(exportarGradesPdf).toHaveBeenCalledWith({
+      modulo: 'SAGE Rural',
+      periodo: '2026.2',
+      nomeArquivo: 'grades-predio-a-2026.2.pdf',
+      paginas: [
+        { sala: 'PREDIO A - SALA 01', alocacoes: [a1], reservas: [] },
+        { sala: 'PREDIO A - SALA 02', alocacoes: [a2], reservas: [] },
+      ],
+    })
+  })
+
+  it('botão desabilitado enquanto as alocações do período carregam', () => {
+    setupHooks({ loading: true })
+    renderWithRouter(<RuralPage />)
+    expect(screen.getByRole('button', { name: /Exportar grade do prédio/i })).toBeDisabled()
   })
 })

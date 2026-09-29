@@ -20,7 +20,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useReservasPontuais } from '../../hooks/useReservasPontuais'
 import { usePeriodo } from '../../contexts/PeriodoContext'
 import { ExportarPdfButton } from '../map/ExportarPdfButton'
-import { exportarGradePdf } from '../map/exportarGradePdf'
+import { exportarGradePdf, exportarGradesPdf, nomeArquivoGradesPredioPdf } from '../map/exportarGradePdf'
 import { SlotChoiceModal } from '../map/SlotChoiceModal'
 import { ReservaPontualForm } from '../map/ReservaPontualForm'
 import { ReservaPontualViewModal } from '../map/ReservaPontualViewModal'
@@ -90,6 +90,20 @@ export function RuralPage() {
     () => salas.filter((s) => getPredioDaSala(s) === selectedPredio),
     [salas, selectedPredio]
   )
+
+  // Um único PDF com a grade de cada sala do prédio selecionado (uma por página).
+  async function handleExportarPredioPdf() {
+    await exportarGradesPdf({
+      modulo: 'SAGE Rural',
+      periodo,
+      paginas: salasDoPredio.map((sala) => ({
+        sala,
+        alocacoes: todasAlocacoes.filter((a) => a.sala === sala),
+        reservas: reservas.filter((r) => r.sala === sala),
+      })),
+      nomeArquivo: nomeArquivoGradesPredioPdf(selectedPredio, periodo),
+    })
+  }
 
   function handlePredioChange(predio: string) {
     const primeira = salas.find((s) => getPredioDaSala(s) === predio)
@@ -226,7 +240,7 @@ export function RuralPage() {
       </div>
 
       {/* Seletor de prédio e sala */}
-      <div className="mb-5 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl">
+      <div className="mb-5 grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] sm:items-end gap-3 max-w-3xl">
         <div>
           <label htmlFor="rural-predio" className="block text-xs font-medium text-gray-700 mb-1">Prédio</label>
           <select
@@ -260,6 +274,12 @@ export function RuralPage() {
             ))}
           </select>
         </div>
+
+        <ExportarPdfButton
+          label="Exportar grade do prédio"
+          onExport={handleExportarPredioPdf}
+          disabled={loadingSalas || loadingBusca || salasDoPredio.length === 0}
+        />
       </div>
 
       {/* Cabeçalho da sala selecionada */}

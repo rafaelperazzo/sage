@@ -27,7 +27,8 @@ Visualização da agenda semanal de cada sala em formato de grade (segunda a sex
 - **Reservas pontuais**: usos de uma sala em uma data específica (ex: palestra, prova de reposição), sem ocupar o horário no semestre inteiro. As reservas futuras aparecem dentro das células livres do dia da semana correspondente, em destaque âmbar, com data, disciplina e horário (ex: `05/10 · PALESTRA 14:00–16:00`); clique para ver disciplina, professor, sala, data e horário
 - Atualização automática em tempo real (Supabase Realtime)
 - Barra de infraestrutura da sala selecionada: cadeiras, computadores, projetor, TV, cabo HDMI e ar-condicionado
-- Botão **"Exportar PDF"** (disponível para todos): baixa a grade semanal da sala visualizada em PDF (A4 paisagem, uma página), com alocações, blocos livres e reservas pontuais, além do período letivo e da data de geração. Nome do arquivo: `grade-<sala>-<período>.pdf`
+- Botão **"Exportar PDF"** (disponível para todos): baixa a grade semanal da sala visualizada em PDF (A4 paisagem, uma página; salas muito cheias são impressas com fonte menor para caber), com alocações, blocos livres e reservas pontuais, além do período letivo e da data de geração. Nome do arquivo: `grade-<sala>-<período>.pdf`
+- Botão **"Exportar grade de todas as salas"**, abaixo dos botões de sala: baixa um único PDF com a grade semanal das 13 salas do departamento, uma por página, na mesma ordem dos botões (salas de aula, salas de inovação e laboratórios), com numeração "Página X de Y". Nome do arquivo: `grades-sage-map-<período>.pdf`
 - **Aba "Buscar Sala"**: localize disciplinas e professores por autocomplete, com lista de salas e horários
 - **Aba "Lista de Disciplinas"**: listagem única de todas as disciplinas do período letivo selecionado (exceto cursos BSI e DCC), em ordem alfabética, com curso, semestre, professor e horários/salas; sessões da mesma disciplina com o mesmo professor e curso são agrupadas em uma linha, com filtro por disciplina ou professor. Suporte a link direto: `/#/map?tab=lista`
 
@@ -45,6 +46,7 @@ Idêntico ao SAGE Map, mas para salas de unidades externas ao Departamento de Co
 
 - Seleção em duas etapas: primeiro o **prédio**, depois a **sala** daquele prédio, e então a grade semanal da sala escolhida. As listas vêm dinamicamente dos valores distintos da coluna `sala` da tabela `externas` (não é uma lista fixa como no SAGE Map), que seguem o padrão `PREDIO - SALA XX`; o seletor de sala mostra só o nome da sala (ex: `SALA 01`). Trocar o prédio seleciona automaticamente a primeira sala dele
 - Mesma grade semanal (incluindo as reservas pontuais e o botão "Exportar PDF"), aba "Buscar Sala" e aba "Lista de Disciplinas" do SAGE Map
+- Botão **"Exportar grade do prédio"**, ao lado dos seletores: baixa um único PDF com a grade semanal de **todas as salas do prédio selecionado**, uma sala por página (em ordem, com numeração "Página X de Y"). Nome do arquivo: `grades-<prédio>-<período>.pdf`
 - **Aba "Salas Livres Agora"**: lista as salas externas livres no momento (considerando alocações e reservas pontuais do dia), agrupadas por prédio. As salas seguem o padrão `PREDIO - SALA XX`; um seletor de prédio filtra a lista para mostrar apenas as salas livres daquele prédio, com o horário até quando cada uma permanece livre (21:50 quando não há mais aulas no dia). Visível apenas de segunda a sexta, entre 08:00 e 21:50
 - Barra de infraestrutura da sala selecionada aparece **somente** se já existir um registro para aquela sala na tabela `infra_salas`; caso contrário, nada é exibido
 
