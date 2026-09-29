@@ -15,11 +15,13 @@ vi.mock('../../hooks/useManutencao', () => ({ useManutencao: vi.fn() }))
 vi.mock('../../hooks/useReservasPontuais', () => ({ useReservasPontuais: vi.fn() }))
 // AllocationForm lê o período atual do contexto.
 vi.mock('../../contexts/PeriodoContext', () => ({ usePeriodo: () => ({ periodo: '2026.2' }) }))
+vi.mock('./exportarGradePdf', () => ({ exportarGradePdf: vi.fn().mockResolvedValue(undefined) }))
 
 const { useAlocacoesPorSala, useAlocacoes } = await import('../../hooks/useAlocacoes')
 const { useAuth } = await import('../../hooks/useAuth')
 const { useManutencao } = await import('../../hooks/useManutencao')
 const { useReservasPontuais } = await import('../../hooks/useReservasPontuais')
+const { exportarGradePdf } = await import('./exportarGradePdf')
 const mockPorSala = vi.mocked(useAlocacoesPorSala)
 const mockTodas = vi.mocked(useAlocacoes)
 const mockUseAuth = vi.mocked(useAuth)
@@ -518,5 +520,35 @@ describe('MapPage — alocação em outro dia/horário', () => {
     expect(await screen.findByText(/Segundo horário: conflito de horário/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Salvar/i })).toBeDisabled()
     mockCRUD.hasConflict.mockReturnValue(false)
+  })
+})
+
+describe('MapPage — exportar PDF', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('qualquer usuário exporta a grade da sala visualizada', async () => {
+    const aloc = makeAlocacao()
+    const reserva = makeReserva()
+    setupHooks({ isAdmin: false, alocacoes: [aloc], reservas: [reserva, makeReserva({ id: 2, sala: 'LAB 35' })] })
+    const user = userEvent.setup()
+    renderWithRouter(<MapPage />)
+
+    await user.click(screen.getByRole('button', { name: /Exportar PDF/i }))
+
+    await waitFor(() => expect(exportarGradePdf).toHaveBeenCalledOnce())
+    expect(exportarGradePdf).toHaveBeenCalledWith({
+      modulo: 'SAGE Map',
+      sala: 'SALA 02',
+      tipoSala: 'Sala de Aula',
+      periodo: '2026.2',
+      alocacoes: [aloc],
+      reservas: [reserva],
+    })
+  })
+
+  it('botão desabilitado enquanto a grade carrega', () => {
+    setupHooks({ loading: true })
+    renderWithRouter(<MapPage />)
+    expect(screen.getByRole('button', { name: /Exportar PDF/i })).toBeDisabled()
   })
 })

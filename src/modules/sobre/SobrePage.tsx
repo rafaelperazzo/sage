@@ -60,6 +60,7 @@ const MODULES: ModuleCardProps[] = [
       'As salas são coloridas por tipo: salas de aula (azul), inovação (roxo) e laboratórios (verde)',
       'Veja a infraestrutura da sala selecionada: cadeiras, computadores, projetor, TV, cabo HDMI e ar-condicionado',
       'Reservas pontuais (em datas específicas) aparecem nas células livres da grade, com a data — clique para ver os detalhes',
+      'Exporte a grade semanal da sala em PDF pelo botão "Exportar PDF"',
       'Aba "Buscar Sala": localize disciplinas e professores com autocomplete e veja todas as salas e horários',
       'A grade é atualizada automaticamente em tempo real',
       'Filtre os dados pelo período letivo usando o seletor no topo da página',
@@ -74,7 +75,7 @@ const MODULES: ModuleCardProps[] = [
       'Agenda semanal das salas de unidades externas ao Departamento de Computação, geridas pela CPGA - PREG, no mesmo formato do SAGE Map.',
     features: [
       'Selecione a sala em uma lista dinâmica com todas as salas externas cadastradas',
-      'Grade semanal com as alocações e as reservas pontuais de cada sala',
+      'Grade semanal com as alocações e as reservas pontuais de cada sala, com exportação em PDF',
       'Abas "Buscar Sala" e "Lista de Disciplinas", como no SAGE Map',
       'Aba "Salas Livres Agora": salas livres no momento, agrupadas por prédio, considerando alocações e reservas pontuais',
       'A grade é atualizada automaticamente em tempo real',

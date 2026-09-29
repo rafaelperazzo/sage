@@ -18,6 +18,9 @@ import { useInfraSalas } from '../../hooks/useInfraSalas'
 import { useManutencao } from '../../hooks/useManutencao'
 import { useAuth } from '../../hooks/useAuth'
 import { useReservasPontuais } from '../../hooks/useReservasPontuais'
+import { usePeriodo } from '../../contexts/PeriodoContext'
+import { ExportarPdfButton } from '../map/ExportarPdfButton'
+import { exportarGradePdf } from '../map/exportarGradePdf'
 import { SlotChoiceModal } from '../map/SlotChoiceModal'
 import { ReservaPontualForm } from '../map/ReservaPontualForm'
 import { ReservaPontualViewModal } from '../map/ReservaPontualViewModal'
@@ -61,6 +64,18 @@ export function RuralPage() {
     getConflito: getConflitoReservaPontual,
   } = useReservasPontuais('rural', alocacoes)
   const reservasSala = reservas.filter((r) => r.sala === selectedSala)
+  const { periodo } = usePeriodo()
+
+  async function handleExportarPdf() {
+    await exportarGradePdf({
+      modulo: 'SAGE Rural',
+      sala: selectedSala,
+      tipoSala: undefined,
+      periodo,
+      alocacoes,
+      reservas: reservasSala,
+    })
+  }
   const { alocacoes: todasAlocacoes, loading: loadingBusca } = useAlocacoesExternas()
   const { infraSalas, loading: loadingInfra, save: saveInfra } = useInfraSalas()
   const infraSala = infraSalas.find((i) => i.sala === selectedSala)
@@ -256,6 +271,7 @@ export function RuralPage() {
             Carregando...
           </span>
         )}
+        <ExportarPdfButton onExport={handleExportarPdf} disabled={loading || !!error || !selectedSala} />
       </div>
 
       {infraSala && (

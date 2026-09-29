@@ -15,6 +15,9 @@ import { useInfraSalas } from '../../hooks/useInfraSalas'
 import { useManutencao } from '../../hooks/useManutencao'
 import { useAuth } from '../../hooks/useAuth'
 import { useReservasPontuais } from '../../hooks/useReservasPontuais'
+import { usePeriodo } from '../../contexts/PeriodoContext'
+import { ExportarPdfButton } from './ExportarPdfButton'
+import { exportarGradePdf } from './exportarGradePdf'
 import { SALAS, LIMITES, TIPO_LABEL, TIPO_COLOR, getSalaInfo } from '../../constants/salas'
 import { SlotChoiceModal } from './SlotChoiceModal'
 import { ReservaPontualForm } from './ReservaPontualForm'
@@ -57,6 +60,18 @@ export function MapPage() {
     getConflito: getConflitoReservaPontual,
   } = useReservasPontuais('map', alocacoes)
   const reservasSala = reservas.filter((r) => r.sala === selectedSala)
+  const { periodo } = usePeriodo()
+
+  async function handleExportarPdf() {
+    await exportarGradePdf({
+      modulo: 'SAGE Map',
+      sala: selectedSala,
+      tipoSala: salaInfo ? TIPO_LABEL[salaInfo.tipo] : undefined,
+      periodo,
+      alocacoes,
+      reservas: reservasSala,
+    })
+  }
   const { alocacoes: todasAlocacoes, loading: loadingBusca } = useAlocacoes()
   const { infraSalas, loading: loadingInfra, save: saveInfra } = useInfraSalas()
   const infraSala = infraSalas.find((i) => i.sala === selectedSala)
@@ -203,6 +218,7 @@ export function MapPage() {
             Carregando...
           </span>
         )}
+        <ExportarPdfButton onExport={handleExportarPdf} disabled={loading || !!error || !selectedSala} />
       </div>
 
       <InfraSalaInfo

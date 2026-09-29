@@ -14,12 +14,15 @@ vi.mock('../../hooks/useSalasExternas', () => ({ useSalasExternas: vi.fn() }))
 vi.mock('../../hooks/useAuth', () => ({ useAuth: vi.fn() }))
 vi.mock('../../hooks/useManutencao', () => ({ useManutencao: vi.fn() }))
 vi.mock('../../hooks/useReservasPontuais', () => ({ useReservasPontuais: vi.fn() }))
+vi.mock('../../contexts/PeriodoContext', () => ({ usePeriodo: () => ({ periodo: '2026.2' }) }))
+vi.mock('../map/exportarGradePdf', () => ({ exportarGradePdf: vi.fn().mockResolvedValue(undefined) }))
 
 const { useAlocacoesExternasPorSala, useAlocacoesExternas } = await import('../../hooks/useAlocacoesExternas')
 const { useSalasExternas } = await import('../../hooks/useSalasExternas')
 const { useAuth } = await import('../../hooks/useAuth')
 const { useManutencao } = await import('../../hooks/useManutencao')
 const { useReservasPontuais } = await import('../../hooks/useReservasPontuais')
+const { exportarGradePdf } = await import('../map/exportarGradePdf')
 const mockPorSala = vi.mocked(useAlocacoesExternasPorSala)
 const mockTodas = vi.mocked(useAlocacoesExternas)
 const mockSalas = vi.mocked(useSalasExternas)
@@ -356,5 +359,23 @@ describe('RuralPage — reservas pontuais', () => {
     renderWithRouter(<RuralPage />)
     expect(screen.getByText(/OFICINA/)).toBeInTheDocument()
     expect(screen.queryByText(/SEMINARIO/)).not.toBeInTheDocument()
+  })
+})
+
+describe('RuralPage — exportar PDF', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('exporta a grade da sala selecionada no prédio escolhido', async () => {
+    setupHooks()
+    const user = userEvent.setup()
+    renderWithRouter(<RuralPage />)
+
+    await user.selectOptions(screen.getByLabelText('Prédio'), 'PREDIO B')
+    await user.click(screen.getByRole('button', { name: /Exportar PDF/i }))
+
+    await waitFor(() => expect(exportarGradePdf).toHaveBeenCalledOnce())
+    expect(exportarGradePdf).toHaveBeenCalledWith(
+      expect.objectContaining({ modulo: 'SAGE Rural', sala: 'PREDIO B - SALA 10', periodo: '2026.2', tipoSala: undefined })
+    )
   })
 })
