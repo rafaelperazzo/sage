@@ -18,6 +18,7 @@ vi.mock('../lib/supabase', () => ({
   TABLE_NAME: 'alocacao_2026.1',
   fetchAlocacoesPorSala: vi.fn(),
   insertAlocacao: vi.fn(),
+  insertAlocacoes: vi.fn(),
   updateAlocacao: vi.fn(),
   deleteAlocacao: vi.fn(),
 }))
@@ -31,6 +32,7 @@ const { useAlocacoesPorSala } = await import('./useAlocacoes')
 const supabaseMocks = await import('../lib/supabase')
 const fetchMock = vi.mocked(supabaseMocks.fetchAlocacoesPorSala)
 const insertMock = vi.mocked(supabaseMocks.insertAlocacao)
+const insertManyMock = vi.mocked(supabaseMocks.insertAlocacoes)
 const updateMock = vi.mocked(supabaseMocks.updateAlocacao)
 const deleteMock = vi.mocked(supabaseMocks.deleteAlocacao)
 
@@ -200,6 +202,54 @@ describe('useAlocacoesPorSala — create', () => {
     const input = makeInput({ sala: 'SALA 02', dia_semana: 'SEGUNDA', inicio: '14:00', fim: '15:00' })
     await expect(result.current.create(input)).rejects.toThrow('Conflito de horário')
     expect(insertMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('useAlocacoesPorSala — createMany', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockChannel.on.mockReturnThis()
+    mockChannel.subscribe.mockReturnThis()
+  })
+
+  it('sem conflito → insere as duas alocações em uma única chamada', async () => {
+    fetchMock.mockResolvedValue([])
+    insertManyMock.mockResolvedValue([])
+
+    const { result } = renderHook(() => useAlocacoesPorSala('SALA 02'))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    const a = makeInput({ dia_semana: 'SEGUNDA', inicio: '08:00', fim: '10:00' })
+    const b = makeInput({ dia_semana: 'QUARTA', inicio: '08:00', fim: '10:00' })
+    await act(async () => { await result.current.createMany([a, b]) })
+
+    expect(insertManyMock).toHaveBeenCalledOnce()
+    expect(insertManyMock).toHaveBeenCalledWith([a, b], '2026.1')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('segunda alocação conflita com existente → nenhuma é gravada', async () => {
+    fetchMock.mockResolvedValue([makeAlocacao({ dia_semana: 'QUARTA', inicio: '08:00', fim: '10:00' })])
+
+    const { result } = renderHook(() => useAlocacoesPorSala('SALA 02'))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    const a = makeInput({ dia_semana: 'SEGUNDA', inicio: '08:00', fim: '10:00' })
+    const b = makeInput({ dia_semana: 'QUARTA', inicio: '09:00', fim: '11:00' })
+    await expect(result.current.createMany([a, b])).rejects.toThrow('Conflito de horário')
+    expect(insertManyMock).not.toHaveBeenCalled()
+  })
+
+  it('alocações sobrepostas entre si → nenhuma é gravada', async () => {
+    fetchMock.mockResolvedValue([])
+
+    const { result } = renderHook(() => useAlocacoesPorSala('SALA 02'))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    const a = makeInput({ dia_semana: 'SEGUNDA', inicio: '08:00', fim: '10:00' })
+    const b = makeInput({ dia_semana: 'SEGUNDA', inicio: '09:00', fim: '11:00' })
+    await expect(result.current.createMany([a, b])).rejects.toThrow('Conflito de horário')
+    expect(insertManyMock).not.toHaveBeenCalled()
   })
 })
 

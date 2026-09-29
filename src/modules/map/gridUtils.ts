@@ -1,4 +1,4 @@
-import type { Alocacao, ReservaPontual, SalaInfo, TipoSala } from '../../types'
+import type { Alocacao, AlocacaoInput, ReservaPontual, SalaInfo, TipoSala } from '../../types'
 import { DIAS, HORAS, LIMITES } from '../../constants/salas'
 
 export type GridCellType =
@@ -246,4 +246,32 @@ export function getSalasLivresAgora(
   }
 
   return livres
+}
+
+/**
+ * Valida o segundo horário de uma alocação criada em dois dias/horários de
+ * uma vez. Retorna a mensagem de erro (prefixada com "Segundo horário:") ou
+ * null se estiver livre. `getConflitoReserva` é opcional (reservas pontuais).
+ */
+export function conflitoSegundaAlocacao(
+  primeira: AlocacaoInput,
+  segunda: AlocacaoInput,
+  hasConflict: (data: AlocacaoInput) => boolean,
+  getConflitoReserva?: (data: AlocacaoInput) => string | null
+): string | null {
+  if (segunda.inicio >= segunda.fim) {
+    return 'Segundo horário: o início deve ser anterior ao fim.'
+  }
+  if (
+    primeira.dia_semana === segunda.dia_semana &&
+    timeToMinutes(primeira.inicio) < timeToMinutes(segunda.fim) &&
+    timeToMinutes(primeira.fim) > timeToMinutes(segunda.inicio)
+  ) {
+    return 'Segundo horário: sobrepõe o primeiro horário.'
+  }
+  if (hasConflict(segunda)) {
+    return 'Segundo horário: conflito de horário, este slot já está ocupado.'
+  }
+  const reserva = getConflitoReserva?.(segunda)
+  return reserva ? `Segundo horário: ${reserva}` : null
 }

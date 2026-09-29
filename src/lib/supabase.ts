@@ -91,6 +91,18 @@ export async function insertAlocacao(input: AlocacaoInput, periodo: string): Pro
   return data as Alocacao
 }
 
+// Insere várias alocações em uma única requisição — o PostgREST aplica o
+// insert em lote atomicamente (todas entram ou nenhuma).
+export async function insertAlocacoes(inputs: AlocacaoInput[], periodo: string): Promise<Alocacao[]> {
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .insert(inputs.map((input) => ({ ...input, periodo })))
+    .select()
+
+  if (error) throw error
+  return data as Alocacao[]
+}
+
 export async function updateAlocacao(id: number, input: AlocacaoInput): Promise<Alocacao> {
   const { data, error } = await supabase
     .from(TABLE_NAME)
@@ -331,6 +343,16 @@ export async function insertAlocacaoExterna(input: AlocacaoInput, periodo: strin
 
   if (error) throw error
   return data as Alocacao
+}
+
+export async function insertAlocacoesExternas(inputs: AlocacaoInput[], periodo: string): Promise<Alocacao[]> {
+  const { data, error } = await supabase
+    .from(EXTERNAS_TABLE_NAME)
+    .insert(inputs.map((input) => ({ ...input, periodo })))
+    .select()
+
+  if (error) throw error
+  return data as Alocacao[]
 }
 
 export async function updateAlocacaoExterna(id: number, input: AlocacaoInput): Promise<Alocacao> {

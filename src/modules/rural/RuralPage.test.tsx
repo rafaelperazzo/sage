@@ -49,6 +49,7 @@ function makeAlocacao(overrides: Partial<Alocacao> = {}): Alocacao {
 
 const mockCRUD = {
   create: vi.fn(),
+  createMany: vi.fn(),
   update: vi.fn(),
   remove: vi.fn(),
   hasConflict: vi.fn().mockReturnValue(false),

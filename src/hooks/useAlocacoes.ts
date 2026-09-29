@@ -6,6 +6,7 @@ import {
   fetchAlocacoes,
   fetchAlocacoesPorSala,
   insertAlocacao,
+  insertAlocacoes,
   updateAlocacao,
   deleteAlocacao,
 } from '../lib/supabase'
@@ -70,6 +71,7 @@ interface UseAlocacoesPorSalaReturn {
   loading: boolean
   error: string | null
   create: (data: AlocacaoInput) => Promise<void>
+  createMany: (data: AlocacaoInput[]) => Promise<void>
   update: (id: number, data: AlocacaoInput) => Promise<void>
   remove: (id: number) => Promise<void>
   hasConflict: (data: AlocacaoInput, excludeId?: number) => boolean
@@ -120,6 +122,19 @@ export function useAlocacoesPorSala(sala: string): UseAlocacoesPorSalaReturn {
     await load()
   }
 
+  // Cria várias alocações de uma vez (ex: mesma disciplina em dois dias) —
+  // nenhuma é gravada se alguma conflitar com as existentes ou entre si.
+  async function createMany(data: AlocacaoInput[]) {
+    const conflitaEntreSi = data.some((a, i) =>
+      data.slice(i + 1).some((b) => horariosConflitam(a, { ...b, id: -1, periodo, semestre: 0 }))
+    )
+    if (conflitaEntreSi || data.some((d) => hasConflict(d))) {
+      throw new Error('Conflito de horário: este slot já está ocupado.')
+    }
+    await insertAlocacoes(data, periodo)
+    await load()
+  }
+
   async function update(id: number, data: AlocacaoInput) {
     if (hasConflict(data, id)) throw new Error('Conflito de horário: este slot já está ocupado.')
     await updateAlocacao(id, data)
@@ -131,5 +146,5 @@ export function useAlocacoesPorSala(sala: string): UseAlocacoesPorSalaReturn {
     await load()
   }
 
-  return { alocacoes, loading, error, create, update, remove, hasConflict }
+  return { alocacoes, loading, error, create, createMany, update, remove, hasConflict }
 }

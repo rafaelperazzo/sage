@@ -4,6 +4,8 @@ import type { AlocacaoInput } from '../../types'
 import { DIAS, HORAS, LIMITES } from '../../constants/salas'
 import { usePeriodo } from '../../contexts/PeriodoContext'
 import { AlertCircle } from 'lucide-react'
+import { OutroHorarioFields, outroHorarioInicial } from '../map/OutroHorarioFields'
+import { conflitoSegundaAlocacao } from '../map/gridUtils'
 
 interface RuralAllocationFormProps {
   salas: string[]
@@ -14,6 +16,8 @@ interface RuralAllocationFormProps {
   // Mensagem de conflito com uma reserva pontual futura (null se não houver).
   getConflitoReserva?: (data: AlocacaoInput) => string | null
   onSave: (data: AlocacaoInput) => Promise<void>
+  // Salva várias alocações de uma vez; habilita "Alocar em outro dia/horário".
+  onSaveMany?: (data: AlocacaoInput[]) => Promise<void>
   onClose: () => void
 }
 
@@ -25,6 +29,7 @@ export function RuralAllocationForm({
   hasConflict,
   getConflitoReserva,
   onSave,
+  onSaveMany,
   onClose,
 }: RuralAllocationFormProps) {
   const { periodo } = usePeriodo()
@@ -38,6 +43,7 @@ export function RuralAllocationForm({
     const h = parseInt(initialHora ?? '14:00')
     return `${String(h + 2).padStart(2, '0')}:00`
   })
+  const [outro, setOutro] = useState(() => outroHorarioInicial(dia, inicio, fim))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -46,6 +52,12 @@ export function RuralAllocationForm({
   const conflict = disciplina.trim() !== '' && hasConflict(input)
   const conflitoReserva = disciplina.trim() !== '' && !conflict ? getConflitoReserva?.(input) ?? null : null
 
+  const input2: AlocacaoInput = { ...input, dia_semana: outro.dia, inicio: outro.inicio, fim: outro.fim }
+  const conflitoSegunda =
+    onSaveMany && outro.ativo && disciplina.trim() !== ''
+      ? conflitoSegundaAlocacao(input, input2, hasConflict, getConflitoReserva)
+      : null
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!disciplina.trim()) { setError('Disciplina é obrigatória.'); return }
@@ -53,10 +65,15 @@ export function RuralAllocationForm({
     if (inicio >= fim) { setError('O horário de início deve ser anterior ao fim.'); return }
     if (conflict) { setError('Conflito de horário: este slot já está ocupado.'); return }
     if (conflitoReserva) { setError(conflitoReserva); return }
+    if (conflitoSegunda) { setError(conflitoSegunda); return }
     setSaving(true)
     setError(null)
     try {
-      await onSave(input)
+      if (onSaveMany && outro.ativo) {
+        await onSaveMany([input, input2])
+      } else {
+        await onSave(input)
+      }
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao salvar.')
@@ -156,10 +173,12 @@ export function RuralAllocationForm({
           </div>
         </div>
 
-        {(error ?? (conflict || conflitoReserva)) && (
+        {onSaveMany && <OutroHorarioFields value={outro} onChange={setOutro} />}
+
+        {(error ?? (conflict || conflitoReserva || conflitoSegunda)) && (
           <div className="flex items-start gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
             <AlertCircle size={15} className="mt-0.5 flex-shrink-0" />
-            {error ?? (conflict ? 'Conflito de horário: este slot já está ocupado.' : conflitoReserva)}
+            {error ?? (conflict ? 'Conflito de horário: este slot já está ocupado.' : conflitoReserva ?? conflitoSegunda)}
           </div>
         )}
 
@@ -173,7 +192,7 @@ export function RuralAllocationForm({
           </button>
           <button
             type="submit"
-            disabled={saving || !!conflict || !!conflitoReserva}
+            disabled={saving || !!conflict || !!conflitoReserva || !!conflitoSegunda}
             className="flex-1 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {saving ? 'Salvando...' : 'Salvar'}

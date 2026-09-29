@@ -62,6 +62,7 @@ function makeReserva(overrides: Partial<ReservaPontual> = {}): ReservaPontual {
 
 const mockCRUD = {
   create: vi.fn(),
+  createMany: vi.fn(),
   update: vi.fn(),
   remove: vi.fn(),
   hasConflict: vi.fn().mockReturnValue(false),
@@ -457,5 +458,65 @@ describe('MapPage — reservas pontuais', () => {
       await screen.findByText(/Conflito com a reserva pontual: PALESTRA IA — Prof. Souza em Segunda-feira, 05\/01\/2099, 08:00–10:00/)
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Salvar/i })).toBeDisabled()
+  })
+})
+
+describe('MapPage — alocação em outro dia/horário', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  async function abrirNovaAlocacao(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(screen.getAllByText('LIVRE')[0]!) // segunda 08:00–10:00
+    await user.click(await screen.findByRole('button', { name: /Nova alocação/i }))
+    await user.type(await screen.findByPlaceholderText('Nome da disciplina'), 'REDES')
+    await user.type(screen.getByPlaceholderText('BCC, LC, DC...'), 'BCC')
+  }
+
+  it('marcar o checkbox e salvar cria as duas alocações de uma vez', async () => {
+    setupHooks({ isAdmin: true })
+    mockCRUD.createMany.mockResolvedValue(undefined)
+    const user = userEvent.setup()
+    renderWithRouter(<MapPage />)
+
+    await abrirNovaAlocacao(user)
+    await user.click(screen.getByLabelText(/Alocar em outro dia\/horário/i))
+    await user.selectOptions(screen.getByLabelText('Dia do segundo horário'), 'QUARTA')
+    await user.selectOptions(screen.getByLabelText('Início do segundo horário'), '14:00')
+    await user.selectOptions(screen.getByLabelText('Fim do segundo horário'), '16:00')
+    await user.click(screen.getByRole('button', { name: /Salvar/i }))
+
+    await waitFor(() => expect(mockCRUD.createMany).toHaveBeenCalledOnce())
+    const [[primeira, segunda]] = mockCRUD.createMany.mock.calls[0]!
+    expect(primeira).toMatchObject({ disciplina: 'REDES', curso: 'BCC', sala: 'SALA 02', dia_semana: 'SEGUNDA', inicio: '08:00', fim: '10:00' })
+    expect(segunda).toMatchObject({ disciplina: 'REDES', curso: 'BCC', sala: 'SALA 02', dia_semana: 'QUARTA', inicio: '14:00', fim: '16:00' })
+    expect(mockCRUD.create).not.toHaveBeenCalled()
+  })
+
+  it('sem o checkbox, salva só uma alocação (fluxo atual)', async () => {
+    setupHooks({ isAdmin: true })
+    mockCRUD.create.mockResolvedValue(undefined)
+    const user = userEvent.setup()
+    renderWithRouter(<MapPage />)
+
+    await abrirNovaAlocacao(user)
+    await user.click(screen.getByRole('button', { name: /Salvar/i }))
+
+    await waitFor(() => expect(mockCRUD.create).toHaveBeenCalledOnce())
+    expect(mockCRUD.createMany).not.toHaveBeenCalled()
+  })
+
+  it('segundo horário com choque → mensagem e Salvar desabilitado', async () => {
+    setupHooks({ isAdmin: true })
+    // Conflita apenas quando o horário é na quarta-feira.
+    mockCRUD.hasConflict.mockImplementation((d: { dia_semana: string }) => d.dia_semana === 'QUARTA')
+    const user = userEvent.setup()
+    renderWithRouter(<MapPage />)
+
+    await abrirNovaAlocacao(user)
+    await user.click(screen.getByLabelText(/Alocar em outro dia\/horário/i))
+    await user.selectOptions(screen.getByLabelText('Dia do segundo horário'), 'QUARTA')
+
+    expect(await screen.findByText(/Segundo horário: conflito de horário/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Salvar/i })).toBeDisabled()
+    mockCRUD.hasConflict.mockReturnValue(false)
   })
 })

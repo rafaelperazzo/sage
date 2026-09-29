@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { timeToMinutes, buildGridMatrix, getHorasVisiveis, markFreeSlots, isAlocacaoAgora, formatFreeRange } from './gridUtils'
-import type { Alocacao } from '../../types'
+import { timeToMinutes, buildGridMatrix, getHorasVisiveis, markFreeSlots, isAlocacaoAgora, formatFreeRange, conflitoSegundaAlocacao } from './gridUtils'
+import type { Alocacao, AlocacaoInput } from '../../types'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -358,5 +358,43 @@ describe('isAlocacaoAgora', () => {
     const aloc = makeAlocacao({ dia_semana: 'SEGUNDA', inicio: '14:00', fim: '16:00' })
     const now = new Date(2026, 6, 26, 14, 35) // domingo
     expect(isAlocacaoAgora(aloc, now)).toBe(false)
+  })
+})
+
+describe('conflitoSegundaAlocacao', () => {
+  const primeira: AlocacaoInput = {
+    disciplina: 'REDES', professor: null, curso: 'BCC', sala: 'SALA 02', dia_semana: 'SEGUNDA', inicio: '08:00', fim: '10:00',
+  }
+  const semConflito = () => false
+
+  it('segundo horário livre → null', () => {
+    const segunda = { ...primeira, dia_semana: 'QUARTA' }
+    expect(conflitoSegundaAlocacao(primeira, segunda, semConflito)).toBeNull()
+  })
+
+  it('início >= fim → erro', () => {
+    const segunda = { ...primeira, dia_semana: 'QUARTA', inicio: '10:00', fim: '10:00' }
+    expect(conflitoSegundaAlocacao(primeira, segunda, semConflito)).toMatch(/início deve ser anterior/)
+  })
+
+  it('mesmo dia e horário sobreposto ao primeiro → erro', () => {
+    const segunda = { ...primeira, inicio: '09:00', fim: '11:00' }
+    expect(conflitoSegundaAlocacao(primeira, segunda, semConflito)).toMatch(/sobrepõe o primeiro/)
+  })
+
+  it('mesmo dia sem sobreposição → null', () => {
+    const segunda = { ...primeira, inicio: '10:00', fim: '12:00' }
+    expect(conflitoSegundaAlocacao(primeira, segunda, semConflito)).toBeNull()
+  })
+
+  it('conflito com alocação existente → erro', () => {
+    const segunda = { ...primeira, dia_semana: 'QUARTA' }
+    expect(conflitoSegundaAlocacao(primeira, segunda, () => true)).toMatch(/Segundo horário: conflito de horário/)
+  })
+
+  it('conflito com reserva pontual → mensagem da reserva prefixada', () => {
+    const segunda = { ...primeira, dia_semana: 'QUARTA' }
+    expect(conflitoSegundaAlocacao(primeira, segunda, semConflito, () => 'Conflito com a reserva pontual: X.'))
+      .toBe('Segundo horário: Conflito com a reserva pontual: X.')
   })
 })

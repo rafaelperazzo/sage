@@ -32,6 +32,7 @@ Visualização da agenda semanal de cada sala em formato de grade (segunda a sá
 
 **Modo administrador** (requer login como administrador geral — veja [Autenticação e Permissões](#autenticação-e-permissões)):
 - Clique em célula livre e escolha entre **Nova alocação** (semanal, no período letivo) ou **Reserva pontual** (disciplina, professor, data, início e fim)
+- Na nova alocação, marque **"Alocar em outro dia/horário"** para criar, no mesmo salvamento, uma segunda alocação da mesma disciplina, professor, curso e sala em outro dia da semana e horário. As duas são gravadas juntas — se o segundo horário tiver choque (com alocações, reservas pontuais ou com o primeiro horário), nenhuma é salva
 - Clique em célula ocupada para editar ou remover a alocação; clique em uma reserva para editá-la ou removê-la
 - Detecção automática de conflito de horário:
   - uma reserva só pode ser feita em horário livre de alocações (mesma sala, mesmo dia da semana da data) e sem sobrepor outra reserva da mesma sala e data
@@ -47,7 +48,7 @@ Idêntico ao SAGE Map, mas para salas de unidades externas ao Departamento de Co
 - Barra de infraestrutura da sala selecionada aparece **somente** se já existir um registro para aquela sala na tabela `infra_salas`; caso contrário, nada é exibido
 
 **Modo administrador** (requer login como administrador geral ou como administrador do SAGE Rural — veja [Autenticação e Permissões](#autenticação-e-permissões)):
-- Clique em célula livre e escolha entre **Nova alocação** ou **Reserva pontual**, como no SAGE Map
+- Clique em célula livre e escolha entre **Nova alocação** ou **Reserva pontual**, como no SAGE Map — incluindo a opção "Alocar em outro dia/horário"
 - Clique em célula ocupada para editar ou remover a alocação; clique em uma reserva para editá-la ou removê-la
 - Detecção automática de conflito de horário entre alocações e reservas pontuais, com as mesmas regras do SAGE Map
 - Clique na barra de infraestrutura para editar os dados da sala (apenas se já houver registro)

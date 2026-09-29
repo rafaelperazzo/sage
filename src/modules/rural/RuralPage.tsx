@@ -51,7 +51,7 @@ export function RuralPage() {
   const [modal, setModal] = useState<ModalState>(null)
   const [editingInfra, setEditingInfra] = useState(false)
   const { isAdmin } = useAuth('rural')
-  const { alocacoes, loading, error, create, update, remove, hasConflict } = useAlocacoesExternasPorSala(selectedSala)
+  const { alocacoes, loading, error, create, createMany, update, remove, hasConflict } = useAlocacoesExternasPorSala(selectedSala)
   const {
     reservas,
     create: createReserva,
@@ -97,6 +97,14 @@ export function RuralPage() {
     const conflito = getConflitoReserva(data)
     if (conflito) throw new Error(conflito)
     await create(data)
+  }
+
+  async function handleCreateMany(data: AlocacaoInput[]) {
+    for (const d of data) {
+      const conflito = getConflitoReserva(d)
+      if (conflito) throw new Error(conflito)
+    }
+    await createMany(data)
   }
 
   async function handleUpdate(id: number, data: AlocacaoInput) {
@@ -278,6 +286,7 @@ export function RuralPage() {
           hasConflict={hasConflict}
           getConflitoReserva={getConflitoReserva}
           onSave={handleCreate}
+          onSaveMany={handleCreateMany}
           onClose={() => setModal(null)}
         />
       )}
