@@ -71,7 +71,7 @@ export function OcupacaoView({
           <h2 className="text-sm font-semibold text-gray-800">Ocupação por Sala</h2>
         </div>
         <p className="text-xs text-gray-400 mb-4">
-          Clique em uma barra para ver detalhes. Máximo: 77,5h/semana (seg-sex, 07:00–21:50; cada aula noturna de 50 min conta 1h) = 100%.
+          Clique em uma barra para ver detalhes. Máximo: 60h/semana (seg-sex, 12h/dia: 08:00–12:00, 14:00–18:00 e 18:30–21:50; cada aula noturna de 50 min conta 1h) = 100%.
         </p>
         {topoGrafico}
         <OccupancyBarChart salas={salasGrafico} onSalaClick={toggleSala} nomeCurto={nomeCurto} />

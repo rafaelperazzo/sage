@@ -37,9 +37,26 @@ function horasEfetivas(inicio: number, fim: number): number {
   return (minutosEfetivos(fim) - minutosEfetivos(inicio)) / 60
 }
 
-// Grade inteira (07:00–21:50) = 11,5h + 4h noturnas = 15,5h por dia;
-// × 5 dias = 77,5h máximo por semana.
-export const MAX_HORAS_DIA = horasEfetivas(timeToMinutes(LIMITES[0]!), timeToMinutes(LIMITES[LIMITES.length - 1]!))
+// Janelas que contam no cálculo. Ficam de fora 07:00–08:00, o almoço
+// (12:00–14:00) e a folga 18:00–18:30, mesmo quando há alocação nelas.
+const JANELAS_CALCULO = [
+  ['08:00', '12:00'],
+  ['14:00', '18:00'],
+  ['18:30', LIMITES[LIMITES.length - 1]!],
+].map(([inicio, fim]) => ({ inicio: timeToMinutes(inicio!), fim: timeToMinutes(fim!) }))
+
+/** Horas efetivas de [inicio, fim) considerando só as janelas de cálculo. */
+function horasConsideradas(inicio: number, fim: number): number {
+  return JANELAS_CALCULO.reduce((total, janela) => {
+    const ini = Math.max(inicio, janela.inicio)
+    const f = Math.min(fim, janela.fim)
+    return f > ini ? total + horasEfetivas(ini, f) : total
+  }, 0)
+}
+
+// 08–12 (4h) + 14–18 (4h) + 18:30–21:50 (4h noturnas) = 12h por dia;
+// × 5 dias = 60h máximo por semana.
+export const MAX_HORAS_DIA = horasConsideradas(0, 24 * 60)
 export const MAX_HORAS_SEMANA = MAX_HORAS_DIA * DIAS_CALCULO.length
 
 export interface SalaRelatorio {
@@ -68,10 +85,10 @@ export function calcularOcupacao(alocacoes: Alocacao[], salasRelatorio: SalaRela
       let currentEnd = -1
       for (const { start, end } of intervals) {
         if (start >= currentEnd) {
-          horasNoDia += horasEfetivas(start, end)
+          horasNoDia += horasConsideradas(start, end)
           currentEnd = end
         } else if (end > currentEnd) {
-          horasNoDia += horasEfetivas(currentEnd, end)
+          horasNoDia += horasConsideradas(currentEnd, end)
           currentEnd = end
         }
       }

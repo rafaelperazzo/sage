@@ -187,7 +187,7 @@ describe('ReportPage — dados de ocupação', () => {
     const aloc = makeAlocacao({ sala: 'SALA 02', inicio: '08:00', fim: '10:00' })
     setupHooks({ alocacoes: [aloc] })
     renderWithRouter(<ReportPage />)
-    // 2h / 72h = ~3%
+    // 2h / 60h = ~3%
     expect(screen.getByText('3%')).toBeInTheDocument()
   })
 })
