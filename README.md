@@ -4,7 +4,7 @@
 
 Sistema web do **Departamento de Computação** para visualização e gestão de alocações de salas. Dados em tempo real via Supabase.
 
-**Acesso:** [rafaelperazzo.github.io/sage](https://rafaelperazzo.github.io/sage/)
+**Acesso:** [sage.yokoapps.com.br](https://sage.yokoapps.com.br)
 
 ---
 
@@ -66,10 +66,12 @@ Grade de horários de um professor específico.
 ### SAGE Report
 Relatórios de ocupação e disponibilidade das salas.
 
-- Gráfico de barras com percentual de ocupação de todas as salas
-- Detalhamento por sala: gráfico de pizza (ocupado vs. livre) e tabela por dia
-- Base de cálculo: 12 horas/dia × 5 dias (segunda a sexta) = 60h/semana = 100% de ocupação
-- Salas agrupadas por tipo: salas de aula, inovação e laboratórios
+- Abas **SAGE Map** (salas do departamento, agrupadas por tipo: salas de aula, inovação e laboratórios) e **SAGE Rural** (salas externas, uma tabela por prédio)
+- Gráfico de barras com percentual de ocupação de todas as salas, com seletor Total / Manhã / Tarde / Noite
+- Cards com a média de ocupação geral e de cada turno; tabelas com o percentual de cada sala por turno
+- Detalhamento por sala: gráfico de pizza (ocupado vs. livre), tabela por dia e ocupação por turno
+- Base de cálculo: contam apenas 08:00–12:00 (manhã), 14:00–18:00 (tarde) e 18:30–21:50 (noite, cada aula de 50 min conta 1h) = 12h/dia × 5 dias (segunda a sexta) = 60h/semana = 100%; cada turno vale 20h/semana
+- Botão **"Exportar relatório em PDF"**: baixa um PDF (A4 retrato) com resumo geral, gráfico de barras por sala, tabela por sala com os turnos e ocupação por dia. Na aba SAGE Rural o PDF inclui todos os prédios. Nome do arquivo: `ocupacao-sage-map-<período>.pdf` ou `ocupacao-sage-rural-<período>.pdf`
 
 ### SAGE Manutenção
 Lista pública das solicitações de manutenção (RTs) do Departamento de Computação.

@@ -27,6 +27,9 @@ vi.mock('../report/OccupancyBarChart', () => ({
   ),
 }))
 
+const mockExportarOcupacaoPdf = vi.fn().mockResolvedValue(undefined)
+vi.mock('./exportarOcupacaoPdf', () => ({ exportarOcupacaoPdf: (...args: unknown[]) => mockExportarOcupacaoPdf(...args) }))
+
 vi.mock('../report/RoomDetail', () => ({
   RoomDetail: ({ onClose }: { room: { sala: string }; onClose: () => void }) => (
     <div data-testid="room-detail">
@@ -230,6 +233,36 @@ describe('ReportPage — ocupação por turno', () => {
 
     await user.click(screen.getByRole('button', { name: 'Total' }))
     expect(barra()).toHaveAttribute('data-percentual', '3')
+  })
+})
+
+describe('ReportPage — exportar relatório em PDF', () => {
+  beforeEach(() => { vi.clearAllMocks(); mockPeriodo = '2026.2' })
+
+  it('SAGE Map: exporta com o módulo, o período e os grupos por tipo', async () => {
+    setupHooks({ alocacoes: [makeAlocacao()] })
+    const user = userEvent.setup()
+    renderWithRouter(<ReportPage />)
+    await user.click(screen.getByRole('button', { name: 'Exportar relatório em PDF' }))
+
+    expect(mockExportarOcupacaoPdf).toHaveBeenCalledTimes(1)
+    const params = mockExportarOcupacaoPdf.mock.calls[0]![0]
+    expect(params).toMatchObject({ modulo: 'SAGE Map', periodo: '2026.2' })
+    expect(params.grupos.map((g: { titulo: string }) => g.titulo)).toEqual(['Salas de Aula', 'Salas de Inovação', 'Laboratórios'])
+    expect(params.summary.salas).toHaveLength(SALAS.length)
+  })
+
+  it('SAGE Rural: exporta todos os prédios, não só o escolhido no gráfico', async () => {
+    setupRural()
+    const user = userEvent.setup()
+    renderWithRouter(<ReportPage />)
+    await user.click(screen.getByRole('button', { name: 'SAGE Rural' }))
+    await user.click(screen.getByRole('button', { name: 'Exportar relatório em PDF' }))
+
+    const params = mockExportarOcupacaoPdf.mock.calls[0]![0]
+    expect(params.modulo).toBe('SAGE Rural')
+    expect(params.grupos.map((g: { titulo: string }) => g.titulo)).toEqual(['CEAGRI', 'PREDIO B'])
+    expect(params.nomeTabela('CEAGRI - SALA 01')).toBe('SALA 01')
   })
 })
 

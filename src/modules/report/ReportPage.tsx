@@ -51,6 +51,7 @@ function ReportMap() {
 
   return (
     <OcupacaoView
+      modulo="SAGE Map"
       summary={summary}
       periodo={periodo}
       grupos={grupos}
@@ -99,6 +100,7 @@ function ReportRural() {
 
   return (
     <OcupacaoView
+      modulo="SAGE Rural"
       summary={summary}
       periodo={periodo}
       grupos={grupos}

@@ -2,7 +2,7 @@
   "name": "sage",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://perazzo.github.io/sage",
+  "homepage": "https://sage.yokoapps.com.br",
   "type": "module",
   "scripts": {
     "dev": "vite",

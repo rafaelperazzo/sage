@@ -95,7 +95,7 @@ export function montarLinhasGradePdf(
   })
 }
 
-function slugArquivo(nome: string): string {
+export function slugArquivo(nome: string): string {
   return nome
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
@@ -202,19 +202,32 @@ export async function exportarGradesPdf({
     desenharTabela(doc, body, escolherEscala(body))
   })
 
-  // Numeração no rodapé quando o arquivo tem mais de uma página.
-  const total = doc.getNumberOfPages()
-  if (total > 1) {
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(8)
-    doc.setTextColor(120)
-    for (let i = 1; i <= total; i++) {
-      doc.setPage(i)
-      doc.text(`Página ${i} de ${total}`, doc.internal.pageSize.getWidth() - MARGEM, doc.internal.pageSize.getHeight() - 5, { align: 'right' })
-    }
-  }
-
+  numerarPaginas(doc)
   doc.save(nomeArquivo)
+}
+
+/** Subconjunto do jsPDF usado pela numeração (evita importar o tipo do jsPDF). */
+interface DocPaginado {
+  getNumberOfPages: () => number
+  setPage: (n: number) => unknown
+  setFont: (fonte: string, estilo: string) => unknown
+  setFontSize: (tamanho: number) => unknown
+  setTextColor: (cor: number) => unknown
+  text: (texto: string, x: number, y: number, opcoes?: { align?: 'right' }) => unknown
+  internal: { pageSize: { getWidth: () => number; getHeight: () => number } }
+}
+
+/** "Página X de Y" no rodapé, quando o arquivo tem mais de uma página. */
+export function numerarPaginas(doc: DocPaginado, margem = MARGEM): void {
+  const total = doc.getNumberOfPages()
+  if (total <= 1) return
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(8)
+  doc.setTextColor(120)
+  for (let i = 1; i <= total; i++) {
+    doc.setPage(i)
+    doc.text(`Página ${i} de ${total}`, doc.internal.pageSize.getWidth() - margem, doc.internal.pageSize.getHeight() - 5, { align: 'right' })
+  }
 }
 
 interface ExportarGradePdfParams extends PaginaGrade {

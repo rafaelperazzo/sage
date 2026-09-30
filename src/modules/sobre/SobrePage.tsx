@@ -105,10 +105,11 @@ const MODULES: ModuleCardProps[] = [
     description:
       'Acompanhe o percentual de ocupação de todas as salas do departamento no período letivo selecionado.',
     features: [
-      'Gráfico de barras com o percentual de ocupação de cada sala',
-      'Clique em uma sala para ver o detalhamento por dia da semana',
-      'Salas agrupadas por tipo: salas de aula, inovação e laboratórios',
-      'Base de cálculo: 12 horas por dia equivalem a 100% de ocupação',
+      'Gráfico de barras com o percentual de ocupação de cada sala, total ou por turno (manhã, tarde e noite)',
+      'Clique em uma sala para ver o detalhamento por dia da semana e por turno',
+      'Abas SAGE Map (salas agrupadas por tipo) e SAGE Rural (salas externas, por prédio)',
+      'Base de cálculo: 12 horas por dia (08:00–12:00, 14:00–18:00 e 18:30–21:50) equivalem a 100% de ocupação',
+      'Exporte o relatório em PDF: resumo, gráfico, tabela por sala e turno e ocupação por dia',
     ],
   },
   {

@@ -4,6 +4,8 @@ import { RoomDetail } from './RoomDetail'
 import { TURNOS, MAX_HORAS_SEMANA, MAX_HORAS_TURNO_SEMANA } from './occupancyUtils'
 import type { ReportSummary, RoomOccupancy, Turno } from './occupancyUtils'
 import { BarChart2 } from 'lucide-react'
+import { ExportarPdfButton } from '../map/ExportarPdfButton'
+import { exportarOcupacaoPdf } from './exportarOcupacaoPdf'
 
 export interface GrupoTabela {
   chave: string
@@ -14,6 +16,7 @@ export interface GrupoTabela {
 }
 
 interface OcupacaoViewProps {
+  modulo: 'SAGE Map' | 'SAGE Rural'
   summary: ReportSummary
   periodo: string
   grupos: GrupoTabela[]
@@ -45,6 +48,7 @@ function legendaMaximo(metrica: Metrica): string {
 
 // Cards de resumo + gráfico de ocupação + detalhe da sala + tabelas por grupo.
 export function OcupacaoView({
+  modulo,
   summary,
   periodo,
   grupos,
@@ -61,8 +65,18 @@ export function OcupacaoView({
     setSelectedSala(sala === selectedSala ? null : sala)
   }
 
+  // O PDF leva todos os grupos (no Rural, todos os prédios), não só o
+  // recorte exibido no gráfico.
+  async function handleExportarPdf() {
+    await exportarOcupacaoPdf({ modulo, periodo, summary, grupos, nomeTabela, nomeCurto })
+  }
+
   return (
     <>
+      <div className="flex mb-4">
+        <ExportarPdfButton label="Exportar relatório em PDF" onExport={handleExportarPdf} />
+      </div>
+
       {/* Cards de resumo */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
         <div className="bg-white border border-gray-200 rounded-xl p-4">
