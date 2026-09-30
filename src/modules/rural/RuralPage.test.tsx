@@ -59,6 +59,8 @@ const mockCRUD = {
   createMany: vi.fn(),
   update: vi.fn(),
   remove: vi.fn(),
+  updateMany: vi.fn(),
+  removeMany: vi.fn(),
   hasConflict: vi.fn().mockReturnValue(false),
 }
 
@@ -78,6 +80,7 @@ function makeManutencao(overrides: Partial<Manutencao> = {}): Manutencao {
 
 function setupHooks({
   alocacoes = [] as Alocacao[],
+  todas = undefined as Alocacao[] | undefined,
   loading = false,
   error = null as string | null,
   isAdmin = false,
@@ -96,7 +99,7 @@ function setupHooks({
     getConflito: vi.fn().mockReturnValue(null),
   })
   mockPorSala.mockReturnValue({ alocacoes, loading, error, ...mockCRUD })
-  mockTodas.mockReturnValue({ alocacoes, loading, error, reload: vi.fn() })
+  mockTodas.mockReturnValue({ alocacoes: todas ?? alocacoes, loading, error, reload: vi.fn() })
   mockSalas.mockReturnValue({ salas, loading: loadingSalas, error: null })
   mockUseAuth.mockReturnValue({
     user: isAdmin ? { id: '1', email: 'a@b.com' } as never : null,
@@ -365,6 +368,54 @@ describe('RuralPage — reservas pontuais', () => {
     await user.click(screen.getByRole('button', { name: /^VER RESERVAS/ }))
     expect(screen.getByText(/OFICINA/)).toBeInTheDocument()
     expect(screen.queryByText(/SEMINARIO/)).not.toBeInTheDocument()
+  })
+})
+
+describe('RuralPage — refletir edição/remoção nos outros dias da disciplina', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  const seg = makeAlocacao({ id: 1, inicio: '08:00', fim: '10:00', dia_semana: 'SEGUNDA' })
+  const qua = makeAlocacao({ id: 2, inicio: '08:00', fim: '10:00', dia_semana: 'QUARTA' })
+
+  async function abrirEdicao(todas: Alocacao[]) {
+    setupHooks({ alocacoes: [seg, qua], todas, isAdmin: true })
+    const user = userEvent.setup()
+    renderWithRouter(<RuralPage />)
+    await user.click(screen.getAllByText('AGRONOMIA I')[0]!)
+    return { user, modal: within((await screen.findByText('Editar Alocação')).parentElement!.parentElement!) }
+  }
+
+  it('refletindo, troca a sala das outras mantendo seus dias e horários', async () => {
+    const { user, modal } = await abrirEdicao([seg, qua])
+    await user.selectOptions(modal.getAllByRole('combobox')[0]!, 'PREDIO A - SALA 02')
+    await user.click(modal.getByLabelText(/Refletir em outros dias/i))
+    await user.click(modal.getByRole('button', { name: 'Salvar' }))
+
+    await waitFor(() =>
+      expect(mockCRUD.updateMany).toHaveBeenCalledWith([
+        { ...seg, sala: 'PREDIO A - SALA 02' },
+        { ...qua, sala: 'PREDIO A - SALA 02' },
+      ])
+    )
+  })
+
+  it('bloqueia quando a nova sala está ocupada no horário de outra alocação refletida', async () => {
+    const ocupante = makeAlocacao({ id: 9, disciplina: 'SOLOS', sala: 'PREDIO A - SALA 02', dia_semana: 'QUARTA', inicio: '08:00', fim: '09:00' })
+    const { user, modal } = await abrirEdicao([seg, qua, ocupante])
+    await user.selectOptions(modal.getAllByRole('combobox')[0]!, 'PREDIO A - SALA 02')
+    await user.click(modal.getByLabelText(/Refletir em outros dias/i))
+
+    expect(modal.getByText(/já está ocupado por SOLOS/)).toBeInTheDocument()
+    expect(modal.getByRole('button', { name: 'Salvar' })).toBeDisabled()
+  })
+
+  it('remoção refletindo remove todas as marcadas', async () => {
+    const { user } = await abrirEdicao([seg, qua])
+    await user.click(screen.getByRole('button', { name: /Remover/i }))
+    await user.click(await screen.findByLabelText(/Refletir em outros dias/i))
+    await user.click(screen.getByRole('button', { name: 'Confirmar Remoção' }))
+
+    await waitFor(() => expect(mockCRUD.removeMany).toHaveBeenCalledWith([1, 2]))
   })
 })
 

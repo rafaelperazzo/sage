@@ -8,7 +8,9 @@ import {
   insertAlocacaoExterna,
   insertAlocacoesExternas,
   updateAlocacaoExterna,
+  updateAlocacoesExternas,
   deleteAlocacaoExterna,
+  deleteAlocacoesExternas,
 } from '../lib/supabase'
 import { usePeriodo } from '../contexts/PeriodoContext'
 
@@ -74,6 +76,8 @@ interface UseAlocacoesExternasPorSalaReturn {
   createMany: (data: AlocacaoInput[]) => Promise<void>
   update: (id: number, data: AlocacaoInput) => Promise<void>
   remove: (id: number) => Promise<void>
+  updateMany: (rows: Alocacao[]) => Promise<void>
+  removeMany: (ids: number[]) => Promise<void>
   hasConflict: (data: AlocacaoInput, excludeId?: number) => boolean
 }
 
@@ -146,5 +150,18 @@ export function useAlocacoesExternasPorSala(sala: string): UseAlocacoesExternasP
     await load()
   }
 
-  return { alocacoes, loading, error, create, createMany, update, remove, hasConflict }
+  // Altera várias alocações de uma vez (ex: refletir a edição nos outros dias
+  // da disciplina). As linhas podem estar em outras salas, então a checagem
+  // de conflito fica com quem chama (contra todas as alocações do período).
+  async function updateMany(rows: Alocacao[]) {
+    await updateAlocacoesExternas(rows)
+    await load()
+  }
+
+  async function removeMany(ids: number[]) {
+    await deleteAlocacoesExternas(ids)
+    await load()
+  }
+
+  return { alocacoes, loading, error, create, createMany, update, remove, updateMany, removeMany, hasConflict }
 }

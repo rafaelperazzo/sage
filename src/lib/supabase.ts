@@ -124,6 +124,28 @@ export async function deleteAlocacao(id: number): Promise<void> {
   if (error) throw error
 }
 
+// Grava várias alocações existentes em uma única requisição (upsert pelo id) —
+// atômico: todas são alteradas ou nenhuma.
+export async function updateAlocacoes(rows: Alocacao[]): Promise<Alocacao[]> {
+  const { data, error } = await supabase
+    .from(TABLE_NAME)
+    .upsert(rows, { onConflict: 'id' })
+    .select()
+
+  if (error) throw error
+  return data as Alocacao[]
+}
+
+// Remove várias alocações em uma única requisição (atômico).
+export async function deleteAlocacoes(ids: number[]): Promise<void> {
+  const { error } = await supabase
+    .from(TABLE_NAME)
+    .delete()
+    .in('id', ids)
+
+  if (error) throw error
+}
+
 // ── Infraestrutura das salas ─────────────────────────────────────
 
 export const INFRA_SALAS_TABLE = 'infra_salas'
@@ -372,6 +394,28 @@ export async function deleteAlocacaoExterna(id: number): Promise<void> {
     .from(EXTERNAS_TABLE_NAME)
     .delete()
     .eq('id', id)
+
+  if (error) throw error
+}
+
+// Grava várias alocações existentes em uma única requisição (upsert pelo id) —
+// atômico: todas são alteradas ou nenhuma.
+export async function updateAlocacoesExternas(rows: Alocacao[]): Promise<Alocacao[]> {
+  const { data, error } = await supabase
+    .from(EXTERNAS_TABLE_NAME)
+    .upsert(rows, { onConflict: 'id' })
+    .select()
+
+  if (error) throw error
+  return data as Alocacao[]
+}
+
+// Remove várias alocações em uma única requisição (atômico).
+export async function deleteAlocacoesExternas(ids: number[]): Promise<void> {
+  const { error } = await supabase
+    .from(EXTERNAS_TABLE_NAME)
+    .delete()
+    .in('id', ids)
 
   if (error) throw error
 }

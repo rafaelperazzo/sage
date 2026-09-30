@@ -22,6 +22,7 @@ import { SALAS, LIMITES, TIPO_LABEL, TIPO_COLOR, getSalaInfo } from '../../const
 import { SlotChoiceModal } from './SlotChoiceModal'
 import { ReservaPontualForm } from './ReservaPontualForm'
 import { ReservaPontualViewModal } from './ReservaPontualViewModal'
+import { conflitoAlocacoes, outrasAlocacoesDaDisciplina, paraInput } from './alocacoesDisciplinaUtils'
 import { alocacaoConflitaComReserva, mensagemConflitoReserva, proximaDataDoDia } from './reservasPontuaisUtils'
 import type { Alocacao, AlocacaoInput, InfraSalaInput, ReservaPontual, ReservaPontualInput } from '../../types'
 import { Shield, RefreshCw } from 'lucide-react'
@@ -51,7 +52,7 @@ export function MapPage() {
   const [modal, setModal] = useState<ModalState>(null)
   const [editingInfra, setEditingInfra] = useState(false)
   const { isAdmin } = useAuth('map')
-  const { alocacoes, loading, error, create, createMany, update, remove, hasConflict } = useAlocacoesPorSala(selectedSala)
+  const { alocacoes, loading, error, create, createMany, update, remove, updateMany, removeMany, hasConflict } = useAlocacoesPorSala(selectedSala)
   const {
     reservas,
     create: createReserva,
@@ -72,7 +73,7 @@ export function MapPage() {
       reservas: reservasSala,
     })
   }
-  const { alocacoes: todasAlocacoes, loading: loadingBusca } = useAlocacoes()
+  const { alocacoes: todasAlocacoes, loading: loadingBusca, reload: reloadTodas } = useAlocacoes()
 
   // Um único PDF com a grade de todas as salas do departamento (uma por página,
   // na mesma ordem dos botões de sala).
@@ -131,10 +132,19 @@ export function MapPage() {
     await createMany(data)
   }
 
-  async function handleUpdate(id: number, data: AlocacaoInput) {
-    const conflito = getConflitoReserva(data)
+  // Conflito ao gravar a alocação editada (e as outras da disciplina, se
+  // refletida): checa todas as alocações do período — a sala pode ter mudado —
+  // e as reservas pontuais futuras.
+  function getConflitoEdicao(linhas: Alocacao[]): string | null {
+    return conflitoAlocacoes(linhas, todasAlocacoes) ?? linhas.map(getConflitoReserva).find(Boolean) ?? null
+  }
+
+  async function handleUpdate(linhas: Alocacao[]) {
+    const conflito = getConflitoEdicao(linhas)
     if (conflito) throw new Error(conflito)
-    await update(id, data)
+    if (linhas.length === 1) await update(linhas[0]!.id, paraInput(linhas[0]!))
+    else await updateMany(linhas)
+    await reloadTodas()
   }
 
   async function handleCreateReserva(data: ReservaPontualInput) {
@@ -152,8 +162,10 @@ export function MapPage() {
     return LIMITES[idx + 2] ?? LIMITES[idx + 1] ?? hora
   }
 
-  async function handleDelete(id: number) {
-    await remove(id)
+  async function handleDelete(ids: number[]) {
+    if (ids.length === 1) await remove(ids[0]!)
+    else await removeMany(ids)
+    await reloadTodas()
   }
 
   async function handleSaveInfra(data: InfraSalaInput) {
@@ -285,8 +297,8 @@ export function MapPage() {
       {modal?.mode === 'edit' && (
         <EditModal
           alocacao={modal.alocacao}
-          hasConflict={hasConflict}
-          getConflitoReserva={getConflitoReserva}
+          outras={outrasAlocacoesDaDisciplina(modal.alocacao, todasAlocacoes)}
+          getConflito={getConflitoEdicao}
           onSave={handleUpdate}
           onDelete={handleDelete}
           onClose={() => setModal(null)}

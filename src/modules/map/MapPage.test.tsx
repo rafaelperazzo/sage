@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithRouter } from '../../test/renderWithRouter'
 import type { Alocacao, Manutencao, ReservaPontual } from '../../types'
@@ -71,6 +71,8 @@ const mockCRUD = {
   createMany: vi.fn(),
   update: vi.fn(),
   remove: vi.fn(),
+  updateMany: vi.fn(),
+  removeMany: vi.fn(),
   hasConflict: vi.fn().mockReturnValue(false),
 }
 
@@ -90,6 +92,7 @@ function makeManutencao(overrides: Partial<Manutencao> = {}): Manutencao {
 
 function setupHooks({
   alocacoes = [] as Alocacao[],
+  todas = undefined as Alocacao[] | undefined,
   loading = false,
   error = null as string | null,
   isAdmin = false,
@@ -106,7 +109,7 @@ function setupHooks({
     getConflito: vi.fn().mockReturnValue(null),
   })
   mockPorSala.mockReturnValue({ alocacoes, loading, error, ...mockCRUD })
-  mockTodas.mockReturnValue({ alocacoes, loading, error, reload: vi.fn() })
+  mockTodas.mockReturnValue({ alocacoes: todas ?? alocacoes, loading, error, reload: vi.fn() })
   mockUseAuth.mockReturnValue({
     user: isAdmin ? { id: '1', email: 'a@b.com' } as never : null,
     isAdmin,
@@ -527,6 +530,100 @@ describe('MapPage — alocação em outro dia/horário', () => {
     expect(await screen.findByText(/Segundo horário: conflito de horário/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Salvar/i })).toBeDisabled()
     mockCRUD.hasConflict.mockReturnValue(false)
+  })
+})
+
+describe('MapPage — refletir edição/remoção nos outros dias da disciplina', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  const seg = makeAlocacao({ id: 1, inicio: '08:00', fim: '10:00', dia_semana: 'SEGUNDA' })
+  const qua = makeAlocacao({ id: 2, inicio: '08:00', fim: '10:00', dia_semana: 'QUARTA' })
+  const sex = makeAlocacao({ id: 3, inicio: '10:00', fim: '12:00', dia_semana: 'SEXTA', sala: 'LAB 35' })
+
+  async function abrirEdicao(todas: Alocacao[]) {
+    setupHooks({ alocacoes: [seg, qua], todas, isAdmin: true })
+    const user = userEvent.setup()
+    renderWithRouter(<MapPage />)
+    await user.click(screen.getAllByText('CÁLCULO I')[0]!)
+    await screen.findByText('Editar Alocação')
+    return user
+  }
+
+  it('sem outras alocações da disciplina a opção não aparece', async () => {
+    setupHooks({ alocacoes: [seg], isAdmin: true })
+    const user = userEvent.setup()
+    renderWithRouter(<MapPage />)
+    await user.click(screen.getByText('CÁLCULO I'))
+    await screen.findByText('Editar Alocação')
+    expect(screen.queryByLabelText(/Refletir em outros dias/i)).not.toBeInTheDocument()
+  })
+
+  it('opção vem desmarcada; salvar sem marcar altera só a alocação clicada', async () => {
+    const user = await abrirEdicao([seg, qua])
+    expect(screen.getByLabelText(/Refletir em outros dias/i)).not.toBeChecked()
+    await user.selectOptions(screen.getAllByRole('combobox')[0]!, 'LAB 35')
+    await user.click(screen.getByRole('button', { name: 'Salvar' }))
+
+    await waitFor(() => expect(mockCRUD.update).toHaveBeenCalledWith(1, expect.objectContaining({ sala: 'LAB 35', dia_semana: 'SEGUNDA' })))
+    expect(mockCRUD.updateMany).not.toHaveBeenCalled()
+  })
+
+  it('refletindo, troca a sala das outras mantendo seus dias e horários', async () => {
+    const user = await abrirEdicao([seg, qua, sex])
+    await user.selectOptions(screen.getAllByRole('combobox')[0]!, 'SALA 36')
+    await user.click(screen.getByLabelText(/Refletir em outros dias/i))
+    // Desmarca a de sexta: só a de quarta acompanha.
+    await user.click(screen.getByLabelText(/SEXTA 10:00–12:00 · LAB 35/))
+    await user.click(screen.getByRole('button', { name: 'Salvar' }))
+
+    await waitFor(() =>
+      expect(mockCRUD.updateMany).toHaveBeenCalledWith([
+        { ...seg, sala: 'SALA 36' },
+        { ...qua, sala: 'SALA 36' },
+      ])
+    )
+    expect(mockCRUD.update).not.toHaveBeenCalled()
+  })
+
+  it('bloqueia quando a nova sala está ocupada no horário de outra alocação refletida', async () => {
+    const ocupante = makeAlocacao({ id: 9, disciplina: 'REDES', professor: 'Prof. Lima', sala: 'SALA 36', dia_semana: 'QUARTA', inicio: '09:00', fim: '11:00' })
+    const user = await abrirEdicao([seg, qua, ocupante])
+    await user.selectOptions(screen.getAllByRole('combobox')[0]!, 'SALA 36')
+    expect(screen.getByRole('button', { name: 'Salvar' })).toBeEnabled()
+
+    await user.click(screen.getByLabelText(/Refletir em outros dias/i))
+
+    expect(screen.getByText(/QUARTA 08:00–10:00 · SALA 36 já está ocupado por REDES — Prof. Lima/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Salvar' })).toBeDisabled()
+  })
+
+  it('edição simples também checa conflito na nova sala (fora da sala selecionada)', async () => {
+    const ocupante = makeAlocacao({ id: 9, disciplina: 'REDES', sala: 'SALA 36', dia_semana: 'SEGUNDA', inicio: '08:00', fim: '09:00' })
+    const user = await abrirEdicao([seg, qua, ocupante])
+    await user.selectOptions(screen.getAllByRole('combobox')[0]!, 'SALA 36')
+
+    expect(screen.getByText(/já está ocupado por REDES/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Salvar' })).toBeDisabled()
+  })
+
+  it('remoção refletindo remove a clicada e as marcadas', async () => {
+    const user = await abrirEdicao([seg, qua, sex])
+    await user.click(screen.getByRole('button', { name: /Remover/i }))
+    await user.click(await screen.findByLabelText(/Refletir em outros dias/i))
+    await user.click(screen.getByLabelText(/QUARTA 08:00–10:00 · SALA 02/))
+    await user.click(screen.getByRole('button', { name: 'Confirmar Remoção' }))
+
+    await waitFor(() => expect(mockCRUD.removeMany).toHaveBeenCalledWith([1, 3]))
+    expect(mockCRUD.remove).not.toHaveBeenCalled()
+  })
+
+  it('remoção sem marcar remove só a clicada', async () => {
+    const user = await abrirEdicao([seg, qua])
+    await user.click(screen.getByRole('button', { name: /Remover/i }))
+    await user.click(await screen.findByRole('button', { name: 'Confirmar Remoção' }))
+
+    await waitFor(() => expect(mockCRUD.remove).toHaveBeenCalledWith(1))
+    expect(mockCRUD.removeMany).not.toHaveBeenCalled()
   })
 })
 

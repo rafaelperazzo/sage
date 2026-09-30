@@ -2,20 +2,25 @@ import { useState } from 'react'
 import { BaseModal } from '../../components/Modal/BaseModal'
 import type { Alocacao, AlocacaoInput } from '../../types'
 import { DIAS, HORAS, LIMITES } from '../../constants/salas'
+import { comCamposDaDisciplina, formatarAlocacaoCurta } from '../map/alocacoesDisciplinaUtils'
+import { OutrasAlocacoesFields, SELECAO_VAZIA, outrasSelecionadas } from '../map/OutrasAlocacoesFields'
 import { AlertCircle, Trash2 } from 'lucide-react'
 
 interface RuralEditModalProps {
   salas: string[]
   alocacao: Alocacao
-  hasConflict: (data: AlocacaoInput, excludeId?: number) => boolean
-  // Mensagem de conflito com uma reserva pontual futura (null se não houver).
-  getConflitoReserva?: (data: AlocacaoInput) => string | null
-  onSave: (id: number, data: AlocacaoInput) => Promise<void>
-  onDelete: (id: number) => Promise<void>
+  // Outras alocações da mesma disciplina (nome, professor e curso) — habilita
+  // "Refletir em outros dias e horários da disciplina".
+  outras?: Alocacao[]
+  // Mensagem de conflito (alocações ou reservas pontuais) ao gravar as linhas; null se livre.
+  getConflito: (linhas: Alocacao[]) => string | null
+  // Linhas a gravar: a alocação editada seguida das outras selecionadas.
+  onSave: (linhas: Alocacao[]) => Promise<void>
+  onDelete: (ids: number[]) => Promise<void>
   onClose: () => void
 }
 
-export function RuralEditModal({ salas, alocacao, hasConflict, getConflitoReserva, onSave, onDelete, onClose }: RuralEditModalProps) {
+export function RuralEditModal({ salas, alocacao, outras = [], getConflito, onSave, onDelete, onClose }: RuralEditModalProps) {
   const [disciplina, setDisciplina] = useState(alocacao.disciplina)
   const [professor, setProfessor] = useState(alocacao.professor ?? '')
   const [curso, setCurso] = useState(alocacao.curso)
@@ -27,22 +32,28 @@ export function RuralEditModal({ salas, alocacao, hasConflict, getConflitoReserv
   const [deleting, setDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [refletirEdicao, setRefletirEdicao] = useState(SELECAO_VAZIA)
+  const [refletirRemocao, setRefletirRemocao] = useState(SELECAO_VAZIA)
 
   const input: AlocacaoInput = { disciplina, professor: professor || null, curso, dia_semana: dia, sala, inicio, fim }
-  const conflict = disciplina.trim() !== '' && hasConflict(input, alocacao.id)
-  const conflitoReserva = disciplina.trim() !== '' && !conflict ? getConflitoReserva?.(input) ?? null : null
+  // As outras selecionadas recebem disciplina, professor, curso e sala; mantêm dia e horário.
+  const linhas: Alocacao[] = [
+    { ...alocacao, ...input },
+    ...outrasSelecionadas(outras, refletirEdicao).map((o) => comCamposDaDisciplina(o, input)),
+  ]
+  const conflito = disciplina.trim() !== '' ? getConflito(linhas) : null
+  const removidas = outrasSelecionadas(outras, refletirRemocao)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!disciplina.trim()) { setError('Disciplina é obrigatória.'); return }
     if (!curso.trim()) { setError('Curso é obrigatório.'); return }
     if (inicio >= fim) { setError('O horário de início deve ser anterior ao fim.'); return }
-    if (conflict) { setError('Conflito de horário: este slot já está ocupado.'); return }
-    if (conflitoReserva) { setError(conflitoReserva); return }
+    if (conflito) { setError(conflito); return }
     setSaving(true)
     setError(null)
     try {
-      await onSave(alocacao.id, input)
+      await onSave(linhas)
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao salvar.')
@@ -55,7 +66,7 @@ export function RuralEditModal({ salas, alocacao, hasConflict, getConflitoReserv
     setDeleting(true)
     setError(null)
     try {
-      await onDelete(alocacao.id)
+      await onDelete([alocacao.id, ...removidas.map((o) => o.id)])
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao remover.')
@@ -73,6 +84,19 @@ export function RuralEditModal({ salas, alocacao, hasConflict, getConflitoReserv
         <p className="text-sm font-semibold text-gray-900 mb-4">
           {alocacao.disciplina} — {alocacao.dia_semana} {alocacao.inicio}–{alocacao.fim}
         </p>
+        <div className="mb-4">
+          <OutrasAlocacoesFields
+            outras={outras}
+            value={refletirRemocao}
+            onChange={setRefletirRemocao}
+            ajuda="As selecionadas também serão removidas."
+          />
+        </div>
+        {removidas.length > 0 && (
+          <p className="text-sm text-gray-700 mb-4">
+            Serão removidas {removidas.length + 1} alocações: {[alocacao, ...removidas].map(formatarAlocacaoCurta).join('; ')}.
+          </p>
+        )}
         {error && (
           <div className="flex items-start gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">
             <AlertCircle size={15} className="mt-0.5 flex-shrink-0" />
@@ -186,10 +210,17 @@ export function RuralEditModal({ salas, alocacao, hasConflict, getConflitoReserv
           </div>
         </div>
 
-        {(error ?? (conflict || conflitoReserva)) && (
+        <OutrasAlocacoesFields
+          outras={outras}
+          value={refletirEdicao}
+          onChange={setRefletirEdicao}
+          ajuda="As selecionadas recebem disciplina, professor, curso e sala; dia e horário de cada uma são mantidos."
+        />
+
+        {(error ?? conflito) && (
           <div className="flex items-start gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
             <AlertCircle size={15} className="mt-0.5 flex-shrink-0" />
-            {error ?? (conflict ? 'Conflito de horário: este slot já está ocupado.' : conflitoReserva)}
+            {error ?? conflito}
           </div>
         )}
 
@@ -211,7 +242,7 @@ export function RuralEditModal({ salas, alocacao, hasConflict, getConflitoReserv
           </button>
           <button
             type="submit"
-            disabled={saving || !!conflict || !!conflitoReserva}
+            disabled={saving || !!conflito}
             className="flex-1 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {saving ? 'Salvando...' : 'Salvar'}

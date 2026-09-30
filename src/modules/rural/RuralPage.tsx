@@ -24,6 +24,7 @@ import { exportarGradePdf, exportarGradesPdf, nomeArquivoGradesPredioPdf } from 
 import { SlotChoiceModal } from '../map/SlotChoiceModal'
 import { ReservaPontualForm } from '../map/ReservaPontualForm'
 import { ReservaPontualViewModal } from '../map/ReservaPontualViewModal'
+import { conflitoAlocacoes, outrasAlocacoesDaDisciplina, paraInput } from '../map/alocacoesDisciplinaUtils'
 import { alocacaoConflitaComReserva, mensagemConflitoReserva, proximaDataDoDia } from '../map/reservasPontuaisUtils'
 import { LIMITES } from '../../constants/salas'
 import type { Alocacao, AlocacaoInput, InfraSalaInput, ReservaPontual, ReservaPontualInput } from '../../types'
@@ -55,7 +56,7 @@ export function RuralPage() {
   const [modal, setModal] = useState<ModalState>(null)
   const [editingInfra, setEditingInfra] = useState(false)
   const { isAdmin } = useAuth('rural')
-  const { alocacoes, loading, error, create, createMany, update, remove, hasConflict } = useAlocacoesExternasPorSala(selectedSala)
+  const { alocacoes, loading, error, create, createMany, update, remove, updateMany, removeMany, hasConflict } = useAlocacoesExternasPorSala(selectedSala)
   const {
     reservas,
     create: createReserva,
@@ -76,7 +77,7 @@ export function RuralPage() {
       reservas: reservasSala,
     })
   }
-  const { alocacoes: todasAlocacoes, loading: loadingBusca } = useAlocacoesExternas()
+  const { alocacoes: todasAlocacoes, loading: loadingBusca, reload: reloadTodas } = useAlocacoesExternas()
   const { infraSalas, loading: loadingInfra, save: saveInfra } = useInfraSalas()
   const infraSala = infraSalas.find((i) => i.sala === selectedSala)
   const { manutencoes, loading: loadingManutencao } = useManutencao()
@@ -151,10 +152,19 @@ export function RuralPage() {
     await createMany(data)
   }
 
-  async function handleUpdate(id: number, data: AlocacaoInput) {
-    const conflito = getConflitoReserva(data)
+  // Conflito ao gravar a alocação editada (e as outras da disciplina, se
+  // refletida): checa todas as alocações do período — a sala pode ter mudado —
+  // e as reservas pontuais futuras.
+  function getConflitoEdicao(linhas: Alocacao[]): string | null {
+    return conflitoAlocacoes(linhas, todasAlocacoes) ?? linhas.map(getConflitoReserva).find(Boolean) ?? null
+  }
+
+  async function handleUpdate(linhas: Alocacao[]) {
+    const conflito = getConflitoEdicao(linhas)
     if (conflito) throw new Error(conflito)
-    await update(id, data)
+    if (linhas.length === 1) await update(linhas[0]!.id, paraInput(linhas[0]!))
+    else await updateMany(linhas)
+    await reloadTodas()
   }
 
   async function handleCreateReserva(data: ReservaPontualInput) {
@@ -172,8 +182,10 @@ export function RuralPage() {
     return LIMITES[idx + 2] ?? LIMITES[idx + 1] ?? hora
   }
 
-  async function handleDelete(id: number) {
-    await remove(id)
+  async function handleDelete(ids: number[]) {
+    if (ids.length === 1) await remove(ids[0]!)
+    else await removeMany(ids)
+    await reloadTodas()
   }
 
   async function handleSaveInfra(data: InfraSalaInput) {
@@ -340,8 +352,8 @@ export function RuralPage() {
         <RuralEditModal
           salas={salas}
           alocacao={modal.alocacao}
-          hasConflict={hasConflict}
-          getConflitoReserva={getConflitoReserva}
+          outras={outrasAlocacoesDaDisciplina(modal.alocacao, todasAlocacoes)}
+          getConflito={getConflitoEdicao}
           onSave={handleUpdate}
           onDelete={handleDelete}
           onClose={() => setModal(null)}
