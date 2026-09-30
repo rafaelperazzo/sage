@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithRouter } from '../../test/renderWithRouter'
 import type { Manutencao, ManutencaoInput } from '../../types'
@@ -86,7 +86,7 @@ describe('ManutencaoPage — estrutura básica', () => {
     renderWithRouter(<ManutencaoPage />)
     expect(screen.getByText(/Nº RT/i)).toBeInTheDocument()
     expect(screen.getByText(/Local/i)).toBeInTheDocument()
-    expect(screen.getByText(/Status/i)).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: /Status/i })).toBeInTheDocument()
     expect(screen.getByText(/Abertura/i)).toBeInTheDocument()
   })
 
@@ -148,19 +148,19 @@ describe('ManutencaoPage — exibição de dados', () => {
   it('exibe badge de status "Aberto"', () => {
     setupManutencao([makeManutencao({ status: 'Aberto' })])
     renderWithRouter(<ManutencaoPage />)
-    expect(screen.getByText('Aberto')).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'Aberto' })).toBeInTheDocument()
   })
 
   it('exibe badge de status "Em andamento"', () => {
     setupManutencao([makeManutencao({ status: 'Em andamento' })])
     renderWithRouter(<ManutencaoPage />)
-    expect(screen.getByText('Em andamento')).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'Em andamento' })).toBeInTheDocument()
   })
 
   it('exibe badge de status "Concluído"', () => {
     setupManutencao([makeManutencao({ status: 'Concluído' })])
     renderWithRouter(<ManutencaoPage />)
-    expect(screen.getByText('Concluído')).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'Concluído' })).toBeInTheDocument()
   })
 
   it('exibe data de abertura formatada em DD/MM/AAAA', () => {
@@ -242,6 +242,48 @@ describe('ManutencaoPage — filtros', () => {
     await user.type(screen.getByPlaceholderText(/Filtrar por RT/i), 'ZZZ-999')
 
     expect(screen.getByText(/Nenhuma solicitação encontrada/i)).toBeInTheDocument()
+  })
+
+  it('filtrar por status mostra apenas as solicitações com o status escolhido', async () => {
+    setupManutencao([
+      makeManutencao({ id: 1, numero_rt: 'RT-001', status: 'Aberto' }),
+      makeManutencao({ id: 2, numero_rt: 'RT-002', status: 'Em andamento' }),
+      makeManutencao({ id: 3, numero_rt: 'RT-003', status: 'Concluído' }),
+    ])
+    const user = userEvent.setup()
+    renderWithRouter(<ManutencaoPage />)
+    const select = screen.getByLabelText(/Filtrar por status/i)
+
+    // Padrão: todos os status
+    expect(select).toHaveValue('')
+    expect(screen.getByText('RT-001')).toBeInTheDocument()
+    expect(screen.getByText('RT-003')).toBeInTheDocument()
+
+    await user.selectOptions(select, 'Concluído')
+    expect(screen.getByText('RT-003')).toBeInTheDocument()
+    expect(screen.queryByText('RT-001')).not.toBeInTheDocument()
+    expect(screen.queryByText('RT-002')).not.toBeInTheDocument()
+
+    await user.selectOptions(select, '')
+    expect(screen.getByText('RT-001')).toBeInTheDocument()
+    expect(screen.getByText('RT-002')).toBeInTheDocument()
+  })
+
+  it('filtro de status combina com os filtros de texto', async () => {
+    setupManutencao([
+      makeManutencao({ id: 1, numero_rt: 'RT-001', sala_local: 'LAB 35', status: 'Aberto' }),
+      makeManutencao({ id: 2, numero_rt: 'RT-002', sala_local: 'LAB 35', status: 'Concluído' }),
+      makeManutencao({ id: 3, numero_rt: 'RT-003', sala_local: 'SALA 02', status: 'Aberto' }),
+    ])
+    const user = userEvent.setup()
+    renderWithRouter(<ManutencaoPage />)
+
+    await user.type(screen.getByPlaceholderText(/Filtrar por local/i), 'LAB')
+    await user.selectOptions(screen.getByLabelText(/Filtrar por status/i), 'Aberto')
+
+    expect(screen.getByText('RT-001')).toBeInTheDocument()
+    expect(screen.queryByText('RT-002')).not.toBeInTheDocument()
+    expect(screen.queryByText('RT-003')).not.toBeInTheDocument()
   })
 })
 
@@ -341,12 +383,13 @@ describe('ManutencaoPage — submit do formulário de criação', () => {
     await user.click(screen.getByRole('button', { name: /Nova RT/i }))
 
     // BaseModal não tem role="dialog"; encontrar via heading do modal
-    await screen.findByText('Nova Solicitação de Manutenção')
+    const titulo = await screen.findByText('Nova Solicitação de Manutenção')
+    const modal = within(titulo.parentElement!.parentElement!)
 
     // ManutencaoForm não usa htmlFor — buscar pelos placeholders
     await user.type(screen.getByPlaceholderText(/Ex: RT-2024-001/i), 'RT-100')
     // Local agora é um select (Status é o primeiro combobox, Local o segundo) com opção "Outro..."
-    const [, localSelect] = screen.getAllByRole('combobox')
+    const [, localSelect] = modal.getAllByRole('combobox')
     await user.selectOptions(localSelect, 'Outro...')
     await user.type(screen.getByPlaceholderText(/Digite o local/i), 'SALA 42')
     await user.type(screen.getByPlaceholderText(/Descreva o problema/i), 'Lâmpada queimada')

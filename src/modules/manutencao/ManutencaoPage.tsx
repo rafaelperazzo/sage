@@ -38,14 +38,16 @@ export function ManutencaoPage() {
   const [filtroRt, setFiltroRt] = useState('')
   const [filtroLocal, setFiltroLocal] = useState('')
   const [filtroDescricao, setFiltroDescricao] = useState('')
+  const [filtroStatus, setFiltroStatus] = useState('') // '' = todos
 
   const filtradas = useMemo(() =>
     manutencoes.filter((m) =>
       normalize(m.numero_rt).includes(normalize(filtroRt)) &&
       normalize(m.sala_local).includes(normalize(filtroLocal)) &&
-      normalize(m.descricao_problema).includes(normalize(filtroDescricao))
+      normalize(m.descricao_problema).includes(normalize(filtroDescricao)) &&
+      (filtroStatus === '' || m.status === filtroStatus)
     ),
-    [manutencoes, filtroRt, filtroLocal, filtroDescricao]
+    [manutencoes, filtroRt, filtroLocal, filtroDescricao, filtroStatus]
   )
 
   function handleRowClick(m: Manutencao) {
@@ -91,7 +93,7 @@ export function ManutencaoPage() {
       }
     >
       {/* Filtros */}
-      <div className="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="mb-4 grid grid-cols-1 sm:grid-cols-4 gap-3">
         <div className="relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
@@ -119,6 +121,17 @@ export function ManutencaoPage() {
             className={`${filterInput} pl-8`}
           />
         </div>
+        <select
+          value={filtroStatus}
+          onChange={(e) => setFiltroStatus(e.target.value)}
+          aria-label="Filtrar por status"
+          className={`${filterInput} bg-white`}
+        >
+          <option value="">Todos os status</option>
+          {Object.keys(STATUS_BADGE).map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
       </div>
 
       {loading && (
