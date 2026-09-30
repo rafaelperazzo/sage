@@ -353,14 +353,16 @@ describe('RuralPage — reservas pontuais', () => {
     expect(await screen.findByText(/Nova Reserva Pontual — PREDIO A - SALA 01/i)).toBeInTheDocument()
   })
 
-  it('reserva da sala selecionada aparece na grade; de outra sala não', () => {
+  it('reserva da sala selecionada aparece na lista "VER RESERVAS"; de outra sala não', async () => {
     setupHooks({
       reservas: [
         { id: 1, disciplina: 'OFICINA', professor: null, data: '2099-01-05', inicio: '14:00', fim: '16:00', sala: 'PREDIO A - SALA 01', modulo: 'rural' },
         { id: 2, disciplina: 'SEMINARIO', professor: null, data: '2099-01-05', inicio: '14:00', fim: '16:00', sala: 'PREDIO A - SALA 02', modulo: 'rural' },
       ],
     })
+    const user = userEvent.setup()
     renderWithRouter(<RuralPage />)
+    await user.click(screen.getByRole('button', { name: /^VER RESERVAS/ }))
     expect(screen.getByText(/OFICINA/)).toBeInTheDocument()
     expect(screen.queryByText(/SEMINARIO/)).not.toBeInTheDocument()
   })

@@ -174,20 +174,27 @@ describe('WeekGrid — reservas pontuais', () => {
     modulo: 'map',
   }
 
-  it('mostra a reserva (com data) na célula livre do dia da semana', () => {
-    render(<WeekGrid alocacoes={[]} isAdmin={false} onCellClick={vi.fn()} reservas={[reserva]} />)
-    expect(screen.getByText(/05\/01/)).toBeInTheDocument()
-    expect(screen.getByText(/PALESTRA IA/)).toBeInTheDocument()
-  })
+  const passada: ReservaPontual = { ...reserva, id: 8, disciplina: 'EVENTO ANTIGO', data: '2000-01-03' } // segunda-feira
 
-  it('não mostra reserva em slot ocupado por alocação', () => {
-    const aloc = makeAlocacao({ inicio: '14:00', fim: '16:00', dia_semana: 'SEGUNDA' })
-    render(<WeekGrid alocacoes={[aloc]} isAdmin={false} onCellClick={vi.fn()} reservas={[reserva]} />)
+  it('mostra "VER RESERVAS (n)" com a quantidade de reservas futuras em vez das reservas', () => {
+    const outra: ReservaPontual = { ...reserva, id: 9, disciplina: 'OFICINA', data: '2099-01-12' } // segunda-feira
+    render(<WeekGrid alocacoes={[]} isAdmin={false} onCellClick={vi.fn()} reservas={[reserva, outra, passada]} />)
+    expect(screen.getByRole('button', { name: 'VER RESERVAS (2)' })).toBeInTheDocument()
     expect(screen.queryByText(/PALESTRA IA/)).not.toBeInTheDocument()
   })
 
-  it('clique na reserva chama onReservaClick e não onEmptyCellClick', async () => {
-    const onReservaClick = vi.fn()
+  it('não mostra "VER RESERVAS" em slot ocupado por alocação', () => {
+    const aloc = makeAlocacao({ inicio: '14:00', fim: '16:00', dia_semana: 'SEGUNDA' })
+    render(<WeekGrid alocacoes={[aloc]} isAdmin={false} onCellClick={vi.fn()} reservas={[reserva]} />)
+    expect(screen.queryByRole('button', { name: /^VER RESERVAS/ })).not.toBeInTheDocument()
+  })
+
+  it('não mostra "VER RESERVAS" quando só há reservas passadas', () => {
+    render(<WeekGrid alocacoes={[]} isAdmin={false} onCellClick={vi.fn()} reservas={[passada]} />)
+    expect(screen.queryByRole('button', { name: /^VER RESERVAS/ })).not.toBeInTheDocument()
+  })
+
+  it('"VER RESERVAS" abre modal só com as reservas futuras, sem chamar onEmptyCellClick', async () => {
     const onEmptyCellClick = vi.fn()
     const user = userEvent.setup()
     render(
@@ -196,12 +203,31 @@ describe('WeekGrid — reservas pontuais', () => {
         isAdmin
         onCellClick={vi.fn()}
         onEmptyCellClick={onEmptyCellClick}
+        reservas={[reserva, passada]}
+      />
+    )
+    await user.click(screen.getByRole('button', { name: /^VER RESERVAS/ }))
+    expect(screen.getByText(/PALESTRA IA/)).toBeInTheDocument()
+    expect(screen.getByText(/05\/01\/2099/)).toBeInTheDocument()
+    expect(screen.queryByText(/EVENTO ANTIGO/)).not.toBeInTheDocument()
+    expect(onEmptyCellClick).not.toHaveBeenCalled()
+  })
+
+  it('clique na reserva do modal chama onReservaClick e fecha a lista', async () => {
+    const onReservaClick = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <WeekGrid
+        alocacoes={[]}
+        isAdmin
+        onCellClick={vi.fn()}
         reservas={[reserva]}
         onReservaClick={onReservaClick}
       />
     )
+    await user.click(screen.getByRole('button', { name: /^VER RESERVAS/ }))
     await user.click(screen.getByText(/PALESTRA IA/))
     expect(onReservaClick).toHaveBeenCalledWith(reserva)
-    expect(onEmptyCellClick).not.toHaveBeenCalled()
+    expect(screen.queryByText(/PALESTRA IA/)).not.toBeInTheDocument()
   })
 })

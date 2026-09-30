@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import type { Alocacao, ReservaPontual } from '../../types'
 import { DIAS, HORAS, LIMITES } from '../../constants/salas'
-import { buildGridMatrix, markFreeSlots, isAlocacaoAgora, formatFreeRange } from './gridUtils'
-import { reservasNoBloco, formatarDataCurta } from './reservasPontuaisUtils'
+import { buildGridMatrix, markFreeSlots, isAlocacaoAgora, formatFreeRange, dataISO } from './gridUtils'
+import { reservasNoBloco } from './reservasPontuaisUtils'
 import { AllocationCell } from './AllocationCell'
+import { ReservasListModal } from './ReservasListModal'
 
 interface WeekGridProps {
   alocacoes: Alocacao[]
@@ -37,30 +38,30 @@ export function WeekGrid({
 }: WeekGridProps) {
   const matrix = markFreeSlots(buildGridMatrix(alocacoes))
 
+  // Bloco cujas reservas estão abertas no modal de lista.
+  const [listaAberta, setListaAberta] = useState<{ dia: string; inicio: string; fim: string } | null>(null)
+
+  // Só reservas de hoje em diante (a página pode ficar aberta após a meia-noite).
+  function reservasFuturasNoBloco(dia: string, inicio: string, fim: string) {
+    const hoje = dataISO()
+    return reservasNoBloco(reservas, dia, inicio, fim).filter((r) => r.data >= hoje)
+  }
+
   function renderReservas(dia: string, inicio: string, rowSpan: number) {
     const fim = LIMITES[LIMITES.indexOf(inicio) + rowSpan] ?? inicio
-    const doBloco = reservasNoBloco(reservas, dia, inicio, fim)
-    if (doBloco.length === 0) return null
+    const total = reservasFuturasNoBloco(dia, inicio, fim).length
+    if (total === 0) return null
     return (
-      <div className="mt-1 space-y-0.5 max-h-24 overflow-y-auto">
-        {doBloco.map((r) => (
-          <button
-            key={r.id}
-            type="button"
-            title={`${r.disciplina}${r.professor ? ` — ${r.professor}` : ''}`}
-            onClick={(e) => {
-              e.stopPropagation()
-              onReservaClick?.(r)
-            }}
-            className="block w-full text-left text-[11px] leading-tight px-1.5 py-0.5 rounded border border-amber-300 bg-amber-100 text-amber-900 hover:bg-amber-200 transition-colors"
-          >
-            <span className="block truncate">
-              <span className="font-semibold">{formatarDataCurta(r.data)}</span> · {r.disciplina}
-            </span>
-            <span className="block text-amber-700">{r.inicio}–{r.fim}</span>
-          </button>
-        ))}
-      </div>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          setListaAberta({ dia, inicio, fim })
+        }}
+        className="mt-1 block w-full text-[11px] font-semibold px-1.5 py-0.5 rounded border border-amber-300 bg-amber-100 text-amber-900 hover:bg-amber-200 transition-colors"
+      >
+        VER RESERVAS ({total})
+      </button>
     )
   }
 
@@ -150,6 +151,17 @@ export function WeekGrid({
           ))}
         </tbody>
       </table>
+      {listaAberta && (
+        <ReservasListModal
+          dia={listaAberta.dia}
+          reservas={reservasFuturasNoBloco(listaAberta.dia, listaAberta.inicio, listaAberta.fim)}
+          onSelect={(r) => {
+            setListaAberta(null)
+            onReservaClick?.(r)
+          }}
+          onClose={() => setListaAberta(null)}
+        />
+      )}
     </div>
   )
 }

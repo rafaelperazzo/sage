@@ -428,11 +428,13 @@ describe('MapPage — reservas pontuais', () => {
     expect(await screen.findByText(/Nova Alocação —/i)).toBeInTheDocument()
   })
 
-  it('reserva aparece na célula livre e usuário comum abre os detalhes', async () => {
+  it('célula livre mostra "VER RESERVAS" e usuário comum abre os detalhes pela lista', async () => {
     setupHooks({ isAdmin: false, reservas: [makeReserva()] })
     const user = userEvent.setup()
     renderWithRouter(<MapPage />)
 
+    expect(screen.queryByText(/PALESTRA IA/)).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /^VER RESERVAS/ }))
     await user.click(screen.getByText(/PALESTRA IA/))
 
     expect(await screen.findByText('Detalhes da Reserva Pontual')).toBeInTheDocument()
@@ -444,6 +446,7 @@ describe('MapPage — reservas pontuais', () => {
     const user = userEvent.setup()
     renderWithRouter(<MapPage />)
 
+    await user.click(screen.getByRole('button', { name: /^VER RESERVAS/ }))
     await user.click(screen.getByText(/PALESTRA IA/))
 
     expect(await screen.findByText(/Editar Reserva Pontual/i)).toBeInTheDocument()
