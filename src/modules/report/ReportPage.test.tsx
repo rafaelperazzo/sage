@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithRouter } from '../../test/renderWithRouter'
 import type { Alocacao } from '../../types'
@@ -8,6 +8,8 @@ import { SALAS } from '../../constants/salas'
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
 vi.mock('../../hooks/useAlocacoes', () => ({ useAlocacoes: vi.fn() }))
+vi.mock('../../hooks/useAlocacoesExternas', () => ({ useAlocacoesExternas: vi.fn() }))
+vi.mock('../../hooks/useSalasExternas', () => ({ useSalasExternas: vi.fn() }))
 
 let mockPeriodo = '2026.1'
 vi.mock('../../contexts/PeriodoContext', () => ({
@@ -36,6 +38,10 @@ vi.mock('../report/RoomDetail', () => ({
 
 const { useAlocacoes } = await import('../../hooks/useAlocacoes')
 const mockUseAlocacoes = vi.mocked(useAlocacoes)
+const { useAlocacoesExternas } = await import('../../hooks/useAlocacoesExternas')
+const mockUseAlocacoesExternas = vi.mocked(useAlocacoesExternas)
+const { useSalasExternas } = await import('../../hooks/useSalasExternas')
+const mockUseSalasExternas = vi.mocked(useSalasExternas)
 
 const { ReportPage } = await import('./ReportPage')
 
@@ -65,6 +71,14 @@ function setupHooks({
   error = null as string | null,
 } = {}) {
   mockUseAlocacoes.mockReturnValue({ alocacoes, loading, error, reload: vi.fn() })
+}
+
+const SALAS_RURAL = ['CEAGRI - SALA 01', 'CEAGRI - SALA 02', 'PREDIO B - SALA 10']
+
+function setupRural({ alocacoes = [] as Alocacao[], salas = SALAS_RURAL } = {}) {
+  setupHooks()
+  mockUseAlocacoesExternas.mockReturnValue({ alocacoes, loading: false, error: null, reload: vi.fn() })
+  mockUseSalasExternas.mockReturnValue({ salas, loading: false, error: null })
 }
 
 // ── Testes ────────────────────────────────────────────────────────────────────
@@ -240,5 +254,45 @@ describe('ReportPage — legenda do gráfico', () => {
   it('exibe instrução de interação com o gráfico', () => {
     renderWithRouter(<ReportPage />)
     expect(screen.getByText(/Clique em uma barra para ver detalhes/i)).toBeInTheDocument()
+  })
+})
+
+describe('ReportPage — aba SAGE Rural', () => {
+  beforeEach(() => { vi.clearAllMocks(); mockPeriodo = '2026.2' })
+
+  async function abrirRural(alocacoes: Alocacao[] = []) {
+    setupRural({ alocacoes })
+    const user = userEvent.setup()
+    renderWithRouter(<ReportPage />)
+    await user.click(screen.getByRole('button', { name: 'SAGE Rural' }))
+    return user
+  }
+
+  it('aba SAGE Map é a padrão e não carrega dados do Rural', () => {
+    setupRural()
+    renderWithRouter(<ReportPage />)
+    expect(screen.getAllByText('Salas de Aula').length).toBeGreaterThanOrEqual(1)
+    expect(mockUseAlocacoesExternas).not.toHaveBeenCalled()
+  })
+
+  it('mostra uma tabela por prédio com as salas (sem o prefixo do prédio), inclusive sem alocação', async () => {
+    await abrirRural([makeAlocacao({ sala: 'CEAGRI - SALA 01', inicio: '18:30', fim: '20:10' })])
+
+    expect(screen.getByRole('heading', { name: 'CEAGRI' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'PREDIO B' })).toBeInTheDocument()
+    expect(screen.getByText(String(SALAS_RURAL.length))).toBeInTheDocument() // Total de Salas
+    const linha01 = screen.getByRole('cell', { name: 'SALA 01' }).closest('tr')!
+    expect(within(linha01).getByText('2.0h')).toBeInTheDocument() // 18:30–20:10 = 2h
+    const linha10 = screen.getByRole('cell', { name: 'SALA 10' }).closest('tr')!
+    expect(within(linha10).getByText('0%')).toBeInTheDocument()
+  })
+
+  it('o gráfico mostra só as salas do prédio escolhido', async () => {
+    const user = await abrirRural()
+    const grafico = screen.getByTestId('bar-chart')
+    expect(within(grafico).getAllByRole('button').map((b) => b.textContent)).toEqual(['CEAGRI - SALA 01', 'CEAGRI - SALA 02'])
+
+    await user.selectOptions(screen.getByLabelText('Prédio'), 'PREDIO B')
+    expect(within(grafico).getAllByRole('button').map((b) => b.textContent)).toEqual(['PREDIO B - SALA 10'])
   })
 })

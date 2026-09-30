@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { calcularOcupacao } from './occupancyUtils'
+import { calcularOcupacao, MAX_HORAS_DIA, MAX_HORAS_SEMANA } from './occupancyUtils'
 import { SALAS, DIAS } from '../../constants/salas'
 import type { Alocacao } from '../../types'
 
@@ -50,12 +50,17 @@ describe('calcularOcupacao', () => {
     expect(sala02.porDia['SEGUNDA']).toBe(1)
   })
 
-  it('percentual correto para 1h em 60h → arredondado para 2%', () => {
-    const aloc = makeAlocacao({ sala: 'SALA 02', inicio: '08:00', fim: '09:00' })
+  it('máximo = grade inteira 07:00–21:50: 15,5h/dia, 77,5h/semana', () => {
+    expect(MAX_HORAS_DIA).toBe(15.5)
+    expect(MAX_HORAS_SEMANA).toBe(77.5)
+  })
+
+  it('percentual correto para 2h em 77,5h → arredondado para 3%', () => {
+    const aloc = makeAlocacao({ sala: 'SALA 02', inicio: '08:00', fim: '10:00' })
     const result = calcularOcupacao([aloc])
     const sala02 = result.salas.find(s => s.sala === 'SALA 02')!
-    // 1/60 = ~1.67% → arredondado para 2
-    expect(sala02.percentual).toBe(2)
+    // 2/77,5 = ~2.58% → arredondado para 3
+    expect(sala02.percentual).toBe(3)
   })
 
   it('alocação no sábado não é considerada no cálculo', () => {
@@ -98,14 +103,14 @@ describe('calcularOcupacao', () => {
     expect(result.totalGeralHoras).toBe(0)
   })
 
-  it('sala 100% ocupada (60h/semana, seg-sex) → percentual 100', () => {
+  it('sala 100% ocupada (grade inteira 07:00–21:50, seg-sex) → percentual 100', () => {
     const alocacoes: Alocacao[] = DIAS.map(dia =>
-      makeAlocacao({ sala: 'LAB 35', dia_semana: dia, inicio: '07:00', fim: '19:00' })
+      makeAlocacao({ sala: 'LAB 35', dia_semana: dia, inicio: '07:00', fim: '21:50' })
     )
     const result = calcularOcupacao(alocacoes)
     const lab35 = result.salas.find(s => s.sala === 'LAB 35')!
-    // 12h × 5 dias (seg-sex) = 60h → percentual exato de 100%; sábado é ignorado
-    expect(lab35.totalHoras).toBe(60)
+    // 15,5h × 5 dias (seg-sex) = 77,5h → 100%; sábado é ignorado
+    expect(lab35.totalHoras).toBe(77.5)
     expect(lab35.percentual).toBe(100)
   })
 
@@ -138,13 +143,64 @@ describe('calcularOcupacao', () => {
   })
 
   it('mediaOcupacao é a média dos percentuais de todas as salas', () => {
-    // 72h em SALA 02 → 100%; todas as demais → 0%
+    // Grade inteira em SALA 02 → 100%; todas as demais → 0%
     const alocacoes: Alocacao[] = DIAS.map(dia =>
-      makeAlocacao({ sala: 'SALA 02', dia_semana: dia, inicio: '07:00', fim: '19:00' })
+      makeAlocacao({ sala: 'SALA 02', dia_semana: dia, inicio: '07:00', fim: '21:50' })
     )
     const result = calcularOcupacao(alocacoes)
     // 100 / 13 salas ≈ 7.69% → arredondado para 8
     const expected = Math.round(100 / SALAS.length)
     expect(result.mediaOcupacao).toBe(expected)
+  })
+})
+
+describe('calcularOcupacao — horário noturno (aulas de 50 min contam 1h)', () => {
+  function horas(inicio: string, fim: string, extra: Partial<Alocacao>[] = []): number {
+    const alocacoes = [makeAlocacao({ inicio, fim }), ...extra.map((e) => makeAlocacao(e))]
+    return calcularOcupacao(alocacoes).salas.find(s => s.sala === 'SALA 02')!.totalHoras
+  }
+
+  it('18:30–20:10 conta 2h', () => expect(horas('18:30', '20:10')).toBe(2))
+  it('20:10–21:50 conta 2h', () => expect(horas('20:10', '21:50')).toBe(2))
+  it('18:30–21:50 conta 4h', () => expect(horas('18:30', '21:50')).toBe(4))
+  it('uma aula noturna (18:30–19:20) conta 1h', () => expect(horas('18:30', '19:20')).toBe(1))
+
+  it('18:30–20:10 + 20:10–21:50 somam 4h', () => {
+    expect(horas('18:30', '20:10', [{ inicio: '20:10', fim: '21:50' }])).toBe(4)
+  })
+
+  it('intervalo que atravessa 18:30 é proporcional (17:00–19:00 = 1h30 + 36 min)', () => {
+    expect(horas('17:00', '19:00')).toBeCloseTo(2.1)
+  })
+
+  it('sobreposição no noturno não conta em dobro (18:30–20:10 + 19:20–21:00 = 18:30–21:00 = 3h)', () => {
+    expect(horas('18:30', '20:10', [{ inicio: '19:20', fim: '21:00' }])).toBe(3)
+  })
+
+  it('horário diurno continua contando horas reais', () => {
+    expect(horas('07:00', '18:30')).toBe(11.5)
+  })
+
+  it('18:30–21:50 seg-sex → 20h, 26%', () => {
+    const alocacoes = DIAS.map((dia) => makeAlocacao({ sala: 'SALA 02', dia_semana: dia, inicio: '18:30', fim: '21:50' }))
+    const sala02 = calcularOcupacao(alocacoes).salas.find(s => s.sala === 'SALA 02')!
+    expect(sala02.totalHoras).toBe(20)
+    expect(sala02.percentual).toBe(26)
+  })
+})
+
+describe('calcularOcupacao — lista de salas informada (SAGE Rural)', () => {
+  it('usa as salas informadas, com prédio e sem tipo; sala sem alocação fica com 0%', () => {
+    const salas = [
+      { nome: 'CEAGRI - SALA 01', predio: 'CEAGRI' },
+      { nome: 'CEAGRI - SALA 02', predio: 'CEAGRI' },
+    ]
+    const aloc = makeAlocacao({ sala: 'CEAGRI - SALA 01', inicio: '18:30', fim: '20:10' })
+    const result = calcularOcupacao([aloc, makeAlocacao({ sala: 'SALA 02' })], salas)
+
+    expect(result.salas).toHaveLength(2)
+    expect(result.salas[0]).toMatchObject({ sala: 'CEAGRI - SALA 01', predio: 'CEAGRI', tipo: undefined, totalHoras: 2 })
+    expect(result.salas[1]).toMatchObject({ sala: 'CEAGRI - SALA 02', totalHoras: 0, percentual: 0 })
+    expect(result.totalGeralHoras).toBe(2)
   })
 })

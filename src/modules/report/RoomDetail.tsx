@@ -1,5 +1,5 @@
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { DIAS_CALCULO, MAX_HORAS_SEMANA } from './occupancyUtils'
+import { DIAS_CALCULO, MAX_HORAS_DIA, MAX_HORAS_SEMANA } from './occupancyUtils'
 import type { RoomOccupancy } from './occupancyUtils'
 import { TIPO_LABEL, TIPO_COLOR } from '../../constants/salas'
 
@@ -17,8 +17,6 @@ const DIA_LABEL: Record<string, string> = {
   'SÁBADO': 'Sábado',
 }
 
-const MAX_HORAS_DIA = 12
-
 export function RoomDetail({ room, onClose }: RoomDetailProps) {
   const ocupadoHoras = parseFloat(room.totalHoras.toFixed(1))
   const livreHoras = parseFloat((MAX_HORAS_SEMANA - room.totalHoras).toFixed(1))
@@ -33,9 +31,16 @@ export function RoomDetail({ room, onClose }: RoomDetailProps) {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <h3 className="text-base font-semibold text-gray-900">{room.sala}</h3>
-          <span className={`text-xs px-2 py-0.5 rounded border font-medium ${TIPO_COLOR[room.tipo]}`}>
-            {TIPO_LABEL[room.tipo]}
-          </span>
+          {room.tipo && (
+            <span className={`text-xs px-2 py-0.5 rounded border font-medium ${TIPO_COLOR[room.tipo]}`}>
+              {TIPO_LABEL[room.tipo]}
+            </span>
+          )}
+          {room.predio && (
+            <span className="text-xs px-2 py-0.5 rounded border font-medium bg-amber-100 text-amber-800 border-amber-200">
+              {room.predio}
+            </span>
+          )}
         </div>
         <button
           onClick={onClose}

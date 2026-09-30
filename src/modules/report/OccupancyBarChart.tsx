@@ -14,6 +14,8 @@ import type { TipoSala } from '../../types'
 interface OccupancyBarChartProps {
   salas: RoomOccupancy[]
   onSalaClick?: (sala: string) => void
+  // Nome exibido no eixo (padrão: encurta "LAB CEAGRI I - " para "CEA-").
+  nomeCurto?: (sala: string) => string
 }
 
 const TIPO_BAR_COLOR: Record<TipoSala, string> = {
@@ -22,17 +24,24 @@ const TIPO_BAR_COLOR: Record<TipoSala, string> = {
   laboratorio: '#10B981',
 }
 
+// Salas do SAGE Rural não têm tipo.
+const COR_SEM_TIPO = '#F59E0B'
+
+function nomeCurtoPadrao(sala: string): string {
+  return sala.replace('LAB CEAGRI I - ', 'CEA-')
+}
+
 interface ChartEntry {
   name: string
   fullName: string
   percentual: number
-  tipo: TipoSala
+  tipo?: TipoSala
   horas: number
 }
 
-export function OccupancyBarChart({ salas, onSalaClick }: OccupancyBarChartProps) {
+export function OccupancyBarChart({ salas, onSalaClick, nomeCurto = nomeCurtoPadrao }: OccupancyBarChartProps) {
   const data: ChartEntry[] = salas.map((s) => ({
-    name: s.sala.replace('LAB CEAGRI I - ', 'CEA-'),
+    name: nomeCurto(s.sala),
     fullName: s.sala,
     percentual: s.percentual,
     tipo: s.tipo,
@@ -85,7 +94,7 @@ export function OccupancyBarChart({ salas, onSalaClick }: OccupancyBarChartProps
           cursor={onSalaClick ? 'pointer' : 'default'}
         >
           {data.map((entry, index) => (
-            <Cell key={index} fill={TIPO_BAR_COLOR[entry.tipo]} />
+            <Cell key={index} fill={entry.tipo ? TIPO_BAR_COLOR[entry.tipo] : COR_SEM_TIPO} />
           ))}
         </Bar>
       </BarChart>
