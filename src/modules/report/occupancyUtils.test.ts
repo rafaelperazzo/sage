@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { calcularOcupacao, MAX_HORAS_DIA, MAX_HORAS_SEMANA } from './occupancyUtils'
+import { calcularOcupacao, MAX_HORAS_DIA, MAX_HORAS_SEMANA, MAX_HORAS_TURNO_SEMANA } from './occupancyUtils'
 import { SALAS, DIAS } from '../../constants/salas'
 import type { Alocacao } from '../../types'
 
@@ -198,6 +198,54 @@ describe('calcularOcupacao — horários fora do cálculo', () => {
   it('12:00–14:00 (almoço) não conta', () => expect(horas('12:00', '14:00')).toBe(0))
   it('18:00–18:30 não conta', () => expect(horas('18:00', '18:30')).toBe(0))
   it('11:00–15:00 conta só 11–12 e 14–15 = 2h', () => expect(horas('11:00', '15:00')).toBe(2))
+})
+
+describe('calcularOcupacao — por turno', () => {
+  function sala02(alocacoes: Alocacao[]) {
+    return calcularOcupacao(alocacoes).salas.find(s => s.sala === 'SALA 02')!
+  }
+
+  it('máximo de cada turno = 4h/dia × 5 dias = 20h/semana', () => {
+    expect(MAX_HORAS_TURNO_SEMANA).toBe(20)
+  })
+
+  it('08:00–12:00 conta só na manhã (4h = 20%)', () => {
+    const { porTurno } = sala02([makeAlocacao({ inicio: '08:00', fim: '12:00' })])
+    expect(porTurno).toEqual({
+      manha: { horas: 4, percentual: 20 },
+      tarde: { horas: 0, percentual: 0 },
+      noite: { horas: 0, percentual: 0 },
+    })
+  })
+
+  it('11:00–15:00 → manhã 1h, tarde 1h, noite 0 (almoço fora)', () => {
+    const { porTurno } = sala02([makeAlocacao({ inicio: '11:00', fim: '15:00' })])
+    expect(porTurno.manha.horas).toBe(1)
+    expect(porTurno.tarde.horas).toBe(1)
+    expect(porTurno.noite.horas).toBe(0)
+  })
+
+  it('18:30–21:50 seg-sex → noite 20h = 100%', () => {
+    const { porTurno } = sala02(DIAS.map(dia => makeAlocacao({ dia_semana: dia, inicio: '18:30', fim: '21:50' })))
+    expect(porTurno.noite).toEqual({ horas: 20, percentual: 100 })
+  })
+
+  it('soma dos turnos = totalHoras, sem contar sobreposição em dobro', () => {
+    const sala = sala02([
+      makeAlocacao({ inicio: '07:00', fim: '15:00' }),
+      makeAlocacao({ inicio: '14:00', fim: '19:20' }),
+      makeAlocacao({ dia_semana: 'TERÇA', inicio: '20:10', fim: '21:50' }),
+    ])
+    const soma = sala.porTurno.manha.horas + sala.porTurno.tarde.horas + sala.porTurno.noite.horas
+    expect(soma).toBeCloseTo(sala.totalHoras)
+    expect(sala.porTurno).toMatchObject({ manha: { horas: 4 }, tarde: { horas: 4 }, noite: { horas: 3 } })
+  })
+
+  it('mediaPorTurno é a média dos percentuais do turno de todas as salas', () => {
+    const alocacoes = DIAS.map(dia => makeAlocacao({ dia_semana: dia, inicio: '08:00', fim: '12:00' }))
+    const result = calcularOcupacao(alocacoes)
+    expect(result.mediaPorTurno).toEqual({ manha: Math.round(100 / SALAS.length), tarde: 0, noite: 0 })
+  })
 })
 
 describe('calcularOcupacao — lista de salas informada (SAGE Rural)', () => {

@@ -1,5 +1,5 @@
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { DIAS_CALCULO, MAX_HORAS_DIA, MAX_HORAS_SEMANA } from './occupancyUtils'
+import { DIAS_CALCULO, MAX_HORAS_DIA, MAX_HORAS_SEMANA, MAX_HORAS_TURNO_SEMANA, TURNOS } from './occupancyUtils'
 import type { RoomOccupancy } from './occupancyUtils'
 import { TIPO_LABEL, TIPO_COLOR } from '../../constants/salas'
 
@@ -130,6 +130,36 @@ export function RoomDetail({ room, onClose }: RoomDetailProps) {
               </tr>
             </tfoot>
           </table>
+        </div>
+      </div>
+
+      {/* Ocupação por turno */}
+      <div className="mt-6">
+        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+          Ocupação por Turno <span className="normal-case font-normal text-gray-400">(máximo {MAX_HORAS_TURNO_SEMANA}h/semana por turno)</span>
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {TURNOS.map((t) => {
+            const { horas, percentual } = room.porTurno[t.chave]
+            return (
+              <div key={t.chave} className="border border-gray-100 rounded-lg p-3">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-sm font-medium text-gray-700">{t.label}</span>
+                  <span className="text-xs text-gray-400">{t.inicio}–{t.fim}</span>
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="flex-1 bg-gray-100 rounded-full h-1.5">
+                    <div
+                      className="bg-blue-500 h-1.5 rounded-full"
+                      style={{ width: `${Math.min(percentual, 100)}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-gray-600 w-8 text-right">{percentual}%</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">{horas.toFixed(1)}h</p>
+              </div>
+            )
+          })}
         </div>
       </div>
     </div>

@@ -3,6 +3,13 @@ import type { TipoSala } from '../../types'
 import { SALAS, DIAS, LIMITES } from '../../constants/salas'
 import { timeToMinutes } from '../map/gridUtils'
 
+export type Turno = 'manha' | 'tarde' | 'noite'
+
+export interface OcupacaoTurno {
+  horas: number
+  percentual: number  // 0–100, sobre MAX_HORAS_TURNO_SEMANA
+}
+
 export interface RoomOccupancy {
   sala: string
   tipo?: TipoSala     // só nas salas do SAGE Map
@@ -10,12 +17,14 @@ export interface RoomOccupancy {
   totalHoras: number
   percentual: number        // 0–100
   porDia: Record<string, number>  // dia → horas
+  porTurno: Record<Turno, OcupacaoTurno>
 }
 
 export interface ReportSummary {
   salas: RoomOccupancy[]
   totalGeralHoras: number
   mediaOcupacao: number
+  mediaPorTurno: Record<Turno, number>
 }
 
 // Ocupação considerada apenas de segunda a sexta (5 dias úteis)
@@ -37,26 +46,34 @@ function horasEfetivas(inicio: number, fim: number): number {
   return (minutosEfetivos(fim) - minutosEfetivos(inicio)) / 60
 }
 
-// Janelas que contam no cálculo. Ficam de fora 07:00–08:00, o almoço
+// Turnos que contam no cálculo. Ficam de fora 07:00–08:00, o almoço
 // (12:00–14:00) e a folga 18:00–18:30, mesmo quando há alocação nelas.
-const JANELAS_CALCULO = [
-  ['08:00', '12:00'],
-  ['14:00', '18:00'],
-  ['18:30', LIMITES[LIMITES.length - 1]!],
-].map(([inicio, fim]) => ({ inicio: timeToMinutes(inicio!), fim: timeToMinutes(fim!) }))
+export const TURNOS: { chave: Turno; label: string; inicio: string; fim: string }[] = [
+  { chave: 'manha', label: 'Manhã', inicio: '08:00', fim: '12:00' },
+  { chave: 'tarde', label: 'Tarde', inicio: '14:00', fim: '18:00' },
+  { chave: 'noite', label: 'Noite', inicio: '18:30', fim: LIMITES[LIMITES.length - 1]! },
+]
 
-/** Horas efetivas de [inicio, fim) considerando só as janelas de cálculo. */
-function horasConsideradas(inicio: number, fim: number): number {
-  return JANELAS_CALCULO.reduce((total, janela) => {
-    const ini = Math.max(inicio, janela.inicio)
-    const f = Math.min(fim, janela.fim)
-    return f > ini ? total + horasEfetivas(ini, f) : total
-  }, 0)
+function turnosZerados(): Record<Turno, number> {
+  return { manha: 0, tarde: 0, noite: 0 }
 }
 
-// 08–12 (4h) + 14–18 (4h) + 18:30–21:50 (4h noturnas) = 12h por dia;
-// × 5 dias = 60h máximo por semana.
-export const MAX_HORAS_DIA = horasConsideradas(0, 24 * 60)
+/** Horas efetivas de [inicio, fim) que caem em cada turno. */
+function horasPorTurno(inicio: number, fim: number): Record<Turno, number> {
+  const horas = turnosZerados()
+  for (const turno of TURNOS) {
+    const ini = Math.max(inicio, timeToMinutes(turno.inicio))
+    const f = Math.min(fim, timeToMinutes(turno.fim))
+    if (f > ini) horas[turno.chave] = horasEfetivas(ini, f)
+  }
+  return horas
+}
+
+// Cada turno tem 4h/dia (a noite, 4 aulas de 50 min) → 20h/semana;
+// os três somam 12h/dia e 60h/semana.
+const MAX_POR_TURNO_DIA = horasPorTurno(0, 24 * 60)
+export const MAX_HORAS_TURNO_SEMANA = MAX_POR_TURNO_DIA.manha * DIAS_CALCULO.length
+export const MAX_HORAS_DIA = TURNOS.reduce((sum, t) => sum + MAX_POR_TURNO_DIA[t.chave], 0)
 export const MAX_HORAS_SEMANA = MAX_HORAS_DIA * DIAS_CALCULO.length
 
 export interface SalaRelatorio {
@@ -68,6 +85,7 @@ export interface SalaRelatorio {
 export function calcularOcupacao(alocacoes: Alocacao[], salasRelatorio: SalaRelatorio[] = SALAS): ReportSummary {
   const salas: RoomOccupancy[] = salasRelatorio.map((salaInfo) => {
     const porDia: Record<string, number> = {}
+    const horasTurno = turnosZerados()
     let totalHoras = 0
 
     for (const dia of DIAS_CALCULO) {
@@ -83,18 +101,33 @@ export function calcularOcupacao(alocacoes: Alocacao[], salasRelatorio: SalaRela
 
       let horasNoDia = 0
       let currentEnd = -1
+      const somarTrecho = (inicio: number, fim: number) => {
+        const horas = horasPorTurno(inicio, fim)
+        for (const { chave } of TURNOS) {
+          horasTurno[chave] += horas[chave]
+          horasNoDia += horas[chave]
+        }
+      }
       for (const { start, end } of intervals) {
         if (start >= currentEnd) {
-          horasNoDia += horasConsideradas(start, end)
+          somarTrecho(start, end)
           currentEnd = end
         } else if (end > currentEnd) {
-          horasNoDia += horasConsideradas(currentEnd, end)
+          somarTrecho(currentEnd, end)
           currentEnd = end
         }
       }
 
       porDia[dia] = horasNoDia
       totalHoras += horasNoDia
+    }
+
+    const porTurno = {} as Record<Turno, OcupacaoTurno>
+    for (const { chave } of TURNOS) {
+      porTurno[chave] = {
+        horas: horasTurno[chave],
+        percentual: Math.round((horasTurno[chave] / MAX_HORAS_TURNO_SEMANA) * 100),
+      }
     }
 
     return {
@@ -104,13 +137,19 @@ export function calcularOcupacao(alocacoes: Alocacao[], salasRelatorio: SalaRela
       totalHoras,
       percentual: Math.round((totalHoras / MAX_HORAS_SEMANA) * 100),
       porDia,
+      porTurno,
     }
   })
 
-  const totalGeralHoras = salas.reduce((sum, s) => sum + s.totalHoras, 0)
-  const mediaOcupacao = salas.length > 0
-    ? Math.round(salas.reduce((sum, s) => sum + s.percentual, 0) / salas.length)
-    : 0
+  const media = (valores: number[]) =>
+    valores.length > 0 ? Math.round(valores.reduce((sum, v) => sum + v, 0) / valores.length) : 0
 
-  return { salas, totalGeralHoras, mediaOcupacao }
+  const totalGeralHoras = salas.reduce((sum, s) => sum + s.totalHoras, 0)
+  const mediaOcupacao = media(salas.map((s) => s.percentual))
+  const mediaPorTurno = turnosZerados()
+  for (const { chave } of TURNOS) {
+    mediaPorTurno[chave] = media(salas.map((s) => s.porTurno[chave].percentual))
+  }
+
+  return { salas, totalGeralHoras, mediaOcupacao, mediaPorTurno }
 }

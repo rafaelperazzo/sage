@@ -18,10 +18,10 @@ vi.mock('../../contexts/PeriodoContext', () => ({
 
 // Recharts usa ResizeObserver que não existe no jsdom — mockar componentes que usam gráficos
 vi.mock('../report/OccupancyBarChart', () => ({
-  OccupancyBarChart: ({ salas, onSalaClick }: { salas: { sala: string }[]; onSalaClick: (s: string) => void }) => (
+  OccupancyBarChart: ({ salas, onSalaClick }: { salas: { sala: string; percentual: number }[]; onSalaClick: (s: string) => void }) => (
     <div data-testid="bar-chart">
       {salas.map(s => (
-        <button key={s.sala} onClick={() => onSalaClick(s.sala)}>{s.sala}</button>
+        <button key={s.sala} data-percentual={s.percentual} onClick={() => onSalaClick(s.sala)}>{s.sala}</button>
       ))}
     </div>
   ),
@@ -192,6 +192,47 @@ describe('ReportPage — dados de ocupação', () => {
   })
 })
 
+describe('ReportPage — ocupação por turno', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockPeriodo = '2026.1'
+    // 08:00–10:00 → manhã 2h/20h = 10%; total 2h/60h = 3%
+    setupHooks({ alocacoes: [makeAlocacao({ sala: 'SALA 02', inicio: '08:00', fim: '10:00' })] })
+  })
+
+  it('tabela tem colunas Manhã, Tarde e Noite com o % de cada turno', () => {
+    renderWithRouter(<ReportPage />)
+    expect(screen.getAllByRole('columnheader', { name: 'Manhã' }).length).toBeGreaterThanOrEqual(1)
+    const linha = screen.getByRole('cell', { name: 'SALA 02' }).closest('tr')!
+    const valores = within(linha).getAllByRole('cell').map((c) => c.textContent)
+    expect(valores.slice(1, 6)).toEqual(['2.0h', '10%', '0%', '0%', '3%'])
+  })
+
+  it('exibe cards com a média de ocupação de cada turno', () => {
+    renderWithRouter(<ReportPage />)
+    expect(screen.getByText('Ocupação Manhã')).toBeInTheDocument()
+    expect(screen.getByText('Ocupação Tarde')).toBeInTheDocument()
+    expect(screen.getByText('Ocupação Noite')).toBeInTheDocument()
+  })
+
+  it('seletor do gráfico troca o percentual exibido pelo do turno', async () => {
+    const user = userEvent.setup()
+    renderWithRouter(<ReportPage />)
+    const barra = () => within(screen.getByTestId('bar-chart')).getByRole('button', { name: 'SALA 02' })
+    expect(barra()).toHaveAttribute('data-percentual', '3')
+
+    await user.click(screen.getByRole('button', { name: 'Manhã' }))
+    expect(barra()).toHaveAttribute('data-percentual', '10')
+    expect(screen.getByText(/Máximo do turno: 20h\/semana/)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Noite' }))
+    expect(barra()).toHaveAttribute('data-percentual', '0')
+
+    await user.click(screen.getByRole('button', { name: 'Total' }))
+    expect(barra()).toHaveAttribute('data-percentual', '3')
+  })
+})
+
 describe('ReportPage — seleção de sala no gráfico e tabela', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -284,7 +325,7 @@ describe('ReportPage — aba SAGE Rural', () => {
     const linha01 = screen.getByRole('cell', { name: 'SALA 01' }).closest('tr')!
     expect(within(linha01).getByText('2.0h')).toBeInTheDocument() // 18:30–20:10 = 2h
     const linha10 = screen.getByRole('cell', { name: 'SALA 10' }).closest('tr')!
-    expect(within(linha10).getByText('0%')).toBeInTheDocument()
+    expect(within(linha10).getAllByText('0%')).toHaveLength(4) // 3 turnos + total
   })
 
   it('o gráfico mostra só as salas do prédio escolhido', async () => {
