@@ -11,6 +11,7 @@ import { ManutencaoSalaInfo } from '../map/ManutencaoSalaInfo'
 import { RuralAllocationForm } from './RuralAllocationForm'
 import { RuralEditModal } from './RuralEditModal'
 import { SalasLivresAgora } from './SalasLivresAgora'
+import { SalaExternaForm } from './SalaExternaForm'
 import { getPredios, getPredioDaSala, getNomeSalaSemPredio } from './salasExternasLivresAgora'
 import { useAlocacoesExternasPorSala, useAlocacoesExternas } from '../../hooks/useAlocacoesExternas'
 import { useSalasExternas } from '../../hooks/useSalasExternas'
@@ -27,8 +28,8 @@ import { ReservaPontualViewModal } from '../map/ReservaPontualViewModal'
 import { conflitoAlocacoes, outrasAlocacoesDaDisciplina, paraInput } from '../map/alocacoesDisciplinaUtils'
 import { alocacaoConflitaComReserva, mensagemConflitoReserva, proximaDataDoDia } from '../map/reservasPontuaisUtils'
 import { LIMITES } from '../../constants/salas'
-import type { Alocacao, AlocacaoInput, InfraSalaInput, ReservaPontual, ReservaPontualInput } from '../../types'
-import { Shield, RefreshCw, Info, Plus } from 'lucide-react'
+import type { Alocacao, AlocacaoInput, InfraSalaInput, ReservaPontual, ReservaPontualInput, SalaExternaCadastrada } from '../../types'
+import { Shield, RefreshCw, Info, Plus, Pencil } from 'lucide-react'
 
 type ModalState =
   | { mode: 'view'; alocacao: Alocacao }
@@ -52,10 +53,21 @@ export function RuralPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const tabParam = searchParams.get('tab')
   const tab: Tab = isTab(tabParam) ? tabParam : 'grade'
-  const { salas, loading: loadingSalas } = useSalasExternas()
+  const {
+    salas,
+    cadastradas,
+    loading: loadingSalas,
+    cadastrar: cadastrarSala,
+    editar: editarSala,
+    remover: removerSala,
+  } = useSalasExternas()
   const [selectedSala, setSelectedSala] = useState('')
   const [modal, setModal] = useState<ModalState>(null)
   const [editingInfra, setEditingInfra] = useState(false)
+  // Formulário de sala cadastrada em `salas_externas`: novo cadastro ou edição.
+  const [salaForm, setSalaForm] = useState<
+    { mode: 'create' } | { mode: 'edit'; cadastrada: SalaExternaCadastrada } | null
+  >(null)
   const { isAdmin } = useAuth('rural')
   const { alocacoes, loading, error, create, createMany, update, remove, updateMany, removeMany, hasConflict } = useAlocacoesExternasPorSala(selectedSala)
   const {
@@ -205,6 +217,28 @@ export function RuralPage() {
     await reloadTodas()
   }
 
+  // Seleciona a sala recém-cadastrada para mostrar sua grade (vazia).
+  async function handleCadastrarSala(sala: string) {
+    await cadastrarSala(sala)
+    setSelectedSala(sala)
+  }
+
+  // Só salas cadastradas em `salas_externas` podem ser editadas/removidas.
+  const salaCadastrada = cadastradas.find((c) => c.sala === selectedSala)
+
+  async function handleEditarSala(cadastrada: SalaExternaCadastrada, sala: string) {
+    await editarSala(cadastrada, sala)
+    setSelectedSala(sala)
+  }
+
+  // Após remover, seleciona outra sala do mesmo prédio (ou a primeira da lista).
+  async function handleRemoverSala(cadastrada: SalaExternaCadastrada) {
+    await removerSala(cadastrada)
+    const restantes = salas.filter((s) => s !== cadastrada.sala)
+    const predio = getPredioDaSala(cadastrada.sala)
+    setSelectedSala(restantes.find((s) => getPredioDaSala(s) === predio) ?? restantes[0] ?? '')
+  }
+
   async function handleSaveInfra(data: InfraSalaInput) {
     await saveInfra(data)
   }
@@ -304,11 +338,24 @@ export function RuralPage() {
           </select>
         </div>
 
-        <ExportarPdfButton
-          label="Exportar grade do prédio"
-          onExport={handleExportarPredioPdf}
-          disabled={loadingSalas || loadingBusca || salasDoPredio.length === 0}
-        />
+        <div className="flex items-center gap-2">
+          <ExportarPdfButton
+            label="Exportar grade do prédio"
+            onExport={handleExportarPredioPdf}
+            disabled={loadingSalas || loadingBusca || salasDoPredio.length === 0}
+          />
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setSalaForm({ mode: 'create' })}
+              disabled={loadingSalas}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <Plus size={13} />
+              Cadastrar Sala
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Cabeçalho da sala selecionada */}
@@ -321,6 +368,16 @@ export function RuralPage() {
           </span>
         )}
         <ExportarPdfButton onExport={handleExportarPdf} disabled={loading || !!error || !selectedSala} />
+        {isAdmin && salaCadastrada && (
+          <button
+            type="button"
+            onClick={() => setSalaForm({ mode: 'edit', cadastrada: salaCadastrada })}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <Pencil size={13} />
+            Editar Sala
+          </button>
+        )}
         {isAdmin && (
           <button
             type="button"
@@ -441,6 +498,25 @@ export function RuralPage() {
         <ReservaPontualViewModal
           reserva={modal.reserva}
           onClose={() => setModal(null)}
+        />
+      )}
+
+      {salaForm?.mode === 'create' && (
+        <SalaExternaForm
+          salas={salas}
+          initialPredio={selectedPredio}
+          onSave={handleCadastrarSala}
+          onClose={() => setSalaForm(null)}
+        />
+      )}
+
+      {salaForm?.mode === 'edit' && (
+        <SalaExternaForm
+          salas={salas}
+          sala={salaForm.cadastrada.sala}
+          onSave={(sala) => handleEditarSala(salaForm.cadastrada, sala)}
+          onDelete={() => handleRemoverSala(salaForm.cadastrada)}
+          onClose={() => setSalaForm(null)}
         />
       )}
 

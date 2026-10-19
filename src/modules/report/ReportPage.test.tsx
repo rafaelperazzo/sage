@@ -81,7 +81,7 @@ const SALAS_RURAL = ['CEAGRI - SALA 01', 'CEAGRI - SALA 02', 'PREDIO B - SALA 10
 function setupRural({ alocacoes = [] as Alocacao[], salas = SALAS_RURAL } = {}) {
   setupHooks()
   mockUseAlocacoesExternas.mockReturnValue({ alocacoes, loading: false, error: null, reload: vi.fn() })
-  mockUseSalasExternas.mockReturnValue({ salas, loading: false, error: null })
+  mockUseSalasExternas.mockReturnValue({ salas, loading: false, error: null, cadastradas: [], cadastrar: vi.fn(), editar: vi.fn(), remover: vi.fn() })
 }
 
 // ── Testes ────────────────────────────────────────────────────────────────────

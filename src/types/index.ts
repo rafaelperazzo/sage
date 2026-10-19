@@ -33,6 +33,12 @@ export interface InfraSala {
 
 export type InfraSalaInput = Omit<InfraSala, 'id'>
 
+// Sala externa (SAGE Rural) cadastrada sem alocação, na tabela `salas_externas`.
+export interface SalaExternaCadastrada {
+  id: number
+  sala: string  // "PREDIO - SALA XX"
+}
+
 export interface Reserva {
   id: number
   data: string          // "YYYY-MM-DD"

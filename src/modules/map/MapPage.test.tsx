@@ -11,6 +11,10 @@ vi.mock('../../hooks/useAlocacoes', () => ({
   useAlocacoes: vi.fn(),
 }))
 vi.mock('../../hooks/useAuth', () => ({ useAuth: vi.fn() }))
+// Sem mock, o hook usaria o client real do Supabase (rede/realtime).
+vi.mock('../../hooks/useInfraSalas', () => ({
+  useInfraSalas: () => ({ infraSalas: [], loading: false, error: null, save: vi.fn() }),
+}))
 vi.mock('../../hooks/useManutencao', () => ({ useManutencao: vi.fn() }))
 vi.mock('../../hooks/useReservasPontuais', () => ({ useReservasPontuais: vi.fn() }))
 // AllocationForm lê o período atual do contexto.

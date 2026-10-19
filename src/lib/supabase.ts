@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { Alocacao, AlocacaoInput, InfraSala, InfraSalaInput, Reserva, ReservaInput, Manutencao, ManutencaoInput, ModuloReserva, ReservaPontual, ReservaPontualInput } from '../types'
+import type { Alocacao, AlocacaoInput, InfraSala, InfraSalaInput, SalaExternaCadastrada, Reserva, ReservaInput, Manutencao, ManutencaoInput, ModuloReserva, ReservaPontual, ReservaPontualInput } from '../types'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
@@ -309,9 +309,21 @@ export async function deleteManutencao(id: number): Promise<void> {
 
 export const EXTERNAS_TABLE_NAME = 'externas'
 
-export async function fetchSalasExternas(): Promise<string[]> {
+// Cadastro de salas externas sem alocação ("PREDIO - SALA XX"). A lista de
+// salas do Rural é a união das salas de `externas` com as desta tabela.
+export const SALAS_EXTERNAS_TABLE = 'salas_externas'
+
+export async function fetchSalasExternas(): Promise<{ salas: string[]; cadastradas: SalaExternaCadastrada[] }> {
   const pageSize = 1000
   const salas = new Set<string>()
+
+  const { data: cadastradas, error: errorCadastradas } = await supabase
+    .from(SALAS_EXTERNAS_TABLE)
+    .select('id, sala')
+    .order('sala')
+
+  if (errorCadastradas) throw errorCadastradas
+  for (const row of cadastradas as SalaExternaCadastrada[]) salas.add(row.sala)
 
   for (let from = 0; ; from += pageSize) {
     const { data, error } = await supabase
@@ -328,7 +340,56 @@ export async function fetchSalasExternas(): Promise<string[]> {
     if (data.length < pageSize) break
   }
 
-  return Array.from(salas).sort()
+  return { salas: Array.from(salas).sort(), cadastradas: cadastradas as SalaExternaCadastrada[] }
+}
+
+export async function insertSalaExterna(sala: string): Promise<void> {
+  const { error } = await supabase
+    .from(SALAS_EXTERNAS_TABLE)
+    .insert({ sala })
+
+  if (error) throw error
+}
+
+export async function updateSalaExterna(id: number, sala: string): Promise<void> {
+  const { error } = await supabase
+    .from(SALAS_EXTERNAS_TABLE)
+    .update({ sala })
+    .eq('id', id)
+
+  if (error) throw error
+}
+
+export async function deleteSalaExterna(id: number): Promise<void> {
+  const { error } = await supabase
+    .from(SALAS_EXTERNAS_TABLE)
+    .delete()
+    .eq('id', id)
+
+  if (error) throw error
+}
+
+// Onde a sala é referenciada pelo nome (alocações de qualquer período,
+// reservas pontuais, infraestrutura, manutenção). Retorna a descrição de cada
+// uso encontrado — vazio se a sala não estiver em uso.
+export async function usosSalaExterna(sala: string): Promise<string[]> {
+  const fontes = [
+    { tabela: EXTERNAS_TABLE_NAME, coluna: 'sala', descricao: 'alocações' },
+    { tabela: RESERVAS_PONTUAIS_TABLE, coluna: 'sala', descricao: 'reservas pontuais' },
+    { tabela: INFRA_SALAS_TABLE, coluna: 'sala', descricao: 'dados de infraestrutura' },
+    { tabela: MANUTENCAO_TABLE, coluna: 'sala_local', descricao: 'chamados de manutenção' },
+  ]
+  const contagens = await Promise.all(
+    fontes.map(async ({ tabela, coluna }) => {
+      const { count, error } = await supabase
+        .from(tabela)
+        .select('*', { count: 'exact', head: true })
+        .eq(coluna, sala)
+      if (error) throw error
+      return count ?? 0
+    })
+  )
+  return fontes.filter((_, i) => contagens[i]! > 0).map((f) => f.descricao)
 }
 
 export async function fetchAlocacoesExternas(periodo: string): Promise<Alocacao[]> {

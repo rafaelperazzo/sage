@@ -12,6 +12,10 @@ vi.mock('../../hooks/useAlocacoesExternas', () => ({
 }))
 vi.mock('../../hooks/useSalasExternas', () => ({ useSalasExternas: vi.fn() }))
 vi.mock('../../hooks/useAuth', () => ({ useAuth: vi.fn() }))
+// Sem mock, o hook usaria o client real do Supabase (rede/realtime).
+vi.mock('../../hooks/useInfraSalas', () => ({
+  useInfraSalas: () => ({ infraSalas: [], loading: false, error: null, save: vi.fn() }),
+}))
 vi.mock('../../hooks/useManutencao', () => ({ useManutencao: vi.fn() }))
 vi.mock('../../hooks/useReservasPontuais', () => ({ useReservasPontuais: vi.fn() }))
 vi.mock('../../contexts/PeriodoContext', () => ({ usePeriodo: () => ({ periodo: '2026.2' }) }))
@@ -64,6 +68,10 @@ const mockCRUD = {
   hasConflict: vi.fn().mockReturnValue(false),
 }
 
+const mockCadastrar = vi.fn()
+const mockEditar = vi.fn()
+const mockRemover = vi.fn()
+
 function makeManutencao(overrides: Partial<Manutencao> = {}): Manutencao {
   return {
     id: 1,
@@ -85,6 +93,7 @@ function setupHooks({
   error = null as string | null,
   isAdmin = false,
   salas = ['PREDIO A - SALA 01', 'PREDIO A - SALA 02', 'PREDIO B - SALA 10'],
+  cadastradas = [] as { id: number; sala: string }[],
   loadingSalas = false,
   manutencoes = [] as Manutencao[],
   reservas = [] as ReservaPontual[],
@@ -100,7 +109,7 @@ function setupHooks({
   })
   mockPorSala.mockReturnValue({ alocacoes, loading, error, ...mockCRUD })
   mockTodas.mockReturnValue({ alocacoes: todas ?? alocacoes, loading, error, reload: vi.fn() })
-  mockSalas.mockReturnValue({ salas, loading: loadingSalas, error: null })
+  mockSalas.mockReturnValue({ salas, cadastradas, loading: loadingSalas, error: null, cadastrar: mockCadastrar, editar: mockEditar, remover: mockRemover })
   mockUseAuth.mockReturnValue({
     user: isAdmin ? { id: '1', email: 'a@b.com' } as never : null,
     isAdmin,
@@ -539,5 +548,130 @@ describe('RuralPage — botão Nova Alocação', () => {
     expect(mockCRUD.create.mock.calls[0]![0]).toMatchObject({ sala: 'PREDIO B - SALA 10', disciplina: 'SOLOS' })
     await waitFor(() => expect(mockPorSala).toHaveBeenLastCalledWith('PREDIO B - SALA 10'))
     expect(screen.getByRole('heading', { name: 'PREDIO B - SALA 10' })).toBeInTheDocument()
+  })
+})
+
+describe('RuralPage — Cadastrar Sala', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('aparece só para admin', () => {
+    setupHooks({ isAdmin: false })
+    renderWithRouter(<RuralPage />)
+    expect(screen.queryByRole('button', { name: /^Cadastrar Sala$/i })).not.toBeInTheDocument()
+  })
+
+  it('cadastra a sala no prédio selecionado e passa a exibi-la', async () => {
+    mockCadastrar.mockResolvedValue(undefined)
+    setupHooks({ isAdmin: true })
+    const user = userEvent.setup()
+    const { rerender } = renderWithRouter(<RuralPage />)
+
+    await user.click(screen.getByRole('button', { name: /^Cadastrar Sala$/i }))
+    expect(screen.getByLabelText('Prédio *')).toHaveValue('PREDIO A')
+    await user.type(screen.getByLabelText('Sala *'), ' sala  03 ')
+    expect(screen.getByText('PREDIO A - SALA 03')).toBeInTheDocument()
+
+    // O hook recarrega a lista após o cadastro.
+    setupHooks({ isAdmin: true, salas: ['PREDIO A - SALA 01', 'PREDIO A - SALA 02', 'PREDIO A - SALA 03', 'PREDIO B - SALA 10'] })
+    await user.click(screen.getByRole('button', { name: /^Cadastrar$/i }))
+
+    await waitFor(() => expect(mockCadastrar).toHaveBeenCalledWith('PREDIO A - SALA 03'))
+    rerender(<RuralPage />)
+    await waitFor(() => expect(mockPorSala).toHaveBeenLastCalledWith('PREDIO A - SALA 03'))
+    expect(screen.queryByText('Cadastrar Sala', { selector: 'h2' })).not.toBeInTheDocument()
+  })
+
+  it('não cadastra sala que já existe', async () => {
+    setupHooks({ isAdmin: true })
+    const user = userEvent.setup()
+    renderWithRouter(<RuralPage />)
+
+    await user.click(screen.getByRole('button', { name: /^Cadastrar Sala$/i }))
+    await user.type(screen.getByLabelText('Sala *'), 'Sala 02')
+    await user.click(screen.getByRole('button', { name: /^Cadastrar$/i }))
+
+    expect(await screen.findByText('A sala PREDIO A - SALA 02 já existe.')).toBeInTheDocument()
+    expect(mockCadastrar).not.toHaveBeenCalled()
+  })
+})
+
+describe('RuralPage — Editar Sala', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  const cadastrada = { id: 7, sala: 'PREDIO A - SALA 02' }
+
+  async function abrirSalaCadastrada(user: ReturnType<typeof userEvent.setup>) {
+    await user.selectOptions(screen.getByLabelText('Sala'), 'PREDIO A - SALA 02')
+    await user.click(screen.getByRole('button', { name: /^Editar Sala$/i }))
+  }
+
+  it('aparece só para admin e só em sala cadastrada', async () => {
+    setupHooks({ isAdmin: true, cadastradas: [cadastrada] })
+    const user = userEvent.setup()
+    renderWithRouter(<RuralPage />)
+
+    // Sala selecionada (SALA 01) vem das alocações, não do cadastro.
+    expect(screen.queryByRole('button', { name: /^Editar Sala$/i })).not.toBeInTheDocument()
+    await user.selectOptions(screen.getByLabelText('Sala'), 'PREDIO A - SALA 02')
+    expect(screen.getByRole('button', { name: /^Editar Sala$/i })).toBeInTheDocument()
+  })
+
+  it('não aparece para usuário comum', async () => {
+    setupHooks({ isAdmin: false, cadastradas: [cadastrada] })
+    const user = userEvent.setup()
+    renderWithRouter(<RuralPage />)
+    await user.selectOptions(screen.getByLabelText('Sala'), 'PREDIO A - SALA 02')
+    expect(screen.queryByRole('button', { name: /^Editar Sala$/i })).not.toBeInTheDocument()
+  })
+
+  it('renomeia a sala e passa a exibi-la', async () => {
+    mockEditar.mockResolvedValue(undefined)
+    setupHooks({ isAdmin: true, cadastradas: [cadastrada] })
+    const user = userEvent.setup()
+    renderWithRouter(<RuralPage />)
+
+    await abrirSalaCadastrada(user)
+    expect(screen.getByLabelText('Prédio *')).toHaveValue('PREDIO A')
+    expect(screen.getByLabelText('Sala *')).toHaveValue('SALA 02')
+    await user.clear(screen.getByLabelText('Sala *'))
+    await user.type(screen.getByLabelText('Sala *'), 'sala 03')
+    setupHooks({
+      isAdmin: true,
+      salas: ['PREDIO A - SALA 01', 'PREDIO A - SALA 03', 'PREDIO B - SALA 10'],
+      cadastradas: [{ id: 7, sala: 'PREDIO A - SALA 03' }],
+    })
+    await user.click(screen.getByRole('button', { name: /^Salvar$/i }))
+
+    await waitFor(() => expect(mockEditar).toHaveBeenCalledWith(cadastrada, 'PREDIO A - SALA 03'))
+    await waitFor(() => expect(mockPorSala).toHaveBeenLastCalledWith('PREDIO A - SALA 03'))
+  })
+
+  it('remove a sala após confirmação e seleciona outra do mesmo prédio', async () => {
+    mockRemover.mockResolvedValue(undefined)
+    setupHooks({ isAdmin: true, cadastradas: [cadastrada] })
+    const user = userEvent.setup()
+    renderWithRouter(<RuralPage />)
+
+    await abrirSalaCadastrada(user)
+    await user.click(screen.getByRole('button', { name: /^Remover$/i }))
+    expect(screen.getByText('Tem certeza que deseja remover a sala:')).toBeInTheDocument()
+    setupHooks({ isAdmin: true, salas: ['PREDIO A - SALA 01', 'PREDIO B - SALA 10'] })
+    await user.click(screen.getByRole('button', { name: /Confirmar Remoção/i }))
+
+    await waitFor(() => expect(mockRemover).toHaveBeenCalledWith(cadastrada))
+    await waitFor(() => expect(mockPorSala).toHaveBeenLastCalledWith('PREDIO A - SALA 01'))
+  })
+
+  it('mostra o erro quando a sala está em uso', async () => {
+    mockRemover.mockRejectedValue(new Error('A sala PREDIO A - SALA 02 está em uso (alocações) e não pode ser removida.'))
+    setupHooks({ isAdmin: true, cadastradas: [cadastrada] })
+    const user = userEvent.setup()
+    renderWithRouter(<RuralPage />)
+
+    await abrirSalaCadastrada(user)
+    await user.click(screen.getByRole('button', { name: /^Remover$/i }))
+    await user.click(screen.getByRole('button', { name: /Confirmar Remoção/i }))
+
+    expect(await screen.findByText(/está em uso \(alocações\) e não pode ser removida/)).toBeInTheDocument()
   })
 })

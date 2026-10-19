@@ -8,6 +8,13 @@ import type { Reserva } from '../../types'
 
 vi.mock('../../hooks/useReservas', () => ({ useReservas: vi.fn() }))
 vi.mock('../../hooks/useAuth', () => ({ useAuth: vi.fn() }))
+// Sem mock, o hook usaria o client real do Supabase (rede/realtime).
+vi.mock('../../hooks/useInfraSalas', () => ({
+  useInfraSalas: () => ({ infraSalas: [], loading: false, error: null, save: vi.fn() }),
+}))
+vi.mock('../../hooks/useManutencao', () => ({
+  useManutencao: () => ({ manutencoes: [], loading: false, error: null, create: vi.fn(), update: vi.fn(), remove: vi.fn() }),
+}))
 
 // AuditorioReport usa Recharts ResponsiveContainer que precisa de ResizeObserver
 vi.mock('./AuditorioReport', () => ({
