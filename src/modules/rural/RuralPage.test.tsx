@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithRouter } from '../../test/renderWithRouter'
-import type { Alocacao, Manutencao, ReservaPontual } from '../../types'
+import type { Alocacao, InfraSala, Manutencao, ReservaPontual } from '../../types'
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -13,9 +13,7 @@ vi.mock('../../hooks/useAlocacoesExternas', () => ({
 vi.mock('../../hooks/useSalasExternas', () => ({ useSalasExternas: vi.fn() }))
 vi.mock('../../hooks/useAuth', () => ({ useAuth: vi.fn() }))
 // Sem mock, o hook usaria o client real do Supabase (rede/realtime).
-vi.mock('../../hooks/useInfraSalas', () => ({
-  useInfraSalas: () => ({ infraSalas: [], loading: false, error: null, save: vi.fn() }),
-}))
+vi.mock('../../hooks/useInfraSalas', () => ({ useInfraSalas: vi.fn() }))
 vi.mock('../../hooks/useManutencao', () => ({ useManutencao: vi.fn() }))
 vi.mock('../../hooks/useReservasPontuais', () => ({ useReservasPontuais: vi.fn() }))
 vi.mock('../../contexts/PeriodoContext', () => ({ usePeriodo: () => ({ periodo: '2026.2' }) }))
@@ -28,6 +26,7 @@ vi.mock('../map/exportarGradePdf', async (importOriginal) => ({
 const { useAlocacoesExternasPorSala, useAlocacoesExternas } = await import('../../hooks/useAlocacoesExternas')
 const { useSalasExternas } = await import('../../hooks/useSalasExternas')
 const { useAuth } = await import('../../hooks/useAuth')
+const { useInfraSalas } = await import('../../hooks/useInfraSalas')
 const { useManutencao } = await import('../../hooks/useManutencao')
 const { useReservasPontuais } = await import('../../hooks/useReservasPontuais')
 const { exportarGradePdf, exportarGradesPdf } = await import('../map/exportarGradePdf')
@@ -35,6 +34,8 @@ const mockPorSala = vi.mocked(useAlocacoesExternasPorSala)
 const mockTodas = vi.mocked(useAlocacoesExternas)
 const mockSalas = vi.mocked(useSalasExternas)
 const mockUseAuth = vi.mocked(useAuth)
+const mockUseInfraSalas = vi.mocked(useInfraSalas)
+const mockSaveInfra = vi.fn()
 const mockUseManutencao = vi.mocked(useManutencao)
 const mockUseReservas = vi.mocked(useReservasPontuais)
 
@@ -97,7 +98,9 @@ function setupHooks({
   loadingSalas = false,
   manutencoes = [] as Manutencao[],
   reservas = [] as ReservaPontual[],
+  infraSalas = [] as InfraSala[],
 } = {}) {
+  mockUseInfraSalas.mockReturnValue({ infraSalas, loading: false, error: null, save: mockSaveInfra })
   mockUseReservas.mockReturnValue({
     reservas,
     loading: false,
@@ -212,11 +215,51 @@ describe('RuralPage — seleção de sala dinâmica', () => {
 describe('RuralPage — infraestrutura da sala', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('não exibe nada sobre infraestrutura quando não há registro em infra_salas', () => {
+  it('sem registro em infra_salas: usuário comum vê "não cadastrada", sem opção de cadastrar', () => {
     setupHooks()
     renderWithRouter(<RuralPage />)
-    expect(screen.queryByText(/não cadastrada/i)).not.toBeInTheDocument()
+    expect(screen.getByText('Infraestrutura da sala não cadastrada.')).toBeInTheDocument()
     expect(screen.queryByText(/cadastrar/i)).not.toBeInTheDocument()
+  })
+
+  it('admin cadastra a infraestrutura inicial da sala pelo modal', async () => {
+    mockSaveInfra.mockResolvedValue(undefined)
+    setupHooks({ isAdmin: true })
+    const user = userEvent.setup()
+    renderWithRouter(<RuralPage />)
+
+    await user.click(screen.getByText('Infraestrutura da sala não cadastrada.'))
+    expect(screen.getByText('Infraestrutura — PREDIO A - SALA 01')).toBeInTheDocument()
+    const [cadeiras, computadores] = screen.getAllByRole('spinbutton')
+    await user.type(cadeiras!, '40')
+    await user.type(computadores!, '0')
+    await user.click(screen.getByRole('checkbox', { name: /Projetor/i }))
+    await user.click(screen.getByRole('checkbox', { name: /Ar-condicionado/i }))
+    await user.click(screen.getByRole('button', { name: /^Salvar$/i }))
+
+    await waitFor(() =>
+      expect(mockSaveInfra).toHaveBeenCalledWith({
+        sala: 'PREDIO A - SALA 01',
+        cadeiras: 40,
+        computadores: 0,
+        projetor: true,
+        tv: false,
+        hdmi: false,
+        arCondicionado: true,
+      })
+    )
+  })
+
+  it('exibe a infraestrutura cadastrada da sala selecionada', () => {
+    setupHooks({
+      infraSalas: [
+        { id: 1, sala: 'PREDIO A - SALA 01', cadeiras: 40, computadores: 2, projetor: true, tv: false, hdmi: true, arCondicionado: true },
+      ],
+    })
+    renderWithRouter(<RuralPage />)
+    expect(screen.getByText('40 cadeiras')).toBeInTheDocument()
+    expect(screen.getByText('2 computadores')).toBeInTheDocument()
+    expect(screen.queryByText(/não cadastrada/i)).not.toBeInTheDocument()
   })
 })
 

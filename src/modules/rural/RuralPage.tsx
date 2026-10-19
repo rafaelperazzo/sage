@@ -391,7 +391,7 @@ export function RuralPage() {
         )}
       </div>
 
-      {infraSala && (
+      {selectedSala && (
         <InfraSalaInfo
           infraSala={infraSala}
           loading={loadingInfra}
