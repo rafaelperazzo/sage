@@ -12,12 +12,19 @@ export function nomeSalaExterna(predio: string, sala: string): string {
   return `${normalizar(predio)} - ${normalizar(sala)}`
 }
 
+// Nome da sala: "SALA" ou "LAB" + espaço + dois dígitos (ex: "SALA 02", "LAB 15").
+const PADRAO_NOME_SALA = /^(SALA|LAB) \d{2}$/
+
+export const MENSAGEM_PADRAO_NOME_SALA =
+  'O nome da sala deve seguir o padrão "SALA XX" ou "LAB XX", com dois dígitos (ex: SALA 02, LAB 15).'
+
 /** Mensagem de erro do cadastro, ou null se a sala puder ser cadastrada. */
 export function erroCadastroSala(predio: string, sala: string, existentes: string[]): string | null {
   if (!normalizar(predio)) return 'Prédio é obrigatório.'
   if (!normalizar(sala)) return 'Sala é obrigatória.'
   // O prédio é separado da sala pelo primeiro " - " do nome completo.
   if (normalizar(predio).includes(' - ')) return 'O nome do prédio não pode conter " - ".'
+  if (!PADRAO_NOME_SALA.test(normalizar(sala))) return MENSAGEM_PADRAO_NOME_SALA
   const nome = nomeSalaExterna(predio, sala)
   if (existentes.some((s) => s.toUpperCase() === nome)) return `A sala ${nome} já existe.`
   return null
@@ -118,7 +125,7 @@ export function SalaExternaForm({ salas, sala: atual, initialPredio = '', onSave
             id="sala-externa-predio"
             list="sala-externa-predios"
             value={predio}
-            onChange={(e) => setPredio(e.target.value)}
+            onChange={(e) => setPredio(e.target.value.toUpperCase())}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Escolha um prédio ou digite um novo"
             required
@@ -135,11 +142,15 @@ export function SalaExternaForm({ salas, sala: atual, initialPredio = '', onSave
           <input
             id="sala-externa-sala"
             value={sala}
-            onChange={(e) => setSala(e.target.value)}
+            onChange={(e) => setSala(e.target.value.toUpperCase())}
+            aria-describedby="sala-externa-sala-ajuda"
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="SALA 02"
             required
           />
+          <p id="sala-externa-sala-ajuda" className="mt-1 text-xs text-gray-400">
+            Use "SALA XX" ou "LAB XX", com dois dígitos (ex: SALA 02, LAB 15).
+          </p>
         </div>
 
         {preenchido && (

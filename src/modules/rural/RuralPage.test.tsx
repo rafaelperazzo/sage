@@ -624,6 +624,22 @@ describe('RuralPage — Cadastrar Sala', () => {
     expect(screen.queryByText('Cadastrar Sala', { selector: 'h2' })).not.toBeInTheDocument()
   })
 
+  it('não cadastra sala fora do padrão "SALA XX" / "LAB XX" e explica como nomear', async () => {
+    setupHooks({ isAdmin: true })
+    const user = userEvent.setup()
+    renderWithRouter(<RuralPage />)
+
+    await user.click(screen.getByRole('button', { name: /^Cadastrar Sala$/i }))
+    await user.type(screen.getByLabelText('Sala *'), 'sala 3')
+    expect(screen.getByLabelText('Sala *')).toHaveValue('SALA 3')
+    await user.click(screen.getByRole('button', { name: /^Cadastrar$/i }))
+
+    expect(
+      await screen.findByText('O nome da sala deve seguir o padrão "SALA XX" ou "LAB XX", com dois dígitos (ex: SALA 02, LAB 15).')
+    ).toBeInTheDocument()
+    expect(mockCadastrar).not.toHaveBeenCalled()
+  })
+
   it('não cadastra sala que já existe', async () => {
     setupHooks({ isAdmin: true })
     const user = userEvent.setup()

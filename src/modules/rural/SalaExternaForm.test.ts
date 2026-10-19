@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { erroCadastroSala, nomeSalaExterna } from './SalaExternaForm'
+import { erroCadastroSala, nomeSalaExterna, MENSAGEM_PADRAO_NOME_SALA } from './SalaExternaForm'
 
 describe('nomeSalaExterna', () => {
   it('monta "PREDIO - SALA" em maiúsculas e sem espaços extras', () => {
@@ -27,4 +27,17 @@ describe('erroCadastroSala', () => {
     expect(erroCadastroSala('DEFIS', 'SALA 03', existentes)).toBeNull()
     expect(erroCadastroSala('NOVO PREDIO', 'SALA 01', existentes)).toBeNull()
   })
+})
+
+describe('erroCadastroSala — padrão "SALA XX" / "LAB XX"', () => {
+  it.each(['SALA 02', 'LAB 15', 'sala 07', ' lab   99 '])('aceita %j', (sala) => {
+    expect(erroCadastroSala('DEFIS', sala, [])).toBeNull()
+  })
+
+  it.each(['SALA 2', 'SALA 002', 'LAB', 'SALA02', 'AUDITÓRIO', 'GEOLAB 03', 'SALA A1', 'LABORATÓRIO 01', 'SALA 01 B'])(
+    'recusa %j e explica o padrão',
+    (sala) => {
+      expect(erroCadastroSala('DEFIS', sala, [])).toBe(MENSAGEM_PADRAO_NOME_SALA)
+    }
+  )
 })
