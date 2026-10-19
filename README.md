@@ -53,7 +53,7 @@ Idêntico ao SAGE Map, mas para salas de unidades externas ao Departamento de Co
 
 **Modo administrador** (requer login como administrador geral ou como administrador do SAGE Rural — veja [Autenticação e Permissões](#autenticação-e-permissões)):
 - Clique em célula livre e escolha entre **Nova alocação** ou **Reserva pontual**, como no SAGE Map — incluindo a opção "Alocar em outro dia/horário"
-- Botão **"Nova Alocação"** (admin), como no SAGE Map: abre o formulário sem escolher antes um slot livre, com sala, dia e horário definidos no próprio formulário
+- Botão **"Nova Alocação"** (admin), como no SAGE Map: abre o formulário sem escolher antes um slot livre, com prédio, sala, dia e horário definidos no próprio formulário. Como na tela, a sala é escolhida em dois seletores (Prédio e Sala) — trocar o prédio seleciona a primeira sala dele
 - Clique em célula ocupada para editar ou remover a alocação; clique em uma reserva para editá-la ou removê-la
 - Detecção automática de conflito de horário entre alocações e reservas pontuais, com as mesmas regras do SAGE Map
 - Clique na barra de infraestrutura para editar os dados da sala (apenas se já houver registro)

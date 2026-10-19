@@ -487,7 +487,24 @@ describe('RuralPage — botão Nova Alocação', () => {
 
     expect(await screen.findByText(/Nova Alocação — 2026.2/i)).toBeInTheDocument()
     const form = screen.getByText(/Nova Alocação — 2026.2/i).closest('div')!.parentElement!
-    expect(within(form).getByDisplayValue('PREDIO A - SALA 01')).toBeInTheDocument()
+    expect(within(form).getByLabelText('Prédio *')).toHaveValue('PREDIO A')
+    expect(within(form).getByLabelText('Sala *')).toHaveValue('PREDIO A - SALA 01')
+  })
+
+  it('separa prédio e sala; trocar o prédio seleciona a primeira sala dele', async () => {
+    setupHooks({ isAdmin: true })
+    const user = userEvent.setup()
+    renderWithRouter(<RuralPage />)
+
+    await user.click(screen.getByRole('button', { name: /^Nova Alocação$/i }))
+    const form = screen.getByText(/Nova Alocação — 2026.2/i).closest('div')!.parentElement!
+    const sala = within(form).getByLabelText('Sala *')
+    expect(within(sala).getAllByRole('option').map((o) => o.textContent)).toEqual(['SALA 01', 'SALA 02'])
+
+    await user.selectOptions(within(form).getByLabelText('Prédio *'), 'PREDIO B')
+
+    expect(sala).toHaveValue('PREDIO B - SALA 10')
+    expect(within(sala).getAllByRole('option').map((o) => o.textContent)).toEqual(['SALA 10'])
   })
 
   it('bloqueia conflito com alocação de outra sala escolhida no formulário', async () => {
@@ -498,7 +515,7 @@ describe('RuralPage — botão Nova Alocação', () => {
 
     await user.click(screen.getByRole('button', { name: /^Nova Alocação$/i }))
     const form = screen.getByText(/Nova Alocação — 2026.2/i).closest('div')!.parentElement!
-    await user.selectOptions(within(form).getByDisplayValue('PREDIO A - SALA 01'), 'PREDIO B - SALA 10')
+    await user.selectOptions(within(form).getByLabelText('Prédio *'), 'PREDIO B')
     await user.type(within(form).getByPlaceholderText('Nome da disciplina'), 'SOLOS')
 
     expect(await within(form).findByText(/Conflito de horário: este slot já está ocupado/i)).toBeInTheDocument()
@@ -513,7 +530,7 @@ describe('RuralPage — botão Nova Alocação', () => {
 
     await user.click(screen.getByRole('button', { name: /^Nova Alocação$/i }))
     const form = screen.getByText(/Nova Alocação — 2026.2/i).closest('div')!.parentElement!
-    await user.selectOptions(within(form).getByDisplayValue('PREDIO A - SALA 01'), 'PREDIO B - SALA 10')
+    await user.selectOptions(within(form).getByLabelText('Prédio *'), 'PREDIO B')
     await user.type(within(form).getByPlaceholderText('Nome da disciplina'), 'SOLOS')
     await user.type(within(form).getByPlaceholderText('BCC, LC, DC...'), 'AGRO')
     await user.click(within(form).getByRole('button', { name: /Salvar/i }))

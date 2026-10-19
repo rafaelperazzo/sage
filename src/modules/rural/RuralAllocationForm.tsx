@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { BaseModal } from '../../components/Modal/BaseModal'
 import type { AlocacaoInput } from '../../types'
 import { DIAS, HORAS, LIMITES } from '../../constants/salas'
@@ -6,6 +6,7 @@ import { usePeriodo } from '../../contexts/PeriodoContext'
 import { AlertCircle } from 'lucide-react'
 import { OutroHorarioFields, outroHorarioInicial } from '../map/OutroHorarioFields'
 import { conflitoSegundaAlocacao } from '../map/gridUtils'
+import { getPredios, getPredioDaSala, getNomeSalaSemPredio } from './salasExternasLivresAgora'
 
 interface RuralAllocationFormProps {
   salas: string[]
@@ -46,6 +47,17 @@ export function RuralAllocationForm({
   const [outro, setOutro] = useState(() => outroHorarioInicial(dia, inicio, fim))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Como na tela do SAGE Rural, o prédio é derivado da sala escolhida.
+  // Trocar o prédio seleciona a primeira sala dele.
+  const predios = useMemo(() => getPredios(salas), [salas])
+  const predio = getPredioDaSala(sala)
+  const salasDoPredio = useMemo(() => salas.filter((s) => getPredioDaSala(s) === predio), [salas, predio])
+
+  function handlePredioChange(novo: string) {
+    const primeira = salas.find((s) => getPredioDaSala(s) === novo)
+    if (primeira) setSala(primeira)
+  }
 
   const input: AlocacaoInput = { disciplina, professor: professor || null, curso, dia_semana: dia, sala, inicio, fim }
 
@@ -119,18 +131,35 @@ export function RuralAllocationForm({
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Sala *</label>
+            <label htmlFor="nova-alocacao-predio" className="block text-xs font-medium text-gray-700 mb-1">Prédio *</label>
             <select
-              value={sala}
-              onChange={(e) => setSala(e.target.value)}
+              id="nova-alocacao-predio"
+              value={predio}
+              onChange={(e) => handlePredioChange(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {salas.map((s) => (
-                <option key={s} value={s}>{s}</option>
+              {predios.map((p) => (
+                <option key={p} value={p}>{p}</option>
               ))}
             </select>
           </div>
 
+          <div>
+            <label htmlFor="nova-alocacao-sala" className="block text-xs font-medium text-gray-700 mb-1">Sala *</label>
+            <select
+              id="nova-alocacao-sala"
+              value={sala}
+              onChange={(e) => setSala(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {salasDoPredio.map((s) => (
+                <option key={s} value={s}>{getNomeSalaSemPredio(s)}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Dia *</label>
             <select
@@ -143,9 +172,7 @@ export function RuralAllocationForm({
               ))}
             </select>
           </div>
-        </div>
 
-        <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Início *</label>
             <select
