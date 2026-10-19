@@ -28,12 +28,13 @@ import { conflitoAlocacoes, outrasAlocacoesDaDisciplina, paraInput } from '../ma
 import { alocacaoConflitaComReserva, mensagemConflitoReserva, proximaDataDoDia } from '../map/reservasPontuaisUtils'
 import { LIMITES } from '../../constants/salas'
 import type { Alocacao, AlocacaoInput, InfraSalaInput, ReservaPontual, ReservaPontualInput } from '../../types'
-import { Shield, RefreshCw, Info } from 'lucide-react'
+import { Shield, RefreshCw, Info, Plus } from 'lucide-react'
 
 type ModalState =
   | { mode: 'view'; alocacao: Alocacao }
   | { mode: 'edit'; alocacao: Alocacao }
-  | { mode: 'create'; dia: string; hora: string }
+  // Sem dia/hora: aberto pelo botão "Nova Alocação" (formulário com valores padrão).
+  | { mode: 'create'; dia?: string; hora?: string }
   | { mode: 'choose'; dia: string; hora: string }
   | { mode: 'createReserva'; dia: string; hora: string }
   | { mode: 'editReserva'; reserva: ReservaPontual }
@@ -138,18 +139,34 @@ export function RuralPage() {
     return reserva ? mensagemConflitoReserva(reserva) : null
   }
 
+  // Conflito de uma nova alocação: a sala escolhida no formulário pode não ser
+  // a selecionada na grade, então checa todas as alocações do período.
+  function hasConflictNova(data: AlocacaoInput): boolean {
+    return hasConflict(data) || conflitoAlocacoes([{ ...data, id: -1, periodo, semestre: 0 }], todasAlocacoes) !== null
+  }
+
+  // Após criar em outra sala, seleciona-a para mostrar a alocação na grade.
+  async function aposCriar(sala: string) {
+    await reloadTodas()
+    if (sala !== selectedSala) setSelectedSala(sala)
+  }
+
   async function handleCreate(data: AlocacaoInput) {
+    if (hasConflictNova(data)) throw new Error('Conflito de horário: este slot já está ocupado.')
     const conflito = getConflitoReserva(data)
     if (conflito) throw new Error(conflito)
     await create(data)
+    await aposCriar(data.sala)
   }
 
   async function handleCreateMany(data: AlocacaoInput[]) {
     for (const d of data) {
+      if (hasConflictNova(d)) throw new Error('Conflito de horário: este slot já está ocupado.')
       const conflito = getConflitoReserva(d)
       if (conflito) throw new Error(conflito)
     }
     await createMany(data)
+    await aposCriar(data[0]!.sala)
   }
 
   // Conflito ao gravar a alocação editada (e as outras da disciplina, se
@@ -304,6 +321,17 @@ export function RuralPage() {
           </span>
         )}
         <ExportarPdfButton onExport={handleExportarPdf} disabled={loading || !!error || !selectedSala} />
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => setModal({ mode: 'create' })}
+            disabled={loadingSalas || salas.length === 0}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <Plus size={13} />
+            Nova Alocação
+          </button>
+        )}
       </div>
 
       {infraSala && (
@@ -336,7 +364,7 @@ export function RuralPage() {
 
       {isAdmin && !loading && (
         <p className="mt-2 text-xs text-gray-400">
-          Clique em uma célula livre para adicionar uma alocação ou reserva pontual, ou em uma alocação/reserva para editar/remover.
+          Clique em uma célula livre para adicionar uma alocação ou reserva pontual, ou em uma alocação/reserva para editar/remover. Use "Nova Alocação" para escolher sala, dia e horário no formulário.
         </p>
       )}
 
@@ -366,7 +394,7 @@ export function RuralPage() {
           initialDia={modal.dia}
           initialHora={modal.hora}
           initialSala={selectedSala}
-          hasConflict={hasConflict}
+          hasConflict={hasConflictNova}
           getConflitoReserva={getConflitoReserva}
           onSave={handleCreate}
           onSaveMany={handleCreateMany}

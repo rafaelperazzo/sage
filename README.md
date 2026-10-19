@@ -34,6 +34,7 @@ Visualização da agenda semanal de cada sala em formato de grade (segunda a sex
 
 **Modo administrador** (requer login como administrador geral — veja [Autenticação e Permissões](#autenticação-e-permissões)):
 - Clique em célula livre e escolha entre **Nova alocação** (semanal, no período letivo) ou **Reserva pontual** (disciplina, professor, data, início e fim)
+- Botão **"Nova Alocação"** (admin) ao lado da sala selecionada: abre o mesmo formulário sem precisar escolher antes uma célula livre — sala, dia e horário são escolhidos no próprio formulário. O conflito é verificado contra as alocações de todas as salas do período; ao salvar em outra sala, a grade passa a exibi-la
 - Na nova alocação, marque **"Alocar em outro dia/horário"** para criar, no mesmo salvamento, uma segunda alocação da mesma disciplina, professor, curso e sala em outro dia da semana e horário. As duas são gravadas juntas — se o segundo horário tiver choque (com alocações, reservas pontuais ou com o primeiro horário), nenhuma é salva
 - Clique em célula ocupada para editar ou remover a alocação; clique em uma reserva para editá-la ou removê-la
 - Detecção automática de conflito de horário:
@@ -52,6 +53,7 @@ Idêntico ao SAGE Map, mas para salas de unidades externas ao Departamento de Co
 
 **Modo administrador** (requer login como administrador geral ou como administrador do SAGE Rural — veja [Autenticação e Permissões](#autenticação-e-permissões)):
 - Clique em célula livre e escolha entre **Nova alocação** ou **Reserva pontual**, como no SAGE Map — incluindo a opção "Alocar em outro dia/horário"
+- Botão **"Nova Alocação"** (admin), como no SAGE Map: abre o formulário sem escolher antes um slot livre, com sala, dia e horário definidos no próprio formulário
 - Clique em célula ocupada para editar ou remover a alocação; clique em uma reserva para editá-la ou removê-la
 - Detecção automática de conflito de horário entre alocações e reservas pontuais, com as mesmas regras do SAGE Map
 - Clique na barra de infraestrutura para editar os dados da sala (apenas se já houver registro)

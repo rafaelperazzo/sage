@@ -404,7 +404,7 @@ describe('MapPage — reservas pontuais', () => {
 
     await user.click(screen.getAllByText('LIVRE')[0]!)
 
-    expect(await screen.findByRole('button', { name: /Nova alocação/i })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /Nova alocação\s*Ocupa este horário/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Reserva pontual/i })).toBeInTheDocument()
   })
 
@@ -426,7 +426,7 @@ describe('MapPage — reservas pontuais', () => {
     renderWithRouter(<MapPage />)
 
     await user.click(screen.getAllByText('LIVRE')[0]!)
-    await user.click(await screen.findByRole('button', { name: /Nova alocação/i }))
+    await user.click(await screen.findByRole('button', { name: /Nova alocação\s*Ocupa este horário/i }))
 
     expect(await screen.findByText(/Nova Alocação —/i)).toBeInTheDocument()
   })
@@ -463,7 +463,7 @@ describe('MapPage — reservas pontuais', () => {
 
     // Primeiro slot livre é segunda 08:00–10:00, onde está a reserva.
     await user.click(screen.getAllByText('LIVRE')[0]!)
-    await user.click(await screen.findByRole('button', { name: /Nova alocação/i }))
+    await user.click(await screen.findByRole('button', { name: /Nova alocação\s*Ocupa este horário/i }))
     await user.type(await screen.findByPlaceholderText('Nome da disciplina'), 'REDES')
 
     expect(
@@ -478,7 +478,7 @@ describe('MapPage — alocação em outro dia/horário', () => {
 
   async function abrirNovaAlocacao(user: ReturnType<typeof userEvent.setup>) {
     await user.click(screen.getAllByText('LIVRE')[0]!) // segunda 08:00–10:00
-    await user.click(await screen.findByRole('button', { name: /Nova alocação/i }))
+    await user.click(await screen.findByRole('button', { name: /Nova alocação\s*Ocupa este horário/i }))
     await user.type(await screen.findByPlaceholderText('Nome da disciplina'), 'REDES')
     await user.type(screen.getByPlaceholderText('BCC, LC, DC...'), 'BCC')
   }
@@ -685,5 +685,58 @@ describe('MapPage — exportar grade de todas as salas', () => {
     setupHooks({ loading: true })
     renderWithRouter(<MapPage />)
     expect(screen.getByRole('button', { name: /Exportar grade de todas as salas/i })).toBeDisabled()
+  })
+})
+
+describe('MapPage — botão Nova Alocação', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('aparece só para admin', () => {
+    setupHooks({ isAdmin: false })
+    renderWithRouter(<MapPage />)
+    expect(screen.queryByRole('button', { name: /^Nova Alocação$/i })).not.toBeInTheDocument()
+  })
+
+  it('abre o formulário de alocação sem escolher um slot, com a sala selecionada', async () => {
+    setupHooks({ isAdmin: true })
+    const user = userEvent.setup()
+    renderWithRouter(<MapPage />)
+
+    await user.click(screen.getByRole('button', { name: /^Nova Alocação$/i }))
+
+    expect(await screen.findByText(/Nova Alocação — 2026.2/i)).toBeInTheDocument()
+    expect(screen.getByDisplayValue('SALA 02')).toBeInTheDocument()
+  })
+
+  it('bloqueia conflito com alocação de outra sala escolhida no formulário', async () => {
+    const ocupada = makeAlocacao({ sala: 'LAB 35', dia_semana: 'SEGUNDA', inicio: '14:00', fim: '16:00', disciplina: 'COMPILADORES' })
+    setupHooks({ isAdmin: true, alocacoes: [], todas: [ocupada] })
+    const user = userEvent.setup()
+    renderWithRouter(<MapPage />)
+
+    await user.click(screen.getByRole('button', { name: /^Nova Alocação$/i }))
+    await user.selectOptions(screen.getByDisplayValue('SALA 02'), 'LAB 35')
+    await user.type(screen.getByPlaceholderText('Nome da disciplina'), 'REDES')
+
+    expect(await screen.findByText(/Conflito de horário: este slot já está ocupado/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Salvar/i })).toBeDisabled()
+  })
+
+  it('salvar em outra sala cria a alocação e seleciona essa sala na grade', async () => {
+    setupHooks({ isAdmin: true })
+    mockCRUD.create.mockResolvedValue(undefined)
+    const user = userEvent.setup()
+    renderWithRouter(<MapPage />)
+
+    await user.click(screen.getByRole('button', { name: /^Nova Alocação$/i }))
+    await user.selectOptions(screen.getByDisplayValue('SALA 02'), 'LAB 35')
+    await user.type(screen.getByPlaceholderText('Nome da disciplina'), 'REDES')
+    await user.type(screen.getByPlaceholderText('BCC, LC, DC...'), 'BCC')
+    await user.click(screen.getByRole('button', { name: /Salvar/i }))
+
+    await waitFor(() => expect(mockCRUD.create).toHaveBeenCalledOnce())
+    expect(mockCRUD.create.mock.calls[0]![0]).toMatchObject({ sala: 'LAB 35', disciplina: 'REDES', curso: 'BCC' })
+    await waitFor(() => expect(mockPorSala).toHaveBeenLastCalledWith('LAB 35'))
+    expect(screen.getByRole('heading', { name: 'LAB 35' })).toBeInTheDocument()
   })
 })
