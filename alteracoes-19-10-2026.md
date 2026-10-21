@@ -63,18 +63,12 @@ Respostas às perguntas feitas durante a tarefa:
 Prompt para pedir as mesmas funcionalidades na versão mobile do SAGE (copiar o bloco abaixo inteiro):
 
 ```text
-Vamos trabalhar no SAGE Map e no SAGE Rural deste app (versão mobile do SAGE). Quero trazer para cá funcionalidades que já foram implementadas na versão web. O banco Supabase é o mesmo da versão web: as tabelas citadas abaixo já existem e NÃO devem ser criadas nem alteradas. Antes de começar, analise como o app está organizado (telas, hooks/serviços de acesso ao Supabase, formulários e verificação de admin) e reaproveite o que já existir. Se alguma tela ou funcionalidade de base citada aqui não existir no app, ou se tiver qualquer dúvida, me pergunte antes de implementar.
+Vamos trabalhar no SAGE Rural deste app (versão mobile do SAGE). Quero trazer para cá funcionalidades que já foram implementadas na versão web. O banco Supabase é o mesmo da versão web: as tabelas citadas abaixo já existem e NÃO devem ser criadas nem alteradas. Antes de começar, analise como o app está organizado (telas, hooks/serviços de acesso ao Supabase, formulários e verificação de admin) e reaproveite o que já existir. Se alguma tela ou funcionalidade de base citada aqui não existir no app, ou se tiver qualquer dúvida, me pergunte antes de implementar.
 
 Todas as ações abaixo são exclusivas de administrador (usuário comum não vê os botões). Mantenha o layout adequado para celular (botões com área de toque confortável, formulários em tela cheia ou bottom sheet, conforme o padrão já usado no app).
 
-1. Botão "Nova Alocação" (SAGE Map e SAGE Rural)
-   - Nas duas telas, adicionar um botão "Nova Alocação" que abre o formulário de nova alocação já existente, sem precisar tocar antes em uma sala e em um horário livre da grade.
-   - O formulário abre com a sala atualmente selecionada já preenchida, mas o usuário pode escolher outra sala, o dia e o horário.
-   - A verificação de conflito deve considerar todas as alocações do período (não só as da sala selecionada na grade), já que a sala escolhida no formulário pode ser outra. Havendo conflito, mostrar "Conflito de horário: este slot já está ocupado." e não permitir salvar.
-   - Após salvar em outra sala, selecionar essa sala na grade para mostrar a nova alocação.
-   - No SAGE Rural, o formulário deve separar Prédio e Sala em dois campos (como na tela): primeiro escolhe o prédio, depois a sala daquele prédio. As salas do Rural têm nome completo no formato "PREDIO - SALA XX"; o prédio é o texto antes do primeiro " - ".
-
-2. Cadastro de salas sem alocação (SAGE Rural)
+1. Cadastro de salas sem alocação (SAGE Rural)
+   - As salas do Rural têm nome completo no formato "PREDIO - SALA XX"; o prédio é o texto antes do primeiro " - ".
    - Tabela `salas_externas` (colunas `id`, `sala`), que guarda salas do Rural que ainda não têm alocação. A lista de salas do Rural passa a ser a união das salas distintas da tabela `externas` (alocações) com as da tabela `salas_externas`, ordenada.
    - Botão "Cadastrar Sala" (admin) abrindo um formulário com os campos Prédio (escolher um existente ou digitar um novo; vem preenchido com o prédio selecionado) e Sala. Mostrar uma prévia "Será cadastrada como PREDIO - SALA XX". O nome é gravado como "PREDIO - SALA" em maiúsculas, sem espaços duplicados.
    - Após cadastrar, selecionar a nova sala na grade (que aparece vazia).
@@ -86,16 +80,16 @@ Todas as ações abaixo são exclusivas de administrador (usuário comum não v�
      - não permitir cadastrar sala que já existe (comparação sem diferenciar maiúsculas/minúsculas): "A sala X já existe."
    - Atualizar a lista em tempo real (realtime do Supabase) quando `externas` ou `salas_externas` mudarem, se o app já usar realtime.
 
-3. Edição e remoção das salas cadastradas (SAGE Rural)
+2. Edição e remoção das salas cadastradas (SAGE Rural)
    - Quando a sala selecionada estiver na tabela `salas_externas`, mostrar ao admin o botão "Editar Sala" (salas que vêm só da tabela `externas` não são editáveis).
    - O formulário de edição reaproveita o de cadastro (mesmas validações; a própria sala não conta como repetida) e tem o botão "Remover", com tela de confirmação ("Tem certeza que deseja remover a sala: X").
    - Só é permitido renomear ou remover se a sala não estiver em uso. Antes de editar/remover, contar registros com aquele nome em: `externas` (coluna `sala`, alocações de qualquer período), `reservas_pontuais` (coluna `sala`), `infra_salas` (coluna `sala`) e `manutencao` (coluna `sala_local`). Se houver uso, bloquear com a mensagem "A sala X está em uso (alocações, reservas pontuais e ...) e não pode ser renomeada/removida."
    - Após renomear, manter a sala renomeada selecionada; após remover, selecionar outra sala do mesmo prédio (ou a primeira da lista).
 
-4. Infraestrutura inicial das salas (SAGE Rural)
+3. Infraestrutura inicial das salas (SAGE Rural)
    - Tabela `infra_salas` (colunas `id`, `sala` única, `cadeiras`, `computadores`, `projetor`, `tv`, `hdmi`, `arcondicionado`; os quatro últimos são 0/1). Gravar com upsert por `sala`.
    - A área de infraestrutura da sala selecionada deve aparecer sempre. Se a sala não tiver registro em `infra_salas`, mostrar "Infraestrutura da sala não cadastrada."; para o admin, tocar nesse aviso abre o formulário de infraestrutura (o mesmo usado para editar, título "Infraestrutura — NOME DA SALA") com Cadeiras, Computadores, Projetor, TV, HDMI e Ar-condicionado. Usuário comum só vê o aviso.
    - Quando houver registro, exibir os dados (ex: "40 cadeiras", "2 computadores" e os itens disponíveis), como já é feito nas salas que têm infraestrutura.
 
-Adicione testes para as novas regras (validação do nome da sala, bloqueio de edição/remoção de sala em uso, conflito na nova alocação e visibilidade dos botões só para admin), sem acessar o banco de produção (use mocks). Ao final, sugira uma mensagem de commit no formato "feat: Descrição", sem fazer o commit.
+Adicione testes para as novas regras (validação do nome da sala, bloqueio de edição/remoção de sala em uso e visibilidade dos botões só para admin), sem acessar o banco de produção (use mocks). Ao final, sugira uma mensagem de commit no formato "feat: Descrição", sem fazer o commit.
 ```
